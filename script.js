@@ -236,22 +236,80 @@ const renderMetricNumber = (element, value) => {
   element.innerHTML = `${formatMetricNumber(value)}<span class="metric-suffix">${suffix}</span>`;
 };
 
+const ensureMetricReel = (element) => {
+  if (element.dataset.reelReady === "true") return;
+
+  const target = Number(element.dataset.target || 0);
+  const suffix = element.dataset.suffix || "";
+  const targetFormatted = formatMetricNumber(target);
+
+  element.innerHTML = "";
+  [...targetFormatted].forEach((char) => {
+    if (/\d/.test(char)) {
+      const digit = document.createElement("span");
+      digit.className = "metric-digit";
+      digit.setAttribute("aria-hidden", "true");
+
+      const track = document.createElement("span");
+      track.className = "metric-digit-track";
+      track.style.setProperty("--digit-y", "0em");
+
+      for (let index = 0; index <= 9; index += 1) {
+        const number = document.createElement("span");
+        number.textContent = String(index);
+        track.append(number);
+      }
+
+      digit.append(track);
+      element.append(digit);
+    } else {
+      const separator = document.createElement("span");
+      separator.className = "metric-separator";
+      separator.setAttribute("aria-hidden", "true");
+      separator.textContent = char;
+      element.append(separator);
+    }
+  });
+
+  const suffixElement = document.createElement("span");
+  suffixElement.className = "metric-suffix";
+  suffixElement.setAttribute("aria-hidden", "true");
+  suffixElement.textContent = suffix;
+  element.append(suffixElement);
+  element.dataset.reelReady = "true";
+};
+
+const setMetricReelValue = (element, value) => {
+  ensureMetricReel(element);
+
+  const target = Number(element.dataset.target || 0);
+  const digitCount = formatMetricNumber(target).replace(/\D/g, "").length;
+  const digits = String(Math.max(0, Math.round(value))).padStart(digitCount, "0").slice(-digitCount);
+
+  element.querySelectorAll(".metric-digit-track").forEach((track, index) => {
+    track.style.setProperty("--digit-y", `-${digits[index] || "0"}em`);
+  });
+
+  element.setAttribute("aria-label", `${formatMetricNumber(Math.round(value))}${element.dataset.suffix || ""}`);
+};
+
 const animateMetricCounter = (element) => {
   const target = Number(element.dataset.target || 0);
   const duration = 1700;
   const start = performance.now();
+  setMetricReelValue(element, 0);
 
   const easeOutExpo = (progress) => (progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress));
 
   const update = (now) => {
     const progress = Math.min((now - start) / duration, 1);
     const current = Math.round(target * easeOutExpo(progress));
-    renderMetricNumber(element, current);
+    setMetricReelValue(element, current);
 
     if (progress < 1) {
       requestAnimationFrame(update);
     } else {
-      renderMetricNumber(element, target);
+      setMetricReelValue(element, target);
     }
   };
 

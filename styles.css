@@ -1132,13 +1132,46 @@ button {
 
 .metric-number {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   color: #fff;
   font-size: clamp(34px, 4vw, 54px);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.055em;
   line-height: 0.95;
+}
+
+.metric-digit {
+  position: relative;
+  display: inline-block;
+  width: 0.64em;
+  height: 1em;
+  overflow: hidden;
+}
+
+.metric-digit-track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(var(--digit-y, 0em));
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.metric-digit-track span {
+  height: 1em;
+  display: flex;
+  flex: 0 0 1em;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-separator {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.02em;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .metric-number .metric-suffix {
@@ -3119,7 +3152,8 @@ button {
   .liquid-navbar,
   .liquid-navbar__lens,
   .liquid-navbar::before,
-  .liquid-navbar::after {
+  .liquid-navbar::after,
+  .metric-digit-track {
     animation: none !important;
     transition: none !important;
   }
