@@ -1,0 +1,18 @@
+<svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ruby-fill" x1="17" y1="13" x2="47" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFA7B4"/>
+      <stop offset="0.42" stop-color="#C81E3A"/>
+      <stop offset="1" stop-color="#58151D"/>
+    </linearGradient>
+    <linearGradient id="ruby-soft" x1="20" y1="14" x2="39" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE2E7" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#E11D48" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="M18 15H46L53 28L32 53L11 28L18 15Z" fill="url(#ruby-fill)"/>
+  <path d="M18 15H46L39 28H25L18 15Z" fill="url(#ruby-soft)"/>
+  <path d="M11 28H25L32 53L11 28Z" fill="#9F1239" fill-opacity="0.58"/>
+  <path d="M39 28H53L32 53L39 28Z" fill="#4C1017" fill-opacity="0.52"/>
+  <path d="M18 15H46L53 28L32 53L11 28L18 15Z" stroke="#FFE4E8" stroke-opacity="0.24" stroke-width="1.2" stroke-linejoin="round"/>
+</svg>
