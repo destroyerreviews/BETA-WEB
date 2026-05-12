@@ -37,8 +37,31 @@ let lenis;
 let motionFrame = null;
 
 const initLenis = () => {
-  // The local file build stays dependency-free so navigation and screenshots never block on a CDN.
-  lenis = null;
+  if (prefersReducedMotion || typeof Lenis === "undefined") {
+    lenis = null;
+    return;
+  }
+
+  lenis = new Lenis({
+    duration: 1.05,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+    wheelMultiplier: 0.9,
+    touchMultiplier: 1.2,
+    infinite: false,
+  });
+
+  lenis.on("scroll", () => {
+    setHeaderState();
+    requestScrollMotion();
+  });
+
+  const raf = (time) => {
+    lenis?.raf(time);
+    requestAnimationFrame(raf);
+  };
+
+  requestAnimationFrame(raf);
 };
 
 const animateLoader = () => {
