@@ -1674,17 +1674,11 @@ button {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 28px 30px;
+  padding: 28px 32px 28px 30px;
 }
 
 .metric-card::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  margin-bottom: 14px;
-  border-radius: 999px;
-  background: var(--blue);
-  box-shadow: 0 0 18px rgba(23, 59, 255, 0.82);
+  content: none;
 }
 
 .metric-card:not(:last-child)::after {
@@ -1699,19 +1693,23 @@ button {
 
 .metric-number {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  width: max-content;
+  max-width: 100%;
+  overflow: visible;
+  padding-right: 0.12em;
   color: #fff;
   font-size: clamp(34px, 4vw, 54px);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.045em;
   line-height: 0.95;
 }
 
 .metric-digit {
   position: relative;
   display: inline-block;
-  width: 0.64em;
+  width: 0.68em;
   height: 1em;
   overflow: hidden;
 }
@@ -1742,10 +1740,13 @@ button {
 }
 
 .metric-number .metric-suffix {
-  margin-left: 3px;
+  flex: 0 0 auto;
+  margin-left: 0.08em;
+  padding-right: 0.04em;
   color: #2f63ff;
   font-size: 0.52em;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .metric-card h3 {
