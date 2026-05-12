@@ -71,21 +71,21 @@ const animateLoader = () => {
 
 const setHeaderState = () => {
   const currentScrollY = window.scrollY;
-  header?.classList.toggle("is-scrolled", currentScrollY > 18);
+  header?.classList.toggle("is-scrolled", currentScrollY > 32);
 
   /* Auto-hide header on scroll down, show on scroll up */
   if (header && currentScrollY > 200) {
     const delta = currentScrollY - lastScrollY;
     if (delta > SCROLL_THRESHOLD && !headerHidden) {
-      header.style.transform = "translateX(-50%) translateY(-120%)";
-      header.style.transition = "transform 420ms cubic-bezier(0.22, 1, 0.36, 1), min-height 320ms cubic-bezier(0.22, 1, 0.36, 1), background 320ms ease, border-color 320ms ease, box-shadow 320ms ease, border-radius 320ms ease, padding 320ms ease";
+      header.style.transform = "translateY(-130%)";
+      header.style.transition = "top 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1)";
       headerHidden = true;
     } else if (delta < -SCROLL_THRESHOLD && headerHidden) {
-      header.style.transform = "translateX(-50%) translateY(0)";
+      header.style.transform = "translateY(0)";
       headerHidden = false;
     }
   } else if (header && headerHidden) {
-    header.style.transform = "translateX(-50%) translateY(0)";
+    header.style.transform = "translateY(0)";
     headerHidden = false;
   }
   lastScrollY = currentScrollY;
