@@ -1692,8 +1692,8 @@ button {
 }
 
 .metric-number {
-  display: flex;
-  align-items: baseline;
+  display: inline-flex;
+  align-items: flex-start;
   width: max-content;
   max-width: 100%;
   overflow: visible;
@@ -1703,15 +1703,17 @@ button {
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
-  line-height: 0.95;
+  line-height: 1;
 }
 
 .metric-digit {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: flex-start;
   width: 0.68em;
   height: 1em;
   overflow: hidden;
+  line-height: 1;
 }
 
 .metric-digit-track {
@@ -1728,8 +1730,9 @@ button {
   height: 1em;
   display: flex;
   flex: 0 0 1em;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  line-height: 1;
 }
 
 .metric-separator {
@@ -1741,10 +1744,12 @@ button {
 
 .metric-number .metric-suffix {
   flex: 0 0 auto;
-  margin-left: 0.08em;
+  align-self: flex-start;
+  margin-top: 0.04em;
+  margin-left: 0.06em;
   padding-right: 0.04em;
   color: #2f63ff;
-  font-size: 0.52em;
+  font-size: 0.64em;
   letter-spacing: -0.02em;
   line-height: 1;
 }
