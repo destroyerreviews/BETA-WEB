@@ -229,6 +229,64 @@ const initCounters = () => {
   document.querySelectorAll("[data-counter]").forEach((counter) => observer.observe(counter));
 };
 
+const formatMetricNumber = (value) => new Intl.NumberFormat("es-ES").format(value);
+
+const renderMetricNumber = (element, value) => {
+  const suffix = element.dataset.suffix || "";
+  element.innerHTML = `${formatMetricNumber(value)}<span class="metric-suffix">${suffix}</span>`;
+};
+
+const animateMetricCounter = (element) => {
+  const target = Number(element.dataset.target || 0);
+  const duration = 1700;
+  const start = performance.now();
+
+  const easeOutExpo = (progress) => (progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress));
+
+  const update = (now) => {
+    const progress = Math.min((now - start) / duration, 1);
+    const current = Math.round(target * easeOutExpo(progress));
+    renderMetricNumber(element, current);
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      renderMetricNumber(element, target);
+    }
+  };
+
+  requestAnimationFrame(update);
+};
+
+const initSocialMetrics = () => {
+  const metricsSection = document.querySelector(".metrics-section");
+  const counters = [...document.querySelectorAll(".metric-number")];
+  if (!metricsSection || !counters.length) return;
+
+  const revealMetrics = () => {
+    metricsSection.classList.add("is-visible");
+    counters.forEach((counter) => {
+      const target = Number(counter.dataset.target || 0);
+      if (prefersReducedMotion) {
+        renderMetricNumber(counter, target);
+      } else {
+        animateMetricCounter(counter);
+      }
+    });
+  };
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return;
+      revealMetrics();
+      observer.disconnect();
+    },
+    { threshold: 0.35 }
+  );
+
+  observer.observe(metricsSection);
+};
+
 const initMicroInteractions = () => {
   document.querySelectorAll(".hover-glow").forEach((card) => {
     card.addEventListener("pointermove", (event) => {
@@ -345,6 +403,7 @@ const init = () => {
   initNavigation();
   initReveals();
   initCounters();
+  initSocialMetrics();
   initMicroInteractions();
   initPlanSwitch();
   initPricingReveal();
