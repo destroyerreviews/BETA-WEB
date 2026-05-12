@@ -181,8 +181,11 @@ const initHeroRotatingWord = () => {
     if (!wordShell || !word) return;
     const shellRect = wordShell.getBoundingClientRect();
     const wordRect = word.getBoundingClientRect();
-    wordShell.style.setProperty("--underline-width", `${wordRect.width}px`);
-    wordShell.style.setProperty("--underline-x", `${wordRect.left - shellRect.left}px`);
+    const wordStyle = window.getComputedStyle(word);
+    const paddingLeft = Number.parseFloat(wordStyle.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(wordStyle.paddingRight) || 0;
+    wordShell.style.setProperty("--underline-width", `${Math.max(0, wordRect.width - paddingLeft - paddingRight)}px`);
+    wordShell.style.setProperty("--underline-x", `${wordRect.left - shellRect.left + paddingLeft}px`);
   };
 
   word.textContent = words[index];
