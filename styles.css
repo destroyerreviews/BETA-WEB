@@ -1472,16 +1472,18 @@ button {
   position: relative;
   display: grid;
   grid-template-rows:
-    32px
-    76px
-    44px
-    92px
-    116px
+    34px
+    78px
+    48px
+    78px
+    78px
+    38px
+    24px
     1fr
-    48px;
-  row-gap: 12px;
-  min-height: 650px;
-  padding: clamp(17px, 1.8vw, 22px);
+    54px;
+  row-gap: 14px;
+  min-height: 760px;
+  padding: 30px 28px 26px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 10px;
   background:
@@ -1564,7 +1566,7 @@ button {
 
 .featured-badge {
   position: absolute;
-  top: -18px;
+  top: -17px;
   left: 50%;
   z-index: 10;
   display: inline-flex;
@@ -1637,29 +1639,11 @@ button {
   pointer-events: none;
 }
 
-.badge-gem svg {
+.badge-gem img {
   display: block;
-  width: 15px;
-  height: 15px;
-  overflow: visible;
-}
-
-.badge-gem-shape {
-  fill: url("#badgeDiamondMain");
-  stroke: rgba(224, 247, 255, 0.88);
-  stroke-width: 0.7;
-}
-
-.badge-gem-facet {
-  fill: none;
-  stroke: url("#badgeDiamondFacet");
-  stroke-width: 0.58;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.badge-gem-glint {
-  fill: rgba(255, 255, 255, 0.78);
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
 }
 
 .price-card.featured:hover .featured-badge,
@@ -1732,54 +1716,22 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 76px;
+  height: 78px;
 }
 
 .pack-gem {
-  position: relative;
-  justify-self: center;
-  width: 48px;
-  height: 48px;
+  display: block;
+  width: 58px;
+  height: 58px;
   margin: 0;
-  clip-path: polygon(50% 0, 88% 20%, 100% 55%, 50% 100%, 0 55%, 12% 20%);
-  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.38));
+  object-fit: contain;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.35));
 }
 
-.pack-gem::before,
-.pack-gem::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-
-.pack-gem::before {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), transparent 32%, rgba(0, 0, 0, 0.16) 72%);
-  mix-blend-mode: screen;
-  opacity: 0.62;
-}
-
-.pack-gem::after {
-  background: linear-gradient(45deg, transparent 49%, rgba(255, 255, 255, 0.36) 50%, transparent 51%);
-}
-
-.gem-amber {
-  background:
-    linear-gradient(135deg, #ffe16d 0 28%, #ffae1a 29% 58%, #f36e19 59% 100%);
-}
-
-.gem-amethyst {
-  background:
-    linear-gradient(135deg, #d7bdff 0 25%, #7d55ff 26% 58%, #3b1c8d 59% 100%);
-}
-
-.gem-diamond {
-  background:
-    linear-gradient(135deg, #aef3ff 0 26%, #4fb5ff 27% 52%, #2447ff 53% 100%);
-}
-
-.gem-ruby {
-  background:
-    linear-gradient(135deg, #ff5b68 0 28%, #d9162d 29% 60%, #7b0d22 61% 100%);
+.price-card.featured .pack-gem {
+  filter:
+    drop-shadow(0 14px 24px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 20px rgba(45, 135, 255, 0.32));
 }
 
 .price-card h3 {
@@ -1787,138 +1739,149 @@ button {
   align-self: end;
   margin: 0;
   color: #fff;
-  font-size: clamp(25px, 2.1vw, 33px);
+  font-size: clamp(26px, 2.05vw, 33px);
   line-height: 1;
 }
 
-.price-card p {
+.card-description {
   grid-row: 4;
   margin: 0;
   color: #d0d3dc;
   max-width: 42ch;
   font-size: 15px;
   line-height: 1.55;
-  min-height: 72px;
+  min-height: 66px;
 }
 
-.price-block {
+.price-row {
   grid-row: 5;
-  display: grid;
-  grid-template-rows: 66px 38px;
-  grid-template-columns: max-content max-content;
-  align-items: end;
-  column-gap: 12px;
-  row-gap: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-height: 70px;
   margin: 0;
 }
 
-.price-card:first-child .price-block::before {
-  content: "0 €";
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  visibility: hidden;
-  font-size: 18px;
+.price-current {
+  color: #fff;
+  font-size: clamp(46px, 4vw, 56px);
   font-weight: 900;
   line-height: 1;
-}
-
-.price-current {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: end;
-  color: #fff;
-  font-size: clamp(42px, 3.7vw, 56px);
-  font-weight: 950;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.055em;
   white-space: nowrap;
 }
 
 .price-before {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  margin-right: 10px;
-  color: #8b8f9c;
+  color: #8d929f;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
   text-decoration: line-through;
   text-decoration-thickness: 2px;
   text-decoration-color: rgba(255, 255, 255, 0.64);
+  opacity: 0.75;
+}
+
+.price-before.placeholder {
+  visibility: hidden;
 }
 
 .price-per-review {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  align-self: start;
-  flex-basis: 100%;
+  grid-row: 6;
+  align-self: center;
   width: fit-content;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 7px 10px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(247, 247, 242, 0.78);
-  font-size: 14px;
-  font-weight: 850;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #e8ebf5;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .price-card.featured .price-per-review {
-  border-color: rgba(90, 119, 255, 0.38);
-  background: rgba(23, 59, 255, 0.18);
-  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(120, 160, 255, 0.52);
+  background: rgba(45, 91, 255, 0.22);
+  color: #ffffff;
 }
 
-.price-card ul {
-  grid-row: 6;
+.features-title {
+  grid-row: 7;
+  align-self: end;
+  color: #f4f6ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.card-features {
+  grid-row: 8;
   display: grid;
-  gap: 10px;
+  gap: 11px;
   align-content: start;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.price-card li {
+.card-features li {
   position: relative;
-  padding-left: 20px;
-  color: #d0d3dc;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  gap: 10px;
+  color: #d7d9e4;
   font-size: 14px;
-  line-height: 1.38;
+  line-height: 1.35;
 }
 
-.price-card li::before {
-  content: "";
-  position: absolute;
-  top: 9px;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 14px rgba(23, 59, 255, 0.8);
+.card-features li::before {
+  content: "✓";
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(91, 141, 255, 0.45);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  background: rgba(37, 99, 255, 0.22);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 12px rgba(45, 91, 255, 0.18);
 }
 
-.price-card.featured li::before {
-  background: #5d78ff;
-  box-shadow: 0 0 14px rgba(23, 59, 255, 0.8);
+.price-card.featured .card-features li::before {
+  border-color: rgba(143, 180, 255, 0.6);
+  background: rgba(77, 132, 255, 0.32);
+  box-shadow: 0 0 14px rgba(77, 132, 255, 0.28);
 }
 
 .price-card .button {
-  grid-row: 7;
+  grid-row: 9;
   position: relative;
   align-self: end;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-top: auto;
+  height: 48px;
   min-height: 48px;
+  margin-top: 0;
   border: 1px solid rgba(45, 91, 255, 0.7);
   border-radius: 999px;
   background: rgba(45, 91, 255, 0.08);
   color: #fff;
+  font-size: 14px;
+  font-weight: 800;
   box-shadow: none;
   transform: translateY(0) !important;
   transition: background 200ms ease, border-color 200ms ease, box-shadow 220ms ease, color 200ms ease;
@@ -2639,14 +2602,21 @@ button {
 
   .price-card {
     grid-template-rows:
-      32px
-      72px
-      42px
-      86px
-      108px
+      34px
+      74px
+      44px
+      74px
+      70px
+      36px
+      22px
       1fr
-      48px;
-    min-height: 616px;
+      50px;
+    min-height: 700px;
+    padding: 28px 18px 22px;
+  }
+
+  .gem-icon-wrap {
+    height: 74px;
   }
 
   .service-row {
