@@ -1368,11 +1368,47 @@ button {
 }
 
 .section-plans {
+  position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding-block: clamp(88px, 8vw, 124px);
+  padding-block: clamp(96px, 8.5vw, 134px) clamp(88px, 8vw, 124px);
   background:
     linear-gradient(90deg, rgba(3, 3, 3, 0.98), rgba(7, 10, 24, 0.94) 62%, rgba(3, 3, 3, 0.98));
+}
+
+.pricing-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  z-index: -3;
+  width: min(900px, 80vw);
+  height: 520px;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle at center,
+      rgba(32, 108, 232, 0.34) 0%,
+      rgba(49, 49, 245, 0.22) 28%,
+      rgba(32, 108, 232, 0.09) 52%,
+      transparent 72%);
+  filter: blur(56px);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.pricing-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 72px 72px;
+  opacity: 0.24;
+  pointer-events: none;
+  mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
 }
 
 .plans-aura,
@@ -1391,12 +1427,100 @@ button {
 }
 
 .plans-grid-surface {
-  z-index: -1;
+  z-index: -2;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.046) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 86px 86px;
   mask-image: radial-gradient(ellipse at 48% 34%, #000 0%, rgba(0, 0, 0, 0.78) 42%, transparent 78%);
+  opacity: 0.74;
+}
+
+.pricing-sparkles {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0.36;
+  pointer-events: none;
+  mask-image: radial-gradient(circle at center, #000 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 70%);
+}
+
+.pricing-sparkles span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(170, 205, 255, 0.9);
+  box-shadow: 0 0 12px rgba(72, 132, 255, 0.8);
+  animation: sparkleFloat 5s ease-in-out infinite;
+}
+
+.pricing-sparkles span:nth-child(1) { left: 11%; top: 34%; animation-delay: 0.2s; }
+.pricing-sparkles span:nth-child(2) { left: 18%; top: 58%; animation-delay: 1.7s; }
+.pricing-sparkles span:nth-child(3) { left: 24%; top: 44%; animation-delay: 3.1s; }
+.pricing-sparkles span:nth-child(4) { left: 31%; top: 68%; animation-delay: 0.9s; }
+.pricing-sparkles span:nth-child(5) { left: 38%; top: 36%; animation-delay: 2.4s; }
+.pricing-sparkles span:nth-child(6) { left: 43%; top: 61%; animation-delay: 4.2s; }
+.pricing-sparkles span:nth-child(7) { left: 48%; top: 28%; animation-delay: 1.1s; }
+.pricing-sparkles span:nth-child(8) { left: 52%; top: 55%; animation-delay: 2.9s; }
+.pricing-sparkles span:nth-child(9) { left: 57%; top: 39%; animation-delay: 0.4s; }
+.pricing-sparkles span:nth-child(10) { left: 61%; top: 72%; animation-delay: 3.6s; }
+.pricing-sparkles span:nth-child(11) { left: 66%; top: 31%; animation-delay: 1.9s; }
+.pricing-sparkles span:nth-child(12) { left: 71%; top: 51%; animation-delay: 4.6s; }
+.pricing-sparkles span:nth-child(13) { left: 76%; top: 66%; animation-delay: 0.7s; }
+.pricing-sparkles span:nth-child(14) { left: 82%; top: 42%; animation-delay: 2.2s; }
+.pricing-sparkles span:nth-child(15) { left: 87%; top: 59%; animation-delay: 3.8s; }
+.pricing-sparkles span:nth-child(16) { left: 35%; top: 81%; animation-delay: 1.4s; }
+.pricing-sparkles span:nth-child(17) { left: 54%; top: 82%; animation-delay: 2.7s; }
+.pricing-sparkles span:nth-child(18) { left: 69%; top: 18%; animation-delay: 4.9s; }
+
+.pricing-section:not(.is-visible) .reveal-item {
+  opacity: 0;
+  transform: translateY(24px);
+  filter: blur(10px);
+}
+
+.pricing-section .reveal-item {
+  will-change: opacity, transform, filter;
+}
+
+.pricing-section.is-visible .plans-heading .reveal-item,
+.pricing-section.is-visible .trust-row {
+  animation: pricingReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.pricing-section.is-visible .plans-heading .reveal-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.pricing-section.is-visible .plans-heading .reveal-item:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.pricing-section.is-visible .plans-heading .reveal-item:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.pricing-section.is-visible .pricing-grid .price-card:nth-child(1) {
+  animation: pricingReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 220ms backwards;
+}
+
+.pricing-section.is-visible .pricing-grid .price-card:nth-child(2) {
+  animation: pricingReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 320ms backwards;
+}
+
+.pricing-section.is-visible .pricing-grid .price-card:nth-child(3) {
+  animation: pricingReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 420ms backwards;
+}
+
+.pricing-section.is-visible .pricing-grid .price-card:nth-child(4) {
+  animation: pricingReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 520ms backwards;
+}
+
+.pricing-section.is-visible .trust-row {
+  animation-delay: 620ms;
 }
 
 .plans-heading {
@@ -1468,6 +1592,24 @@ button {
   overflow: visible;
 }
 
+.pricing-grid-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  z-index: -1;
+  width: min(760px, 82vw);
+  height: 240px;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(ellipse at center,
+      rgba(37, 99, 255, 0.24) 0%,
+      rgba(37, 99, 255, 0.11) 38%,
+      transparent 72%);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
 .price-card {
   position: relative;
   display: grid;
@@ -1529,9 +1671,17 @@ button {
     rgba(10, 13, 32, 0.96);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 0 1px rgba(23, 59, 255, 0.2),
-    0 0 90px rgba(23, 59, 255, 0.22),
-    0 28px 90px rgba(0, 0, 0, 0.36);
+    0 0 0 1px rgba(70, 120, 255, 0.75),
+    0 0 48px rgba(49, 80, 245, 0.28),
+    0 24px 90px rgba(0, 0, 0, 0.35);
+}
+
+.price-card.featured:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 0 0 1px rgba(110, 155, 255, 0.9),
+    0 0 64px rgba(49, 80, 245, 0.38),
+    0 28px 100px rgba(0, 0, 0, 0.42);
 }
 
 .pack-meta {
@@ -1708,6 +1858,33 @@ button {
   76% {
     opacity: 0;
     transform: translateX(48%) scale(0.7);
+  }
+}
+
+@keyframes pricingReveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes sparkleFloat {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0) scale(0.8);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: translateY(-10px) scale(1);
   }
 }
 
@@ -2691,6 +2868,17 @@ button {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
+  }
+
+  .pricing-section .reveal-item,
+  .price-card,
+  .featured-badge,
+  .pricing-sparkles span {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
   }
 
   .reveal {

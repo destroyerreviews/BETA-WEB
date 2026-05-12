@@ -285,6 +285,27 @@ const initPlanSwitch = () => {
   });
 };
 
+const initPricingReveal = () => {
+  const pricingSection = document.querySelector(".pricing-section");
+  if (!pricingSection) return;
+
+  if (prefersReducedMotion) {
+    pricingSection.classList.add("is-visible");
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) return;
+      pricingSection.classList.add("is-visible");
+      observer.disconnect();
+    },
+    { threshold: 0.22 }
+  );
+
+  observer.observe(pricingSection);
+};
+
 const initForm = () => {
   const form = document.querySelector("[data-lead-form]");
   const formStatus = document.querySelector("[data-form-status]");
@@ -303,6 +324,7 @@ const init = () => {
   initCounters();
   initMicroInteractions();
   initPlanSwitch();
+  initPricingReveal();
   initForm();
   setHeaderState();
   updateScrollMotion();
