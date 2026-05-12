@@ -5,7 +5,11 @@ const scrollMeter = document.querySelector(".scroll-meter");
 const loader = document.querySelector("[data-loader]");
 const loaderCount = document.querySelector("[data-loader-count]");
 const navLinks = [...document.querySelectorAll("[data-nav-link]")];
-const navSections = navLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+const navSectionLinks = navLinks.filter((link) => {
+  const href = link.getAttribute("href") || "";
+  return href.startsWith("#") && href.length > 1;
+});
+const navSections = navSectionLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
 const motionPanels = [...document.querySelectorAll("[data-motion-panel]")];
 const depthLayers = [...document.querySelectorAll("[data-depth]")];
 const proofCards = [...document.querySelectorAll(".proof-card")];
@@ -14,24 +18,7 @@ const hasFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").m
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 /* ── Sliding pill indicator for active nav link ── */
-let lastScrollY = 0;
-let headerHidden = false;
-const SCROLL_THRESHOLD = 8;
-
-const updateNavPill = () => {
-  if (!nav) return;
-  const activeLink = nav.querySelector(".is-active");
-  if (activeLink) {
-    const navRect = nav.getBoundingClientRect();
-    const linkRect = activeLink.getBoundingClientRect();
-    const left = linkRect.left - navRect.left;
-    const width = linkRect.width;
-    nav.style.setProperty("--pill-left", `${left}px`);
-    nav.style.setProperty("--pill-width", `${width}px`);
-  } else {
-    nav.style.setProperty("--pill-width", "0px");
-  }
-};
+const updateNavPill = () => {};
 
 let lenis;
 let motionFrame = null;
@@ -96,23 +83,6 @@ const setHeaderState = () => {
   const currentScrollY = window.scrollY;
   header?.classList.toggle("is-scrolled", currentScrollY > 32);
 
-  /* Auto-hide header on scroll down, show on scroll up */
-  if (header && currentScrollY > 200) {
-    const delta = currentScrollY - lastScrollY;
-    if (delta > SCROLL_THRESHOLD && !headerHidden) {
-      header.style.transform = "translateY(-130%)";
-      header.style.transition = "top 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1)";
-      headerHidden = true;
-    } else if (delta < -SCROLL_THRESHOLD && headerHidden) {
-      header.style.transform = "translateY(0)";
-      headerHidden = false;
-    }
-  } else if (header && headerHidden) {
-    header.style.transform = "translateY(0)";
-    headerHidden = false;
-  }
-  lastScrollY = currentScrollY;
-
   const scrollable = document.documentElement.scrollHeight - window.innerHeight;
   const progress = scrollable > 0 ? (currentScrollY / scrollable) * 100 : 0;
   if (scrollMeter) scrollMeter.style.width = `${progress}%`;
@@ -123,7 +93,8 @@ const setHeaderState = () => {
     .find((section) => currentScrollY + 220 >= section.offsetTop);
 
   navLinks.forEach((link) => {
-    link.classList.toggle("is-active", activeSection && link.getAttribute("href") === `#${activeSection.id}`);
+    const href = link.getAttribute("href");
+    link.classList.toggle("is-active", Boolean(activeSection && href === `#${activeSection.id}`));
   });
 
   /* Update the sliding pill position */

@@ -31,30 +31,44 @@
     </div>
 
     <header class="site-header" data-header>
-      <div class="liquid-navbar">
-        <span class="liquid-navbar__lens" aria-hidden="true"></span>
-        <div class="liquid-navbar__content">
-          <a class="brand" href="#inicio" aria-label="Destroyer Reviews">
-            <span class="brand-mark">DR</span>
-            <span>Destroyer Reviews</span>
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="nav-brand" href="/" aria-label="Destroyer Reviews">
+            <span class="nav-logo">DR</span>
+            <span class="nav-brand-text">Destroyer Reviews</span>
           </a>
 
-          <button class="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+          <div class="nav-links" data-nav>
+            <a href="/" data-nav-link>Inicio</a>
+            <a href="/blogs" data-nav-link>Blogs</a>
+            <a href="#planes" data-nav-link>Precios</a>
+            <a href="#contacto" data-nav-link>Contáctanos</a>
+            <a href="/gana-dinero" data-nav-link>Gana dinero</a>
+          </div>
+
+          <div class="nav-auth">
+            <a class="nav-login" href="/login">Iniciar sesión</a>
+            <a class="nav-register" href="/register">Registrarse</a>
+          </div>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
             <span></span>
             <span></span>
           </button>
-
-          <nav class="site-nav" data-nav>
-            <a href="#sistema" data-nav-link>Sistema</a>
-            <a href="#servicios" data-nav-link>Servicios</a>
-            <a href="#metodo" data-nav-link>Método</a>
-            <a href="#planes" data-nav-link>Planes</a>
-            <a href="#resultados" data-nav-link>Resultados</a>
-          </nav>
-
-          <a class="header-cta magnetic" href="#contacto">Empezar</a>
         </div>
-      </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="/">Inicio</a>
+          <a href="/blogs">Blogs</a>
+          <a href="#planes">Precios</a>
+          <a href="#contacto">Contáctanos</a>
+          <a href="/gana-dinero">Gana dinero</a>
+          <a href="/login">Iniciar sesión</a>
+          <a class="mobile-register" href="/register">Registrarse</a>
+        </div>
+      </nav>
     </header>
 
     <main>
