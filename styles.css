@@ -21,6 +21,18 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html {
   scroll-behavior: auto;
   scroll-padding-top: 104px;
@@ -836,31 +848,69 @@ button {
 
 .hero-title {
   margin: 0;
-  max-width: 900px;
-  font-size: clamp(62px, 9.2vw, 140px);
-  line-height: 0.86;
-  letter-spacing: 0;
+  max-width: 860px;
+  color: #fff;
+  font-size: clamp(58px, 7vw, 112px);
+  font-weight: 850;
+  letter-spacing: -0.075em;
+  line-height: 0.92;
 }
 
-.hero-title span {
+.hero-title > .hero-title-visible {
   display: block;
   animation: titleLift 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.hero-title span:nth-child(2) {
-  animation-delay: 90ms;
+.rotating-word-shell {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 8.4ch;
+  height: 1.02em;
+  overflow: hidden;
+  vertical-align: baseline;
 }
 
-.hero-title span:nth-child(3) {
-  animation-delay: 180ms;
+.rotating-word {
+  display: inline-block;
+  background: linear-gradient(180deg, #fff 18%, #9db7ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 34px rgba(45, 91, 255, 0.22);
+  transform: translateY(0);
+  will-change: transform, opacity, filter;
+}
+
+.rotating-word.is-entering {
+  animation: rotatingWordIn 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rotating-word.is-exiting {
+  animation: rotatingWordOut 360ms cubic-bezier(0.55, 0, 0.2, 1) both;
+}
+
+.rotating-word-shell::after {
+  content: "";
+  position: absolute;
+  left: 0.02em;
+  right: 0.04em;
+  bottom: 0.02em;
+  height: 0.07em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #245bff, #75a4ff, #245bff);
+  box-shadow: 0 0 24px rgba(45, 91, 255, 0.42);
+  opacity: 0.85;
+  transform-origin: left center;
 }
 
 .hero-lead {
-  width: min(100%, 690px);
+  width: min(100%, 680px);
   margin: 28px 0 0;
-  color: #d7d7d3;
-  font-size: clamp(18px, 1.75vw, 23px);
-  line-height: 1.48;
+  color: #c8ccd8;
+  font-size: clamp(17px, 1.3vw, 21px);
+  letter-spacing: -0.02em;
+  line-height: 1.55;
 }
 
 .hero-actions {
@@ -2603,6 +2653,34 @@ button {
   }
 }
 
+@keyframes rotatingWordIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(110%);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotatingWordOut {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(-90%);
+  }
+}
+
 @keyframes announcementSheen {
   0%,
   48% {
@@ -2720,9 +2798,9 @@ button {
 }
 
 .hero-title {
-  max-width: 790px;
-  font-size: clamp(54px, 7.8vw, 118px);
-  line-height: 0.9;
+  max-width: 860px;
+  font-size: clamp(58px, 7vw, 112px);
+  line-height: 0.92;
 }
 
 .hero-title span {
@@ -2732,7 +2810,7 @@ button {
 }
 
 .hero-lead {
-  max-width: 650px;
+  max-width: 680px;
   font-size: clamp(17px, 1.45vw, 21px);
 }
 
@@ -2993,21 +3071,22 @@ button {
   }
 
   .hero-title {
-    font-size: clamp(43px, 12.4vw, 58px);
-    line-height: 0.92;
+    max-width: 100%;
+    font-size: clamp(46px, 14vw, 72px);
+    letter-spacing: -0.065em;
+    line-height: 0.95;
     text-wrap: auto;
   }
 
-  .hero-title span:nth-child(2) {
-    max-width: 7ch;
-  }
-
-  .hero-title span:nth-child(3) {
-    max-width: 9ch;
+  .rotating-word-shell {
+    min-width: min(7.9ch, 100%);
   }
 
   .hero-lead {
     max-width: 96%;
+    margin-top: 22px;
+    font-size: 16px;
+    line-height: 1.55;
   }
 
   .hero-copy {
@@ -3019,10 +3098,6 @@ button {
   .metrics-section,
   .lead-form {
     max-width: 100%;
-  }
-
-  .hero-lead {
-    font-size: 17px;
   }
 
   .hero-actions .button {
@@ -3205,9 +3280,12 @@ button {
   .liquid-navbar__lens,
   .liquid-navbar::before,
   .liquid-navbar::after,
-  .metric-digit-track {
+  .metric-digit-track,
+  .rotating-word {
     animation: none !important;
     transition: none !important;
+    transform: none !important;
+    filter: none !important;
   }
 
   .metrics-panel {

@@ -169,6 +169,29 @@ const initNavigation = () => {
   });
 };
 
+const initHeroRotatingWord = () => {
+  const word = document.querySelector("[data-rotating-word]");
+  if (!word) return;
+
+  const words = ["confianza", "visibilidad", "clientes", "autoridad"];
+  let index = 0;
+  word.textContent = words[index];
+
+  if (prefersReducedMotion) return;
+
+  window.setInterval(() => {
+    word.classList.remove("is-entering");
+    word.classList.add("is-exiting");
+
+    window.setTimeout(() => {
+      index = (index + 1) % words.length;
+      word.textContent = words[index];
+      word.classList.remove("is-exiting");
+      word.classList.add("is-entering");
+    }, 330);
+  }, 2400);
+};
+
 const initReveals = () => {
   if (prefersReducedMotion) {
     document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
@@ -459,6 +482,7 @@ const initForm = () => {
 const init = () => {
   animateLoader();
   initNavigation();
+  initHeroRotatingWord();
   initReveals();
   initCounters();
   initSocialMetrics();
