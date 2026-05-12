@@ -1464,6 +1464,8 @@ button {
   gap: 24px;
   width: min(calc(100% - 40px), 1200px);
   margin-inline: auto;
+  padding-top: 28px;
+  overflow: visible;
 }
 
 .price-card {
@@ -1518,6 +1520,7 @@ button {
 }
 
 .price-card.featured {
+  overflow: visible;
   border-color: rgba(47, 87, 255, 0.95);
   background:
     linear-gradient(180deg, rgba(23, 59, 255, 0.28), rgba(12, 16, 42, 0.94) 46%, rgba(255, 255, 255, 0.05)),
@@ -1559,25 +1562,169 @@ button {
   color: #fff;
 }
 
-.recommendation-badge {
+.featured-badge {
   position: absolute;
-  top: 52px;
+  top: -18px;
   left: 50%;
-  z-index: 2;
-  width: fit-content;
-  min-height: 24px;
+  z-index: 10;
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(90, 119, 255, 0.82);
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
   border-radius: 999px;
-  padding: 0 11px;
-  background: rgba(23, 59, 255, 0.24);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 950;
-  text-transform: uppercase;
-  box-shadow: 0 10px 36px rgba(23, 59, 255, 0.24);
+  font-family: "Geist", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.07)),
+    rgba(15, 25, 58, 0.52);
+  border: 1px solid rgba(90, 119, 255, 0.82);
+  box-shadow:
+    0 0 24px rgba(45, 91, 255, 0.42),
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transform: translateX(-50%);
+  animation: badgeEnter 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.featured-badge::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+.badge-gem {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  color: #aeeeff;
+  filter:
+    drop-shadow(0 0 8px rgba(88, 166, 255, 0.78))
+    drop-shadow(0 0 18px rgba(45, 91, 255, 0.34));
+  animation: gemGlow 2.8s ease-in-out infinite;
+}
+
+.badge-gem::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  background: linear-gradient(115deg, transparent 22%, rgba(255, 255, 255, 0.82) 47%, transparent 66%);
+  opacity: 0;
+  transform: translateX(-46%) scale(0.7);
+  animation: gemShimmer 3.4s ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.badge-gem svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  overflow: visible;
+}
+
+.badge-gem-shape {
+  fill: url("#badgeDiamondMain");
+  stroke: rgba(224, 247, 255, 0.88);
+  stroke-width: 0.7;
+}
+
+.badge-gem-facet {
+  fill: none;
+  stroke: url("#badgeDiamondFacet");
+  stroke-width: 0.58;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badge-gem-glint {
+  fill: rgba(255, 255, 255, 0.78);
+}
+
+.price-card.featured:hover .featured-badge,
+.featured-badge:hover {
+  border-color: rgba(172, 214, 255, 0.94);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.09)),
+    rgba(18, 32, 70, 0.62);
+  box-shadow:
+    0 0 32px rgba(58, 121, 255, 0.54),
+    0 10px 30px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transform: translate(-50%, -1px);
+}
+
+.price-card.featured:hover .badge-gem,
+.featured-badge:hover .badge-gem {
+  filter:
+    drop-shadow(0 0 10px rgba(145, 221, 255, 0.94))
+    drop-shadow(0 0 24px rgba(63, 111, 255, 0.54));
+}
+
+@keyframes badgeEnter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes gemGlow {
+  0%,
+  100% {
+    filter:
+      drop-shadow(0 0 7px rgba(98, 180, 255, 0.56))
+      drop-shadow(0 0 14px rgba(45, 91, 255, 0.26));
+  }
+
+  50% {
+    filter:
+      drop-shadow(0 0 11px rgba(179, 239, 255, 0.92))
+      drop-shadow(0 0 22px rgba(68, 124, 255, 0.5));
+  }
+}
+
+@keyframes gemShimmer {
+  0%,
+  58%,
+  100% {
+    opacity: 0;
+    transform: translateX(-46%) scale(0.7);
+  }
+
+  67% {
+    opacity: 0.42;
+  }
+
+  76% {
+    opacity: 0;
+    transform: translateX(48%) scale(0.7);
+  }
 }
 
 .gem-icon-wrap {
