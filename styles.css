@@ -865,9 +865,10 @@ button {
   position: relative;
   display: inline-flex;
   align-items: baseline;
-  min-width: 8.4ch;
-  min-height: 1.16em;
-  padding-bottom: 0.08em;
+  min-width: 11.2ch;
+  min-height: 1.22em;
+  padding: 0.02em 0.04em 0.16em;
+  margin: 0 -0.04em -0.08em;
   overflow: visible;
   vertical-align: baseline;
 }
@@ -883,15 +884,16 @@ button {
   position: relative;
   display: inline-flex;
   align-items: baseline;
-  min-height: 1.08em;
+  min-height: 1.16em;
   overflow: hidden;
-  padding-right: 0.04em;
-  padding-bottom: 0.08em;
+  padding: 0.04em 0.04em 0.18em;
+  margin: -0.04em -0.04em -0.12em;
 }
 
 .rotating-word {
   display: inline-block;
-  line-height: 1.02;
+  line-height: 1.04;
+  padding-bottom: 0.08em;
   background: linear-gradient(180deg, #fff 10%, #aac1ff 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -911,21 +913,29 @@ button {
 
 .rotating-word-underline {
   position: absolute;
-  left: 0;
-  right: 0.04em;
-  bottom: 0.01em;
-  height: 0.06em;
+  left: var(--underline-x, 0px);
+  bottom: 0.04em;
+  width: var(--underline-width, 100%);
+  height: 0.055em;
+  min-height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #2a5dff 0%, #78a8ff 50%, #2a5dff 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(36, 91, 255, 0.95) 0%,
+    rgba(130, 170, 255, 1) 50%,
+    rgba(36, 91, 255, 0.95) 100%
+  );
   box-shadow:
-    0 0 14px rgba(42, 93, 255, 0.28),
-    0 0 28px rgba(42, 93, 255, 0.14);
+    0 0 12px rgba(45, 91, 255, 0.34),
+    0 0 26px rgba(45, 91, 255, 0.16);
   opacity: 0.95;
+  pointer-events: none;
   transform-origin: left center;
-}
-
-.rotating-word-fit.is-changing .rotating-word-underline {
-  animation: rotatingUnderlineIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    width 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 280ms ease,
+    box-shadow 280ms ease;
 }
 
 .hero-lead {
@@ -2705,18 +2715,6 @@ button {
   }
 }
 
-@keyframes rotatingUnderlineIn {
-  from {
-    opacity: 0.4;
-    transform: scaleX(0.62);
-  }
-
-  to {
-    opacity: 0.95;
-    transform: scaleX(1);
-  }
-}
-
 @keyframes announcementSheen {
   0%,
   48% {
@@ -3115,9 +3113,25 @@ button {
   }
 
   .rotating-word-shell {
-    min-width: min(7.9ch, 100%);
-    min-height: 1.14em;
-    padding-bottom: 0.08em;
+    min-width: min(10.6ch, 100%);
+    min-height: 1.24em;
+    padding-bottom: 0.18em;
+  }
+
+  .rotating-word-mask {
+    min-height: 1.18em;
+    padding-bottom: 0.22em;
+  }
+
+  .rotating-word {
+    line-height: 1.06;
+    padding-bottom: 0.1em;
+  }
+
+  .rotating-word-underline {
+    bottom: 0.04em;
+    height: 0.05em;
+    min-height: 3px;
   }
 
   .hero-lead {
