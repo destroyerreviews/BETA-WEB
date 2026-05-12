@@ -461,283 +461,27 @@ const initPricingReveal = () => {
   observer.observe(pricingSection);
 };
 
-class VaporizeHoverText {
-  constructor(container, {
-    text,
-    active = false,
-    font = {},
-    color = "rgb(255,255,255)",
-    spread = 2.2,
-    density = 3,
-    direction = "left-to-right",
-    className = "",
-  }) {
-    this.container = container;
-    this.text = text;
-    this.active = active;
-    this.font = {
-      fontFamily: "Geist, Inter, system-ui, sans-serif",
-      fontSize: "14px",
-      fontWeight: 800,
-      ...font,
-    };
-    this.color = color;
-    this.spread = spread;
-    this.currentSpread = spread;
-    this.density = Math.max(2, density);
-    this.direction = direction;
-    this.progress = active ? 1 : 0;
-    this.target = this.progress;
-    this.particles = [];
-    this.frame = null;
-    this.startTime = 0;
-    this.startProgress = this.progress;
-    this.duration = 360;
-    this.disposed = false;
-    this.isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (className) this.container.classList.add(className);
-
-    if (this.isReducedMotion) {
-      this.renderFallback();
-      return;
-    }
-
-    this.canvas = this.container.querySelector(".whatsapp-vapor-canvas") || document.createElement("canvas");
-    this.canvas.classList.add("whatsapp-vapor-canvas");
-    this.context = this.canvas.getContext("2d", { alpha: true });
-    this.container.prepend(this.canvas);
-    this.resizeObserver = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(() => this.prepare())
-      : null;
-    this.resizeObserver?.observe(this.container);
-    this.prepare();
-    this.draw();
-  }
-
-  renderFallback() {
-    this.fallback = document.createElement("span");
-    this.fallback.className = "whatsapp-float__fallback-text";
-    this.fallback.textContent = this.text;
-    this.container.appendChild(this.fallback);
-  }
-
-  getFontString() {
-    return `${this.font.fontWeight} ${this.font.fontSize} ${this.font.fontFamily}`;
-  }
-
-  prepare() {
-    if (!this.canvas || !this.context || this.disposed) return;
-
-    const bounds = this.container.getBoundingClientRect();
-    const cssWidth = Math.ceil(bounds.width + 20);
-    const cssHeight = Math.max(30, Math.ceil(bounds.height + 10));
-    if (!cssWidth || !cssHeight) return;
-
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = Math.ceil(cssWidth * this.dpr);
-    this.canvas.height = Math.ceil(cssHeight * this.dpr);
-    this.context.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    this.width = cssWidth;
-    this.height = cssHeight;
-
-    const buffer = document.createElement("canvas");
-    const bufferContext = buffer.getContext("2d", { willReadFrequently: true });
-    buffer.width = this.canvas.width;
-    buffer.height = this.canvas.height;
-    bufferContext.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    bufferContext.clearRect(0, 0, this.width, this.height);
-    bufferContext.font = this.getFontString();
-    bufferContext.fillStyle = this.color;
-    bufferContext.textBaseline = "middle";
-    bufferContext.textAlign = "left";
-    bufferContext.fillText(this.text, 10, this.height / 2);
-
-    const imageData = bufferContext.getImageData(0, 0, buffer.width, buffer.height).data;
-    const particles = [];
-    const step = Math.max(2, Math.round(this.density * this.dpr));
-
-    for (let y = 0; y < buffer.height; y += step) {
-      for (let x = 0; x < buffer.width; x += step) {
-        const alpha = imageData[(y * buffer.width + x) * 4 + 3];
-        if (alpha < 90) continue;
-
-        const baseX = x / this.dpr;
-        const baseY = y / this.dpr;
-        const seed = Math.sin((baseX + 1) * 12.9898 + (baseY + 1) * 78.233) * 43758.5453;
-        const random = seed - Math.floor(seed);
-        const drift = 4 + random * 6;
-        const vertical = (random - 0.5) * 7;
-        const side = this.direction === "right-to-left" ? -1 : 1;
-
-        particles.push({
-          x: baseX,
-          y: baseY,
-          driftX: side * drift,
-          driftY: vertical,
-          size: Math.max(1, step / this.dpr),
-          alpha: alpha / 255,
-          wave: baseX / Math.max(this.width, 1),
-        });
-      }
-    }
-
-    this.particles = particles.slice(0, 520);
-    this.draw();
-  }
-
-  setActive(nextActive, options = {}) {
-    if (this.disposed || (this.active === nextActive && !options.force)) return;
-
-    this.active = nextActive;
-    this.target = nextActive ? 1 : 0;
-    this.startProgress = this.progress;
-    this.startTime = performance.now();
-    this.duration = options.duration || (nextActive ? 520 : 560);
-    this.currentSpread = options.spread || this.spread;
-    this.onComplete = typeof options.onComplete === "function" ? options.onComplete : null;
-    this.onAlmostComplete = typeof options.onAlmostComplete === "function" ? options.onAlmostComplete : null;
-    this.almostCompleteAt = options.almostCompleteAt || 0.78;
-    this.hasAlmostCompleted = false;
-
-    if (this.isReducedMotion) {
-      this.progress = this.target;
-      this.onComplete?.();
-      return;
-    }
-
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = requestAnimationFrame((time) => this.tick(time));
-  }
-
-  easeOutCubic(value) {
-    return 1 - Math.pow(1 - value, 3);
-  }
-
-  tick(time) {
-    if (this.disposed) return;
-
-    const elapsed = time - this.startTime;
-    const linear = clamp(elapsed / this.duration, 0, 1);
-    if (this.active && !this.hasAlmostCompleted && linear >= this.almostCompleteAt) {
-      this.hasAlmostCompleted = true;
-      const almostComplete = this.onAlmostComplete;
-      this.onAlmostComplete = null;
-      almostComplete?.();
-      if (!this.frame) return;
-    }
-
-    const eased = this.easeOutCubic(linear);
-    this.progress = this.startProgress + (this.target - this.startProgress) * eased;
-    this.draw();
-
-    if (linear < 1) {
-      this.frame = requestAnimationFrame((nextTime) => this.tick(nextTime));
-    } else {
-      this.progress = this.target;
-      this.frame = null;
-      if (this.progress === 0) this.context?.clearRect(0, 0, this.width, this.height);
-      const complete = this.onComplete;
-      this.onComplete = null;
-      this.onAlmostComplete = null;
-      complete?.();
-    }
-  }
-
-  draw() {
-    if (!this.context || !this.canvas || this.disposed) return;
-
-    const ctx = this.context;
-    ctx.clearRect(0, 0, this.width, this.height);
-    if (this.progress <= 0) return;
-
-    ctx.fillStyle = this.color;
-
-    this.particles.forEach((particle) => {
-      const wave = this.direction === "right-to-left" ? 1 - particle.wave : particle.wave;
-      const local = clamp((this.progress - wave * 0.18) / 0.82, 0, 1);
-      const vapor = 1 - local;
-      const opacity = particle.alpha * (this.active ? local : this.progress);
-      if (opacity <= 0.02) return;
-
-      ctx.globalAlpha = opacity;
-      ctx.filter = `blur(${(this.active ? vapor : 1 - this.progress) * 2.4}px)`;
-      ctx.fillRect(
-        particle.x + particle.driftX * vapor * this.currentSpread,
-        particle.y + particle.driftY * vapor * this.currentSpread,
-        particle.size,
-        particle.size
-      );
-    });
-
-    ctx.globalAlpha = 1;
-    ctx.filter = "none";
-  }
-
-  reset() {
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = null;
-    this.onComplete = null;
-    this.onAlmostComplete = null;
-    this.hasAlmostCompleted = false;
-    this.active = false;
-    this.target = 0;
-    this.progress = 0;
-    this.context?.clearRect(0, 0, this.width, this.height);
-  }
-
-  finishGenerateCleanly() {
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = null;
-    this.active = true;
-    this.target = 1;
-    this.progress = 1;
-    this.onComplete = null;
-    this.onAlmostComplete = null;
-    this.hasAlmostCompleted = true;
-    requestAnimationFrame(() => {
-      this.context?.clearRect(0, 0, this.width, this.height);
-    });
-  }
-
-  destroy() {
-    this.disposed = true;
-    if (this.frame) cancelAnimationFrame(this.frame);
-    this.onComplete = null;
-    this.onAlmostComplete = null;
-    this.resizeObserver?.disconnect();
-  }
-}
-
 const initWhatsappFloat = () => {
   const button = document.querySelector("[data-whatsapp-float]");
-  const textWrap = button?.querySelector("[data-vapor-text]");
-  if (!button || !textWrap) return;
+  if (!button) return;
 
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
-  if (!canHover || isMobile) return;
-
-  const vaporText = new VaporizeHoverText(textWrap, {
-    text: textWrap.dataset.vaporText || "Hablar por WhatsApp",
-    active: false,
-    font: {
-      fontFamily: "Geist, Inter, system-ui, sans-serif",
-      fontSize: "14px",
-      fontWeight: 800,
-    },
-    color: "rgb(255,255,255)",
-    spread: 1.1,
-    density: 5,
-    direction: "left-to-right",
-  });
-  const states = ["whatsapp-float--idle", "whatsapp-float--opening", "whatsapp-float--text-ready", "whatsapp-float--ready", "whatsapp-float--closing"];
+  const states = ["whatsapp-float--idle", "whatsapp-float--opening", "whatsapp-float--open", "whatsapp-float--closing"];
   let state = "idle";
-  let openDelayTimer = null;
-  let readyTimer = null;
-  let resetTimer = null;
   let isHovering = false;
   let sequence = 0;
+  let openTimer = null;
+  let closeTimer = null;
+  let resetTimer = null;
+
+  const clearTimers = () => {
+    if (openTimer) window.clearTimeout(openTimer);
+    if (closeTimer) window.clearTimeout(closeTimer);
+    if (resetTimer) window.clearTimeout(resetTimer);
+    openTimer = null;
+    closeTimer = null;
+    resetTimer = null;
+  };
 
   const setState = (nextState) => {
     state = nextState;
@@ -750,93 +494,61 @@ const initWhatsappFloat = () => {
   const resetWhatsappButton = () => {
     sequence += 1;
     isHovering = false;
-
-    if (openDelayTimer) window.clearTimeout(openDelayTimer);
-    if (readyTimer) window.clearTimeout(readyTimer);
-    if (resetTimer) window.clearTimeout(resetTimer);
-
-    openDelayTimer = null;
-    readyTimer = null;
-    resetTimer = null;
-    vaporText.reset();
+    clearTimers();
     setState("idle");
   };
 
   const activate = () => {
-    if (state === "opening" || state === "ready") return;
-
+    if (!canHover && document.activeElement !== button) return;
     isHovering = true;
+    if (state === "opening" || state === "open") return;
+
     sequence += 1;
     const token = sequence;
-    if (openDelayTimer) window.clearTimeout(openDelayTimer);
-    if (readyTimer) window.clearTimeout(readyTimer);
-    if (resetTimer) window.clearTimeout(resetTimer);
-
-    vaporText.reset();
+    clearTimers();
     setState("opening");
-    openDelayTimer = window.setTimeout(() => {
-      if (token !== sequence || !wantsOpen()) return;
-      vaporText.setActive(true, {
-        duration: 360,
-        spread: 1.1,
-        force: true,
-        almostCompleteAt: 0.78,
-        onAlmostComplete: () => {
-          if (token !== sequence || !wantsOpen()) return;
-          setState("text-ready");
-          vaporText.finishGenerateCleanly();
-          readyTimer = window.setTimeout(() => {
-            if (token === sequence && wantsOpen()) setState("ready");
-            readyTimer = null;
-          }, 100);
-        },
-        onComplete: () => {
-          if (token === sequence && wantsOpen()) setState("ready");
-        },
-      });
-    }, 80);
+    openTimer = window.setTimeout(() => {
+      if (token !== sequence || (!isHovering && document.activeElement !== button)) return;
+      setState("open");
+      openTimer = null;
+    }, 360);
   };
 
   const deactivate = () => {
-    if ((state === "idle" || state === "closing") && !wantsOpen()) return;
-
     isHovering = false;
+    if (wantsOpen()) return;
+    if (state === "idle" || state === "closing") return;
+
     sequence += 1;
     const token = sequence;
-    if (openDelayTimer) window.clearTimeout(openDelayTimer);
-    if (readyTimer) window.clearTimeout(readyTimer);
-    if (resetTimer) window.clearTimeout(resetTimer);
-
+    clearTimers();
     setState("closing");
-    vaporText.setActive(false, {
-      duration: 560,
-      spread: 2,
-      force: true,
-      onComplete: () => {
-        if (token === sequence && !wantsOpen()) setState("idle");
-      },
-    });
+    closeTimer = window.setTimeout(() => {
+      if (token !== sequence) return;
+      setState(wantsOpen() ? "open" : "idle");
+      closeTimer = null;
+    }, 300);
   };
 
   setState("idle");
 
-  button.addEventListener("pointerenter", activate);
+  button.addEventListener("pointerenter", () => {
+    if (canHover) activate();
+  });
   button.addEventListener("focus", activate);
   button.addEventListener("pointerleave", deactivate);
   button.addEventListener("blur", deactivate);
   button.addEventListener("click", () => {
-    resetTimer = window.setTimeout(resetWhatsappButton, 120);
+    resetWhatsappButton();
+    resetTimer = window.setTimeout(resetWhatsappButton, 180);
   });
 
   window.addEventListener("blur", resetWhatsappButton);
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") resetWhatsappButton();
+    resetWhatsappButton();
   });
   window.addEventListener("pageshow", resetWhatsappButton);
-  window.addEventListener("pagehide", () => {
-    resetWhatsappButton();
-    vaporText.destroy();
-  }, { once: true });
+  window.addEventListener("pagehide", resetWhatsappButton);
 };
 
 const initForm = () => {
