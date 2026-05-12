@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Crea tu cuenta en Destroyer Reviews para seguir tus pedidos, soporte y progreso de reseñas."
+    />
+    <title>Crear cuenta | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-page auth-page--register">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="nav-brand" href="/" aria-label="Destroyer Reviews">
+            <span class="nav-logo">DR</span>
+            <span class="nav-brand-text">Destroyer Reviews</span>
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="/" data-nav-link>Inicio</a>
+            <a href="/blogs" data-nav-link>Blogs</a>
+            <a href="/#planes" data-nav-link>Precios</a>
+            <a href="/#contacto" data-nav-link>Contáctanos</a>
+            <a href="/gana-dinero" data-nav-link>Gana dinero</a>
+          </div>
+
+          <div class="nav-auth">
+            <a class="nav-register" href="/login">Iniciar sesión</a>
+          </div>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="/">Inicio</a>
+          <a href="/blogs">Blogs</a>
+          <a href="/#planes">Precios</a>
+          <a href="/#contacto">Contáctanos</a>
+          <a href="/gana-dinero">Gana dinero</a>
+          <a class="mobile-register" href="/login">Iniciar sesión</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="auth-shell">
+      <section class="auth-stage" aria-labelledby="register-title">
+        <div class="auth-background" aria-hidden="true"></div>
+
+        <aside class="auth-copy reveal">
+          <p class="eyebrow">CREA TU CUENTA</p>
+          <h1 id="register-title">Empieza con tu panel</h1>
+          <p>
+            Guarda tus pedidos, recibe soporte y sigue el progreso de tus reseñas desde un espacio privado.
+          </p>
+          <div class="auth-console" aria-hidden="true">
+            <div class="auth-console__top">
+              <span>Panel privado</span>
+              <strong>Seguro</strong>
+            </div>
+            <div class="auth-console__score">
+              <span>Control de pedidos</span>
+              <strong>24/7</strong>
+            </div>
+            <div class="auth-console__grid">
+              <span>Estado por pack</span>
+              <span>Soporte directo</span>
+              <span>Historial guardado</span>
+              <span>Seguimiento claro</span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="auth-card reveal" aria-label="Formulario de registro">
+          <div class="auth-card__header">
+            <p class="eyebrow">CREA TU CUENTA</p>
+            <h2>Crear cuenta</h2>
+            <p>Activa un espacio privado para seguir tus reseñas y soporte.</p>
+          </div>
+
+          <button class="auth-google" type="button">
+            <span aria-hidden="true">G</span>
+            Continuar con Google
+          </button>
+
+          <div class="auth-divider"><span>o crea tu cuenta con email</span></div>
+
+          <form class="auth-form" data-auth-form data-auth-mode="register" novalidate>
+            <div class="auth-field" data-auth-field>
+              <label for="register-name">Nombre</label>
+              <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required />
+              <p class="auth-error" data-error-for="name"></p>
+            </div>
+
+            <div class="auth-field" data-auth-field>
+              <label for="register-email">Email</label>
+              <input id="register-email" name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
+              <p class="auth-error" data-error-for="email"></p>
+            </div>
+
+            <div class="auth-field" data-auth-field>
+              <label for="register-whatsapp">WhatsApp <span>opcional</span></label>
+              <input id="register-whatsapp" name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" />
+              <p class="auth-error" data-error-for="whatsapp"></p>
+            </div>
+
+            <div class="auth-field" data-auth-field>
+              <label for="register-password">Contraseña</label>
+              <div class="auth-password-control">
+                <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required minlength="8" />
+                <button type="button" data-password-toggle aria-label="Mostrar contraseña">Ver</button>
+              </div>
+              <p class="auth-error" data-error-for="password"></p>
+            </div>
+
+            <div class="auth-field" data-auth-field>
+              <label for="register-confirm">Confirmar contraseña</label>
+              <div class="auth-password-control">
+                <input id="register-confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repite la contraseña" required />
+                <button type="button" data-password-toggle aria-label="Mostrar contraseña">Ver</button>
+              </div>
+              <p class="auth-error" data-error-for="confirm"></p>
+            </div>
+
+            <label class="auth-check" data-auth-field>
+              <input name="terms" type="checkbox" required />
+              <span>Acepto los términos y la política de privacidad</span>
+            </label>
+            <p class="auth-error" data-error-for="terms"></p>
+
+            <p class="auth-status" aria-live="polite" data-auth-status></p>
+
+            <button class="auth-submit" type="submit" disabled>
+              <span data-submit-text>Crear cuenta</span>
+              <i aria-hidden="true"></i>
+            </button>
+          </form>
+
+          <p class="auth-switch">¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a></p>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

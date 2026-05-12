@@ -570,6 +570,104 @@ const initWhatsappFloat = () => {
   window.addEventListener("pagehide", resetWhatsappButton);
 };
 
+const initAuthForms = () => {
+  document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+    const input = toggle.closest(".auth-password-control")?.querySelector("input");
+    if (!input) return;
+
+    toggle.addEventListener("click", () => {
+      const showPassword = input.type === "password";
+      input.type = showPassword ? "text" : "password";
+      toggle.textContent = showPassword ? "Ocultar" : "Ver";
+      toggle.setAttribute("aria-label", showPassword ? "Ocultar contraseña" : "Mostrar contraseña");
+    });
+  });
+
+  document.querySelectorAll("[data-auth-form]").forEach((form) => {
+    const mode = form.dataset.authMode;
+    const submit = form.querySelector(".auth-submit");
+    const submitText = form.querySelector("[data-submit-text]");
+    const status = form.querySelector("[data-auth-status]");
+
+    const setError = (name, message) => {
+      const input = form.elements[name];
+      const field = input?.closest("[data-auth-field]") || input?.closest(".auth-check");
+      const error = form.querySelector(`[data-error-for="${name}"]`);
+      if (field) field.classList.toggle("is-invalid", Boolean(message));
+      if (error) error.textContent = message || "";
+    };
+
+    const validate = ({ showErrors = false } = {}) => {
+      const email = form.elements.email?.value.trim() || "";
+      const password = form.elements.password?.value || "";
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      let valid = true;
+
+      const errors = {
+        email: emailValid ? "" : "Introduce un email válido.",
+        password: password.length >= 8 ? "" : "La contraseña debe tener al menos 8 caracteres.",
+      };
+
+      if (mode === "register") {
+        const name = form.elements.name?.value.trim() || "";
+        const confirm = form.elements.confirm?.value || "";
+        const terms = Boolean(form.elements.terms?.checked);
+        errors.name = name ? "" : "Introduce tu nombre.";
+        errors.confirm = confirm === password && confirm ? "" : "Las contraseñas deben coincidir.";
+        errors.terms = terms ? "" : "Debes aceptar los términos para continuar.";
+      }
+
+      Object.entries(errors).forEach(([name, message]) => {
+        if (message) valid = false;
+        if (showErrors) setError(name, message);
+      });
+
+      if (!showErrors) {
+        Object.keys(errors).forEach((name) => setError(name, ""));
+      }
+
+      if (submit) submit.disabled = !valid;
+      return valid;
+    };
+
+    form.addEventListener("input", () => {
+      status.textContent = "";
+      status.className = "auth-status";
+      validate();
+    });
+
+    form.addEventListener("change", () => validate());
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!validate({ showErrors: true })) {
+        status.textContent = mode === "login"
+          ? "No hemos podido iniciar sesión. Revisa tus datos."
+          : "Revisa los campos marcados antes de continuar.";
+        status.className = "auth-status is-error";
+        return;
+      }
+
+      submit.disabled = true;
+      submit.classList.add("is-loading");
+      submitText.textContent = mode === "login" ? "Entrando..." : "Creando cuenta...";
+      status.textContent = "";
+      status.className = "auth-status";
+
+      window.setTimeout(() => {
+        submit.classList.remove("is-loading");
+        status.textContent = mode === "login"
+          ? "Acceso correcto. Redirigiendo..."
+          : "Cuenta creada. Preparando tu panel...";
+        status.className = "auth-status is-success";
+        submitText.textContent = mode === "login" ? "Iniciar sesión" : "Crear cuenta";
+      }, 900);
+    });
+
+    validate();
+  });
+};
+
 const initForm = () => {
   const form = document.querySelector("[data-lead-form]");
   const formStatus = document.querySelector("[data-form-status]");
@@ -592,6 +690,7 @@ const init = () => {
   initPlanSwitch();
   initPricingReveal();
   initWhatsappFloat();
+  initAuthForms();
   initForm();
   setHeaderState();
   updateScrollMotion();

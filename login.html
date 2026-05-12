@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Accede al panel de Destroyer Reviews para gestionar tus packs de reseñas y el progreso de publicación."
+    />
+    <title>Iniciar sesión | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-page auth-page--login">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="nav-brand" href="/" aria-label="Destroyer Reviews">
+            <span class="nav-logo">DR</span>
+            <span class="nav-brand-text">Destroyer Reviews</span>
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="/" data-nav-link>Inicio</a>
+            <a href="/blogs" data-nav-link>Blogs</a>
+            <a href="/#planes" data-nav-link>Precios</a>
+            <a href="/#contacto" data-nav-link>Contáctanos</a>
+            <a href="/gana-dinero" data-nav-link>Gana dinero</a>
+          </div>
+
+          <div class="nav-auth">
+            <a class="nav-register" href="/register">Registrarse</a>
+          </div>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="/">Inicio</a>
+          <a href="/blogs">Blogs</a>
+          <a href="/#planes">Precios</a>
+          <a href="/#contacto">Contáctanos</a>
+          <a href="/gana-dinero">Gana dinero</a>
+          <a class="mobile-register" href="/register">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="auth-shell">
+      <section class="auth-stage" aria-labelledby="login-title">
+        <div class="auth-background" aria-hidden="true"></div>
+
+        <aside class="auth-copy reveal">
+          <p class="eyebrow">ACCESO AL PANEL</p>
+          <h1 id="login-title">Entra en tu cuenta</h1>
+          <p>
+            Gestiona tus pedidos, revisa el estado de publicación y mantén el control de tus packs de reseñas.
+          </p>
+          <div class="auth-console" aria-hidden="true">
+            <div class="auth-console__top">
+              <span>Reputation Console</span>
+              <strong>Activo</strong>
+            </div>
+            <div class="auth-console__score">
+              <span>Trust Index</span>
+              <strong>92</strong>
+            </div>
+            <div class="auth-console__grid">
+              <span>Pack Diamante</span>
+              <span>Publicación progresiva</span>
+              <span>Soporte WhatsApp</span>
+              <span>Pago protegido</span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="auth-card reveal" aria-label="Formulario de inicio de sesión">
+          <div class="auth-card__header">
+            <p class="eyebrow">ACCESO AL PANEL</p>
+            <h2>Iniciar sesión</h2>
+            <p>Continúa con tu panel privado de reputación local.</p>
+          </div>
+
+          <button class="auth-google" type="button">
+            <span aria-hidden="true">G</span>
+            Continuar con Google
+          </button>
+
+          <div class="auth-divider"><span>o continúa con email</span></div>
+
+          <form class="auth-form" data-auth-form data-auth-mode="login" novalidate>
+            <div class="auth-field" data-auth-field>
+              <label for="login-email">Email</label>
+              <input id="login-email" name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
+              <p class="auth-error" data-error-for="email"></p>
+            </div>
+
+            <div class="auth-field" data-auth-field>
+              <div class="auth-label-row">
+                <label for="login-password">Contraseña</label>
+                <a href="/login">¿Has olvidado tu contraseña?</a>
+              </div>
+              <div class="auth-password-control">
+                <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" required minlength="8" />
+                <button type="button" data-password-toggle aria-label="Mostrar contraseña">Ver</button>
+              </div>
+              <p class="auth-error" data-error-for="password"></p>
+            </div>
+
+            <label class="auth-check">
+              <input name="remember" type="checkbox" />
+              <span>Recordarme</span>
+            </label>
+
+            <p class="auth-status" aria-live="polite" data-auth-status></p>
+
+            <button class="auth-submit" type="submit" disabled>
+              <span data-submit-text>Iniciar sesión</span>
+              <i aria-hidden="true"></i>
+            </button>
+          </form>
+
+          <p class="auth-switch">¿Aún no tienes cuenta? <a href="/register">Crear cuenta</a></p>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
