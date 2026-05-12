@@ -734,6 +734,9 @@ const initWhatsappFloat = () => {
   const states = ["whatsapp-float--idle", "whatsapp-float--opening", "whatsapp-float--text-ready", "whatsapp-float--ready", "whatsapp-float--closing"];
   let state = "idle";
   let openDelayTimer = null;
+  let readyTimer = null;
+  let resetTimer = null;
+  let isHovering = false;
   let sequence = 0;
 
   const setState = (nextState) => {
@@ -742,14 +745,32 @@ const initWhatsappFloat = () => {
     button.classList.add(`whatsapp-float--${nextState}`);
   };
 
-  const wantsOpen = () => button.matches(":hover") || document.activeElement === button;
+  const wantsOpen = () => isHovering || document.activeElement === button;
+
+  const resetWhatsappButton = () => {
+    sequence += 1;
+    isHovering = false;
+
+    if (openDelayTimer) window.clearTimeout(openDelayTimer);
+    if (readyTimer) window.clearTimeout(readyTimer);
+    if (resetTimer) window.clearTimeout(resetTimer);
+
+    openDelayTimer = null;
+    readyTimer = null;
+    resetTimer = null;
+    vaporText.reset();
+    setState("idle");
+  };
 
   const activate = () => {
     if (state === "opening" || state === "ready") return;
 
+    isHovering = true;
     sequence += 1;
     const token = sequence;
     if (openDelayTimer) window.clearTimeout(openDelayTimer);
+    if (readyTimer) window.clearTimeout(readyTimer);
+    if (resetTimer) window.clearTimeout(resetTimer);
 
     vaporText.reset();
     setState("opening");
@@ -764,8 +785,9 @@ const initWhatsappFloat = () => {
           if (token !== sequence || !wantsOpen()) return;
           setState("text-ready");
           vaporText.finishGenerateCleanly();
-          window.setTimeout(() => {
+          readyTimer = window.setTimeout(() => {
             if (token === sequence && wantsOpen()) setState("ready");
+            readyTimer = null;
           }, 100);
         },
         onComplete: () => {
@@ -778,9 +800,12 @@ const initWhatsappFloat = () => {
   const deactivate = () => {
     if ((state === "idle" || state === "closing") && !wantsOpen()) return;
 
+    isHovering = false;
     sequence += 1;
     const token = sequence;
     if (openDelayTimer) window.clearTimeout(openDelayTimer);
+    if (readyTimer) window.clearTimeout(readyTimer);
+    if (resetTimer) window.clearTimeout(resetTimer);
 
     setState("closing");
     vaporText.setActive(false, {
@@ -799,8 +824,19 @@ const initWhatsappFloat = () => {
   button.addEventListener("focus", activate);
   button.addEventListener("pointerleave", deactivate);
   button.addEventListener("blur", deactivate);
+  button.addEventListener("click", () => {
+    resetTimer = window.setTimeout(resetWhatsappButton, 120);
+  });
 
-  window.addEventListener("pagehide", () => vaporText.destroy(), { once: true });
+  window.addEventListener("blur", resetWhatsappButton);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") resetWhatsappButton();
+  });
+  window.addEventListener("pageshow", resetWhatsappButton);
+  window.addEventListener("pagehide", () => {
+    resetWhatsappButton();
+    vaporText.destroy();
+  }, { once: true });
 };
 
 const initForm = () => {
