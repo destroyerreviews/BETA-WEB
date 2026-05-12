@@ -13,6 +13,10 @@ const navSections = navSectionLinks.map((link) => document.querySelector(link.ge
 const motionPanels = [...document.querySelectorAll("[data-motion-panel]")];
 const depthLayers = [...document.querySelectorAll("[data-depth]")];
 const proofCards = [...document.querySelectorAll(".proof-card")];
+const authShell = document.querySelector(".auth-shell");
+const authBackground = document.querySelector(".auth-background");
+const authCard = document.querySelector(".auth-card");
+const authConsole = document.querySelector(".auth-console");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const hasFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -22,6 +26,7 @@ const updateNavPill = () => {};
 
 let lenis;
 let motionFrame = null;
+let authMotionFrame = null;
 
 const initLenis = () => {
   if (prefersReducedMotion || typeof Lenis === "undefined") {
@@ -30,17 +35,18 @@ const initLenis = () => {
   }
 
   lenis = new Lenis({
-    duration: 1.05,
+    duration: document.body.classList.contains("auth-page") ? 1.18 : 1.05,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     smoothWheel: true,
-    wheelMultiplier: 0.9,
-    touchMultiplier: 1.2,
+    wheelMultiplier: document.body.classList.contains("auth-page") ? 0.85 : 0.9,
+    touchMultiplier: document.body.classList.contains("auth-page") ? 1.15 : 1.2,
     infinite: false,
   });
 
   lenis.on("scroll", () => {
     setHeaderState();
     requestScrollMotion();
+    requestAuthMotion();
   });
 
   const raf = (time) => {
@@ -426,6 +432,25 @@ const requestScrollMotion = () => {
   motionFrame = requestAnimationFrame(updateScrollMotion);
 };
 
+const updateAuthMotion = () => {
+  authMotionFrame = null;
+  if (prefersReducedMotion || !authShell) return;
+
+  const y = window.scrollY;
+  const velocity = lenis?.velocity || 0;
+  authShell.style.setProperty("--auth-bg-y", `${clamp(y * 0.035 + velocity * 1.4, -18, 28)}px`);
+  authShell.style.setProperty("--auth-card-y", `${clamp(y * -0.012 + velocity * 1.2, -8, 8)}px`);
+  authShell.style.setProperty("--auth-console-y", `${clamp(y * 0.018 - velocity, -8, 8)}px`);
+  authBackground?.style.setProperty("--auth-bg-shift", `${clamp(y * 0.02, 0, 18)}px`);
+  authCard?.style.setProperty("--auth-card-y", `${clamp(y * -0.012 + velocity * 1.2, -8, 8)}px`);
+  authConsole?.style.setProperty("--auth-console-y", `${clamp(y * 0.018 - velocity, -8, 8)}px`);
+};
+
+const requestAuthMotion = () => {
+  if (authMotionFrame || prefersReducedMotion || !authShell) return;
+  authMotionFrame = requestAnimationFrame(updateAuthMotion);
+};
+
 const initPlanSwitch = () => {
   document.querySelectorAll("[data-plan-mode]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -571,15 +596,47 @@ const initWhatsappFloat = () => {
 };
 
 const initAuthForms = () => {
+  if (authShell) {
+    window.setTimeout(() => {
+      document.body.classList.add("auth-ready");
+    }, prefersReducedMotion ? 0 : 820);
+  }
+
+  document.querySelectorAll(".auth-switch a").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;
+      event.preventDefault();
+      document.body.classList.add("auth-is-leaving");
+      window.setTimeout(() => {
+        window.location.href = link.href;
+      }, prefersReducedMotion ? 0 : 260);
+    });
+  });
+
   document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
     const input = toggle.closest(".auth-password-control")?.querySelector("input");
     if (!input) return;
+    const control = toggle.closest(".auth-password-control");
+    toggle.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="eye-open" d="M3.2 12s3.1-5.2 8.8-5.2S20.8 12 20.8 12s-3.1 5.2-8.8 5.2S3.2 12 3.2 12Z" />
+        <circle class="eye-open" cx="12" cy="12" r="2.3" />
+        <path class="eye-closed" d="M4.4 5.4 19.6 18.6" />
+        <path class="eye-closed" d="M6.7 10.1c1.4-.9 3.2-1.5 5.3-1.5 5.7 0 8.8 3.4 8.8 3.4a15.4 15.4 0 0 1-2.5 2.6" />
+        <path class="eye-closed" d="M14.2 16.8a10.1 10.1 0 0 1-2.2.2c-5.7 0-8.8-5-8.8-5a13.6 13.6 0 0 1 2.4-2.7" />
+      </svg>
+    `;
 
     toggle.addEventListener("click", () => {
       const showPassword = input.type === "password";
-      input.type = showPassword ? "text" : "password";
-      toggle.textContent = showPassword ? "Ocultar" : "Ver";
-      toggle.setAttribute("aria-label", showPassword ? "Ocultar contraseña" : "Mostrar contraseña");
+      control?.classList.add("is-revealing");
+      window.setTimeout(() => {
+        input.type = showPassword ? "text" : "password";
+        control?.classList.toggle("is-visible", showPassword);
+        toggle.classList.toggle("is-visible", showPassword);
+        toggle.setAttribute("aria-label", showPassword ? "Ocultar contraseña" : "Mostrar contraseña");
+      }, 210);
+      window.setTimeout(() => control?.classList.remove("is-revealing"), 430);
     });
   });
 
@@ -588,6 +645,7 @@ const initAuthForms = () => {
     const submit = form.querySelector(".auth-submit");
     const submitText = form.querySelector("[data-submit-text]");
     const status = form.querySelector("[data-auth-status]");
+    let wasValid = false;
 
     const setError = (name, message) => {
       const input = form.elements[name];
@@ -627,8 +685,39 @@ const initAuthForms = () => {
       }
 
       if (submit) submit.disabled = !valid;
+      form.querySelectorAll(".auth-field").forEach((field) => {
+        const input = field.querySelector("input");
+        if (!input || input.type === "checkbox") return;
+        const name = input.name;
+        field.classList.toggle("is-valid", Boolean(input.value.trim()) && !errors[name]);
+      });
+      if (valid && !wasValid) {
+        submit?.classList.add("is-armed");
+        window.setTimeout(() => submit?.classList.remove("is-armed"), 520);
+      }
+      wasValid = valid;
       return valid;
     };
+
+    form.querySelectorAll("input").forEach((input) => {
+      let typingTimer = null;
+      const field = input.closest("[data-auth-field]") || input.closest(".auth-check");
+      const syncFieldState = () => {
+        field?.classList.toggle("has-value", Boolean(input.value.trim()) || input.checked);
+      };
+
+      input.addEventListener("focus", () => field?.classList.add("is-focused"));
+      input.addEventListener("blur", () => field?.classList.remove("is-focused"));
+      input.addEventListener("input", () => {
+        syncFieldState();
+        field?.classList.add("is-typing");
+        if (typingTimer) window.clearTimeout(typingTimer);
+        typingTimer = window.setTimeout(() => field?.classList.remove("is-typing"), 160);
+      });
+      input.addEventListener("change", syncFieldState);
+      syncFieldState();
+      window.setTimeout(syncFieldState, 160);
+    });
 
     form.addEventListener("input", () => {
       status.textContent = "";
@@ -649,6 +738,7 @@ const initAuthForms = () => {
       }
 
       submit.disabled = true;
+      wasValid = false;
       submit.classList.add("is-loading");
       submitText.textContent = mode === "login" ? "Entrando..." : "Creando cuenta...";
       status.textContent = "";
@@ -694,13 +784,18 @@ const init = () => {
   initForm();
   setHeaderState();
   updateScrollMotion();
+  updateAuthMotion();
   initLenis();
 
   window.addEventListener("scroll", () => {
     setHeaderState();
     requestScrollMotion();
+    requestAuthMotion();
   }, { passive: true });
-  window.addEventListener("resize", requestScrollMotion);
+  window.addEventListener("resize", () => {
+    requestScrollMotion();
+    requestAuthMotion();
+  });
 };
 
 init();
