@@ -469,18 +469,16 @@ const initWhatsappFloat = () => {
   const states = ["whatsapp-float--idle", "whatsapp-float--opening", "whatsapp-float--open", "whatsapp-float--closing"];
   let state = "idle";
   let isHovering = false;
+  let clickedUntilLeave = false;
   let sequence = 0;
   let openTimer = null;
   let closeTimer = null;
-  let resetTimer = null;
 
   const clearTimers = () => {
     if (openTimer) window.clearTimeout(openTimer);
     if (closeTimer) window.clearTimeout(closeTimer);
-    if (resetTimer) window.clearTimeout(resetTimer);
     openTimer = null;
     closeTimer = null;
-    resetTimer = null;
   };
 
   const setState = (nextState) => {
@@ -491,14 +489,28 @@ const initWhatsappFloat = () => {
 
   const wantsOpen = () => isHovering || document.activeElement === button;
 
-  const resetWhatsappButton = () => {
+  const closeWhatsappButton = ({ immediate = false, blockUntilLeave = false } = {}) => {
     sequence += 1;
     isHovering = false;
+    if (blockUntilLeave) clickedUntilLeave = true;
     clearTimers();
-    setState("idle");
+
+    if (immediate) {
+      setState("idle");
+      return;
+    }
+
+    const token = sequence;
+    setState("closing");
+    closeTimer = window.setTimeout(() => {
+      if (token !== sequence) return;
+      setState("idle");
+      closeTimer = null;
+    }, 420);
   };
 
   const activate = () => {
+    if (clickedUntilLeave) return;
     if (!canHover && document.activeElement !== button) return;
     isHovering = true;
     if (state === "opening" || state === "open") return;
@@ -514,7 +526,8 @@ const initWhatsappFloat = () => {
     }, 360);
   };
 
-  const deactivate = () => {
+  const deactivate = ({ fromPointer = false } = {}) => {
+    if (fromPointer) clickedUntilLeave = false;
     isHovering = false;
     if (wantsOpen()) return;
     if (state === "idle" || state === "closing") return;
@@ -530,17 +543,23 @@ const initWhatsappFloat = () => {
     }, 300);
   };
 
+  const resetWhatsappButton = () => {
+    closeWhatsappButton({ immediate: true });
+  };
+
   setState("idle");
 
   button.addEventListener("pointerenter", () => {
     if (canHover) activate();
   });
   button.addEventListener("focus", activate);
-  button.addEventListener("pointerleave", deactivate);
+  button.addEventListener("pointerleave", () => deactivate({ fromPointer: true }));
   button.addEventListener("blur", deactivate);
   button.addEventListener("click", () => {
-    resetWhatsappButton();
-    resetTimer = window.setTimeout(resetWhatsappButton, 180);
+    closeWhatsappButton({ blockUntilLeave: true });
+    requestAnimationFrame(() => {
+      if (document.activeElement === button) button.blur();
+    });
   });
 
   window.addEventListener("blur", resetWhatsappButton);

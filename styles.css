@@ -3133,6 +3133,18 @@ button {
     transform 260ms ease;
 }
 
+.whatsapp-float,
+.whatsapp-float:hover,
+.whatsapp-float:focus,
+.whatsapp-float:active,
+.whatsapp-float *,
+.whatsapp-float *::before,
+.whatsapp-float *::after {
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration: none !important;
+}
+
 .whatsapp-float--opening,
 .whatsapp-float--open,
 .whatsapp-float--closing {
@@ -3215,8 +3227,7 @@ button {
     radial-gradient(circle at 12% 50%, rgba(67, 240, 143, 0.8) 0 1px, transparent 2px),
     radial-gradient(circle at 32% 42%, rgba(255, 255, 255, 0.72) 0 1px, transparent 2px),
     radial-gradient(circle at 54% 58%, rgba(67, 240, 143, 0.64) 0 1px, transparent 2px),
-    radial-gradient(circle at 74% 38%, rgba(160, 206, 255, 0.72) 0 1px, transparent 2px),
-    linear-gradient(90deg, transparent, rgba(67, 240, 143, 0.22), transparent);
+    radial-gradient(circle at 74% 38%, rgba(160, 206, 255, 0.72) 0 1px, transparent 2px);
   filter: blur(0.4px);
   transform: translateX(-12px) scaleX(0.68);
 }
@@ -3251,6 +3262,23 @@ button {
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none;
+  background-image: none;
+}
+
+.whatsapp-float__text-real:hover,
+.whatsapp-float__text-real:focus,
+.whatsapp-float__text-real:active {
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none;
+  background-image: none;
 }
 
 .whatsapp-float--opening .whatsapp-float__text-real {
