@@ -173,9 +173,12 @@ const initHeroRotatingWord = () => {
   const word = document.querySelector("[data-rotating-word]");
   if (!word) return;
 
-  const words = ["confianza", "visibilidad", "clientes", "autoridad"];
+  const wordFrame = word.closest(".rotating-word-fit");
+  const words = ["clientes", "confianza", "visibilidad", "autoridad"];
   let index = 0;
   word.textContent = words[index];
+  wordFrame?.classList.add("is-changing");
+  window.setTimeout(() => wordFrame?.classList.remove("is-changing"), 460);
 
   if (prefersReducedMotion) return;
 
@@ -188,8 +191,12 @@ const initHeroRotatingWord = () => {
       word.textContent = words[index];
       word.classList.remove("is-exiting");
       word.classList.add("is-entering");
+      wordFrame?.classList.remove("is-changing");
+      void wordFrame?.offsetWidth;
+      wordFrame?.classList.add("is-changing");
+      window.setTimeout(() => wordFrame?.classList.remove("is-changing"), 460);
     }, 330);
-  }, 2400);
+  }, 2500);
 };
 
 const initReveals = () => {
