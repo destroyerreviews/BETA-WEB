@@ -351,9 +351,12 @@ button {
   top: 0;
   left: 0;
   z-index: 1001;
-  width: 0%;
+  width: 100%;
   height: 3px;
   background: var(--blue);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
 }
 
 .section-inner {
@@ -622,11 +625,11 @@ button {
 
 @keyframes testimonialMarquee {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   to {
-    transform: translateX(calc(-50% - 10px));
+    transform: translate3d(calc(-50% - var(--testimonial-half-gap, 11px)), 0, 0);
   }
 }
 
@@ -3156,33 +3159,46 @@ button {
 }
 
 .testimonial-track {
+  --testimonial-gap: 22px;
+  --testimonial-half-gap: 11px;
   display: flex;
+  align-items: stretch;
   width: max-content;
-  gap: 20px;
-  animation: testimonialMarquee 42s linear infinite;
+  gap: var(--testimonial-gap);
+  animation: testimonialMarquee 32s linear infinite;
   will-change: transform;
 }
 
-.testimonial-marquee:hover .testimonial-track {
+.testimonial-track.is-paused {
   animation-play-state: paused;
+}
+
+.testimonial-group {
+  display: flex;
+  align-items: stretch;
+  gap: var(--testimonial-gap);
 }
 
 .testimonial-card {
   position: relative;
-  width: clamp(560px, 43vw, 620px);
-  min-height: 268px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 22px;
+  width: clamp(348px, 29vw, 408px);
+  min-height: 372px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: stretch;
+  border: 1px solid rgba(132, 162, 220, 0.18);
+  border-radius: 24px;
   padding: 28px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
-    rgba(8, 10, 22, 0.62);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
+    radial-gradient(circle at 18% 0%, rgba(66, 127, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.032) 48%, rgba(57, 93, 180, 0.05)),
+    rgba(8, 11, 24, 0.72);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(37, 99, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(155%);
+  -webkit-backdrop-filter: blur(20px) saturate(155%);
   overflow: hidden;
   transition:
     border-color 220ms ease,
@@ -3198,53 +3214,79 @@ button {
   right: 18px;
   top: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  opacity: 0.35;
+  background: linear-gradient(90deg, transparent, rgba(220, 232, 255, 0.42), transparent);
+  opacity: 0.46;
   pointer-events: none;
 }
 
 .testimonial-card::after {
   content: "";
   position: absolute;
-  inset: auto 24px 82px 24px;
+  inset: auto 28px 92px 28px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(125, 165, 255, 0.22), transparent);
+  background: linear-gradient(90deg, transparent, rgba(125, 165, 255, 0.26), transparent);
   pointer-events: none;
 }
 
 .testimonial-card:hover {
-  border-color: rgba(80, 130, 255, 0.28);
+  border-color: rgba(117, 164, 255, 0.54);
   background:
-    radial-gradient(circle at 50% 0%, rgba(37, 99, 255, 0.12), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.088), rgba(255, 255, 255, 0.03)),
-    rgba(8, 10, 22, 0.68);
+    radial-gradient(circle at 50% 0%, rgba(58, 120, 255, 0.2), transparent 44%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.036) 48%, rgba(57, 93, 180, 0.07)),
+    rgba(8, 11, 24, 0.78);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.42),
-    0 0 60px rgba(37, 99, 255, 0.14);
-  transform: translateY(-3px);
+    0 26px 86px rgba(0, 0, 0, 0.46),
+    0 0 68px rgba(37, 99, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  transform: translateY(-4px);
 }
 
 .testimonial-mark {
   position: absolute;
-  top: 18px;
+  top: 56px;
   right: 24px;
-  color: rgba(125, 165, 255, 0.24);
-  font-size: 92px;
+  color: rgba(77, 132, 255, 0.12);
+  font-size: 88px;
   font-weight: 900;
   line-height: 0.75;
   pointer-events: none;
 }
 
+.testimonial-tag {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #e3ebff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(37, 99, 255, 0.12)),
+    rgba(37, 99, 255, 0.08);
+  border: 1px solid rgba(138, 176, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 0 20px rgba(37, 99, 255, 0.08);
+}
+
 .testimonial-quote {
   position: relative;
   z-index: 1;
-  max-width: 500px;
-  margin: 0;
-  color: #f4f6ff;
-  font-size: clamp(18px, 1.35vw, 21px);
-  font-weight: 680;
-  line-height: 1.55;
-  letter-spacing: -0.025em;
+  max-width: 100%;
+  min-height: 168px;
+  margin: 20px 0 0;
+  color: #f1f4ff;
+  font-size: 16px;
+  font-weight: 640;
+  line-height: 1.62;
+  letter-spacing: -0.01em;
 }
 
 .testimonial-footer {
@@ -3254,8 +3296,8 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 58px;
-  margin-top: 28px;
+  min-height: 66px;
+  margin-top: 26px;
 }
 
 .testimonial-person {
@@ -3265,7 +3307,6 @@ button {
   gap: 12px;
 }
 
-.testimonial-avatar,
 .testimonial-brand {
   display: grid;
   place-items: center;
@@ -3279,29 +3320,33 @@ button {
 }
 
 .testimonial-avatar {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  display: block;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
   border-radius: 999px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  object-fit: cover;
+  border: 1px solid rgba(139, 180, 255, 0.6);
+  background: #0b1020;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 255, 0.1),
+    0 0 32px rgba(37, 99, 255, 0.24),
+    0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .testimonial-person h3 {
   margin: 0;
   color: #fff;
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 850;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 .testimonial-person p {
   margin: 5px 0 0;
-  color: #aeb4c4;
+  color: #aeb7ca;
   font-size: 13px;
-  font-weight: 760;
+  font-weight: 720;
 }
 
 .testimonial-brand {
@@ -3309,9 +3354,10 @@ button {
   height: 34px;
   flex: 0 0 48px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 12px;
+  color: rgba(232, 239, 255, 0.9);
+  font-size: 11px;
   font-weight: 900;
+  letter-spacing: 0.02em;
 }
 
 .final-cta {
@@ -5023,28 +5069,31 @@ button {
   }
 
   .testimonial-viewport {
+    overflow: hidden;
     mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 7%, #000 93%, transparent 100%);
   }
 
   .testimonial-track {
-    gap: 16px;
-    animation-duration: 48s;
+    --testimonial-gap: 16px;
+    --testimonial-half-gap: 8px;
+    animation-duration: 26s;
   }
 
   .testimonial-card {
-    width: 82vw;
-    min-height: 284px;
+    width: min(324px, 82vw);
+    min-height: 376px;
     padding: 24px;
   }
 
   .testimonial-card::after {
     inset-inline: 20px;
-    bottom: 78px;
+    bottom: 86px;
   }
 
   .testimonial-quote {
-    font-size: 17px;
+    min-height: 168px;
+    font-size: 15px;
   }
 
   .plans-heading .section-title {
@@ -5103,7 +5152,7 @@ button {
   }
 
   .testimonial-card {
-    width: min(620px, 74vw);
+    width: min(324px, 82vw);
   }
 
   .proof-card,
@@ -5139,8 +5188,8 @@ button {
 
 @media (max-width: 560px) {
   .testimonial-card {
-    width: 86vw;
-    min-height: 318px;
+    width: min(318px, calc(100vw - 46px));
+    min-height: 396px;
     border-radius: 18px;
     padding: 22px;
   }
@@ -5161,6 +5210,7 @@ button {
   .testimonial-brand {
     width: 42px;
     height: 32px;
+    font-size: 11px;
   }
 
   .metrics-panel {
@@ -5391,6 +5441,7 @@ button {
 
   .testimonial-track {
     animation: none !important;
+    transform: none !important;
   }
 
   .testimonial-viewport {

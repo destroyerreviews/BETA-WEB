@@ -27,6 +27,13 @@ const updateNavPill = () => {};
 let lenis;
 let motionFrame = null;
 let authMotionFrame = null;
+let navSectionPositions = [];
+
+const refreshNavSectionPositions = () => {
+  navSectionPositions = navSections
+    .map((section) => ({ id: section.id, top: section.offsetTop }))
+    .sort((a, b) => a.top - b.top);
+};
 
 const initLenis = () => {
   if (prefersReducedMotion || typeof Lenis === "undefined") {
@@ -91,12 +98,12 @@ const setHeaderState = () => {
 
   const scrollable = document.documentElement.scrollHeight - window.innerHeight;
   const progress = scrollable > 0 ? (currentScrollY / scrollable) * 100 : 0;
-  if (scrollMeter) scrollMeter.style.width = `${progress}%`;
+  if (scrollMeter) scrollMeter.style.transform = `scaleX(${progress / 100})`;
 
-  const activeSection = navSections
+  const activeSection = navSectionPositions
     .slice()
     .reverse()
-    .find((section) => currentScrollY + 220 >= section.offsetTop);
+    .find((section) => currentScrollY + 220 >= section.top);
 
   navLinks.forEach((link) => {
     const href = link.getAttribute("href");
@@ -369,24 +376,50 @@ const initSocialMetrics = () => {
 
 const initMicroInteractions = () => {
   document.querySelectorAll(".hover-glow").forEach((card) => {
+    if (!hasFinePointer) return;
+    let glowFrame = null;
+    let pointerX = 0;
+    let pointerY = 0;
+
     card.addEventListener("pointermove", (event) => {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty("--x", `${event.clientX - rect.left}px`);
-      card.style.setProperty("--y", `${event.clientY - rect.top}px`);
-    });
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (glowFrame) return;
+
+      glowFrame = requestAnimationFrame(() => {
+        glowFrame = null;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--x", `${pointerX - rect.left}px`);
+        card.style.setProperty("--y", `${pointerY - rect.top}px`);
+      });
+    }, { passive: true });
   });
 
   document.querySelectorAll(".magnetic").forEach((button) => {
     if (!hasFinePointer || prefersReducedMotion) return;
+    let magneticFrame = null;
+    let pointerX = 0;
+    let pointerY = 0;
 
     button.addEventListener("pointermove", (event) => {
-      const rect = button.getBoundingClientRect();
-      const x = event.clientX - rect.left - rect.width / 2;
-      const y = event.clientY - rect.top - rect.height / 2;
-      button.style.transform = `translate3d(${x * 0.08}px, ${y * 0.1}px, 0)`;
-    });
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (magneticFrame) return;
+
+      magneticFrame = requestAnimationFrame(() => {
+        magneticFrame = null;
+        const rect = button.getBoundingClientRect();
+        const x = pointerX - rect.left - rect.width / 2;
+        const y = pointerY - rect.top - rect.height / 2;
+        button.style.transform = `translate3d(${x * 0.08}px, ${y * 0.1}px, 0)`;
+      });
+    }, { passive: true });
 
     button.addEventListener("pointerleave", () => {
+      if (magneticFrame) {
+        cancelAnimationFrame(magneticFrame);
+        magneticFrame = null;
+      }
       button.style.transform = "";
     });
   });
@@ -400,6 +433,26 @@ const initMicroInteractions = () => {
       window.setTimeout(() => map.classList.remove("is-scanning"), 740);
     }, 2600);
   });
+};
+
+const initAnimationVisibility = () => {
+  const animatedTracks = [...document.querySelectorAll(".testimonial-track")];
+  if (!animatedTracks.length || typeof IntersectionObserver === "undefined") return;
+
+  animatedTracks.forEach((track) => track.classList.add("is-paused"));
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        entry.target
+          .querySelectorAll(".testimonial-track")
+          .forEach((track) => track.classList.toggle("is-paused", !entry.isIntersecting));
+      });
+    },
+    { rootMargin: "180px 0px" }
+  );
+
+  document.querySelectorAll(".testimonial-marquee").forEach((marquee) => observer.observe(marquee));
 };
 
 const updateScrollMotion = () => {
@@ -777,11 +830,13 @@ const init = () => {
   initCounters();
   initSocialMetrics();
   initMicroInteractions();
+  initAnimationVisibility();
   initPlanSwitch();
   initPricingReveal();
   initWhatsappFloat();
   initAuthForms();
   initForm();
+  refreshNavSectionPositions();
   setHeaderState();
   updateScrollMotion();
   updateAuthMotion();
@@ -793,9 +848,10 @@ const init = () => {
     requestAuthMotion();
   }, { passive: true });
   window.addEventListener("resize", () => {
+    refreshNavSectionPositions();
     requestScrollMotion();
     requestAuthMotion();
-  });
+  }, { passive: true });
 };
 
 init();

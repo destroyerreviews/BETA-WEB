@@ -9,6 +9,7 @@
     />
     <title>Iniciar sesión | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="../styles.css" />
   </head>
   <body class="auth-page auth-page--login">
@@ -20,21 +21,21 @@
         <span class="liquid-nav__glass" aria-hidden="true"></span>
 
         <div class="liquid-nav__content">
-          <a class="nav-brand" href="/" aria-label="Destroyer Reviews">
+          <a class="nav-brand" href="../index.html" aria-label="Destroyer Reviews">
             <span class="nav-logo">DR</span>
             <span class="nav-brand-text">Destroyer Reviews</span>
           </a>
 
           <div class="nav-links" data-nav>
-            <a href="/" data-nav-link>Inicio</a>
-            <a href="/blogs" data-nav-link>Blogs</a>
-            <a href="/#planes" data-nav-link>Precios</a>
-            <a href="/#contacto" data-nav-link>Contáctanos</a>
-            <a href="/gana-dinero" data-nav-link>Gana dinero</a>
+            <a href="../index.html" data-nav-link>Inicio</a>
+            <a href="../index.html#resultados" data-nav-link>Blogs</a>
+            <a href="../index.html#planes" data-nav-link>Precios</a>
+            <a href="../index.html#contacto" data-nav-link>Contáctanos</a>
+            <a href="../index.html#contacto" data-nav-link>Gana dinero</a>
           </div>
 
           <div class="nav-auth">
-            <a class="nav-register" href="/register">Registrarse</a>
+            <a class="nav-register" href="../register.html">Registrarse</a>
           </div>
 
           <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
@@ -44,12 +45,12 @@
         </div>
 
         <div class="mobile-menu" data-mobile-menu>
-          <a href="/">Inicio</a>
-          <a href="/blogs">Blogs</a>
-          <a href="/#planes">Precios</a>
-          <a href="/#contacto">Contáctanos</a>
-          <a href="/gana-dinero">Gana dinero</a>
-          <a class="mobile-register" href="/register">Registrarse</a>
+          <a href="../index.html">Inicio</a>
+          <a href="../index.html#resultados">Blogs</a>
+          <a href="../index.html#planes">Precios</a>
+          <a href="../index.html#contacto">Contáctanos</a>
+          <a href="../index.html#contacto">Gana dinero</a>
+          <a class="mobile-register" href="../register.html">Registrarse</a>
         </div>
       </nav>
     </header>
@@ -106,7 +107,7 @@
             <div class="auth-field" data-auth-field>
               <div class="auth-label-row">
                 <label for="login-password">Contraseña</label>
-                <a href="/login">¿Has olvidado tu contraseña?</a>
+                <a href="../login.html">¿Has olvidado tu contraseña?</a>
               </div>
               <div class="auth-password-control">
                 <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" required minlength="8" />
@@ -129,12 +130,12 @@
             </button>
           </form>
 
-          <p class="auth-switch">¿Aún no tienes cuenta? <a href="/register">Crear cuenta</a></p>
+          <p class="auth-switch">¿Aún no tienes cuenta? <a href="../register.html">Crear cuenta</a></p>
         </section>
       </section>
     </main>
 
-    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script src="../script.js"></script>
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="../script.js"></script>
   </body>
 </html>
