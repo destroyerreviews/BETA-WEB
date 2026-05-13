@@ -19,6 +19,7 @@ const authCard = document.querySelector(".auth-card");
 const authConsole = document.querySelector(".auth-console");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const hasFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+const perfDebug = new URLSearchParams(window.location.search).has("perf");
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 /* ── Sliding pill indicator for active nav link ── */
@@ -35,11 +36,24 @@ let requestLenisFrame = () => {};
 let visibleMotionPanels = new Set(motionPanels);
 let visibleProofCards = new Set(proofCards);
 let visibleDepthLayers = new Set(depthLayers);
+let lastHeaderScrolled = null;
+let lastScrollProgress = -1;
+let lastActiveSectionId = "";
+const lastMotionValues = new WeakMap();
 
 const refreshNavSectionPositions = () => {
   navSectionPositions = navSections
     .map((section) => ({ id: section.id, top: section.offsetTop }))
     .sort((a, b) => a.top - b.top);
+};
+
+const setStyleVarIfChanged = (element, name, value, tolerance = 0.05) => {
+  const values = lastMotionValues.get(element) || {};
+  const previous = values[name];
+  if (typeof previous === "number" && Math.abs(previous - value) < tolerance) return;
+  values[name] = value;
+  lastMotionValues.set(element, values);
+  element.style.setProperty(name, `${value}px`);
 };
 
 const initLenis = () => {
@@ -114,21 +128,32 @@ const animateLoader = () => {
 
 const setHeaderState = () => {
   const currentScrollY = window.scrollY;
-  header?.classList.toggle("is-scrolled", currentScrollY > 32);
+  const isScrolled = currentScrollY > 32;
+  if (isScrolled !== lastHeaderScrolled) {
+    header?.classList.toggle("is-scrolled", isScrolled);
+    lastHeaderScrolled = isScrolled;
+  }
 
   const scrollable = document.documentElement.scrollHeight - window.innerHeight;
   const progress = scrollable > 0 ? (currentScrollY / scrollable) * 100 : 0;
-  if (scrollMeter) scrollMeter.style.transform = `scaleX(${progress / 100})`;
+  if (scrollMeter && Math.abs(progress - lastScrollProgress) > 0.05) {
+    scrollMeter.style.transform = `scaleX(${progress / 100})`;
+    lastScrollProgress = progress;
+  }
 
   const activeSection = navSectionPositions
     .slice()
     .reverse()
     .find((section) => currentScrollY + 220 >= section.top);
+  const activeSectionId = activeSection?.id || "";
 
-  navLinks.forEach((link) => {
-    const href = link.getAttribute("href");
-    link.classList.toggle("is-active", Boolean(activeSection && href === `#${activeSection.id}`));
-  });
+  if (activeSectionId !== lastActiveSectionId) {
+    navLinks.forEach((link) => {
+      const href = link.getAttribute("href");
+      link.classList.toggle("is-active", Boolean(activeSectionId && href === `#${activeSectionId}`));
+    });
+    lastActiveSectionId = activeSectionId;
+  }
 
   /* Update the sliding pill position */
   updateNavPill();
@@ -471,6 +496,7 @@ const initMicroInteractions = () => {
 
 const initAnimationVisibility = () => {
   const pauseGroups = [
+    { roots: document.querySelectorAll(".hero"), targets: ".hero-product, .live-dot, .rank-map span, .button-primary" },
     { roots: document.querySelectorAll(".testimonial-marquee"), targets: ".testimonial-track" },
     { roots: document.querySelectorAll(".signal-strip"), targets: ".signal-track" },
     { roots: document.querySelectorAll(".pricing-section"), targets: ".pricing-sparkles span, .badge-gem, .pack-gem" },
@@ -495,6 +521,7 @@ const initAnimationVisibility = () => {
         entry.target
           .querySelectorAll(group.targets)
           .forEach((target) => target.classList.toggle("is-paused", !entry.isIntersecting || document.hidden));
+        entry.target.classList.toggle("is-animation-paused", !entry.isIntersecting || document.hidden);
       });
     },
     { rootMargin: "180px 0px" }
@@ -538,21 +565,21 @@ const updateScrollMotion = () => {
 
   visibleDepthLayers.forEach((layer) => {
     const speed = Number(layer.dataset.depth || 0.025);
-    layer.style.setProperty("--depth-y", `${window.scrollY * speed + velocity * 2}px`);
+    setStyleVarIfChanged(layer, "--depth-y", window.scrollY * speed + velocity * 2);
   });
 
   visibleMotionPanels.forEach((panel) => {
     const rect = panel.getBoundingClientRect();
     const center = rect.top + rect.height / 2;
     const distance = (center - window.innerHeight / 2) / window.innerHeight;
-    panel.style.setProperty("--motion-y", `${clamp(distance * -30 + velocity * 5, -28, 28)}px`);
+    setStyleVarIfChanged(panel, "--motion-y", clamp(distance * -30 + velocity * 5, -28, 28));
   });
 
   visibleProofCards.forEach((card) => {
     const index = proofCards.indexOf(card);
     const rect = card.getBoundingClientRect();
     const progress = clamp((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0, 1);
-    card.style.setProperty("--proof-y", `${(0.5 - progress) * (index === 0 ? 24 : 36)}px`);
+    setStyleVarIfChanged(card, "--proof-y", (0.5 - progress) * (index === 0 ? 24 : 36));
   });
 };
 
@@ -898,6 +925,24 @@ const initForm = () => {
   });
 };
 
+const initPerfDebug = () => {
+  if (!perfDebug) return;
+
+  window.setInterval(() => {
+    console.info("[perf]", {
+      lenisFrameActive: Boolean(lenisFrame),
+      scrollFrameActive: Boolean(scrollStateFrame || motionFrame || authMotionFrame),
+      visibleDepthLayers: visibleDepthLayers.size,
+      visibleMotionPanels: visibleMotionPanels.size,
+      visibleProofCards: visibleProofCards.size,
+      pausedAnimations: document.querySelectorAll(".is-paused, .is-animation-paused").length,
+      decodedImages: [...document.images].filter((image) => image.complete).length,
+      totalImages: document.images.length,
+      hidden: document.hidden,
+    });
+  }, 5000);
+};
+
 const init = () => {
   const hasHomeContent = Boolean(document.querySelector(".hero"));
 
@@ -917,6 +962,7 @@ const init = () => {
   }
   initAuthForms();
   initForm();
+  initPerfDebug();
   refreshNavSectionPositions();
   setHeaderState();
   updateScrollMotion();
@@ -930,6 +976,11 @@ const init = () => {
     refreshNavSectionPositions();
     requestScrollMotion();
     requestAuthMotion();
+  }, { passive: true });
+
+  window.addEventListener("load", () => {
+    refreshNavSectionPositions();
+    requestScrollState();
   }, { passive: true });
 
   document.addEventListener("visibilitychange", () => {

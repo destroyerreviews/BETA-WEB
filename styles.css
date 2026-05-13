@@ -1562,6 +1562,10 @@ button {
   box-shadow: 0 18px 70px rgba(23, 59, 255, 0.3);
 }
 
+.button-primary.is-paused {
+  animation-play-state: paused;
+}
+
 .button-secondary {
   border: 1px solid var(--line-strong);
   background: rgba(255, 255, 255, 0.04);
@@ -1597,6 +1601,11 @@ button {
   animation: panelSweep 5.8s ease-in-out infinite 1.4s;
 }
 
+.hero.is-animation-paused .hero-product::before,
+.hero-product.is-paused::before {
+  animation-play-state: paused;
+}
+
 .product-top,
 .board-header {
   display: flex;
@@ -1627,6 +1636,10 @@ button {
   background: var(--blue);
   box-shadow: 0 0 0 0 rgba(23, 59, 255, 0.8);
   animation: livePulse 1.8s ease-out infinite;
+}
+
+.hero.is-animation-paused .product-top strong::before {
+  animation-play-state: paused;
 }
 
 .score-module {
@@ -1695,6 +1708,10 @@ button {
   transition: background 260ms ease, border-color 260ms ease, box-shadow 260ms ease, transform 260ms ease;
   animation: cellIdle 5s ease-in-out infinite;
   animation-delay: calc(var(--cell-index, 0) * 55ms);
+}
+
+.rank-map span.is-paused {
+  animation-play-state: paused;
 }
 
 .rank-map span:nth-child(3n),
