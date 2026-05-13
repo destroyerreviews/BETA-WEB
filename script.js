@@ -28,6 +28,13 @@ let lenis;
 let motionFrame = null;
 let authMotionFrame = null;
 let navSectionPositions = [];
+let scrollStateFrame = null;
+let lenisFrame = null;
+let lenisLastActive = 0;
+let requestLenisFrame = () => {};
+let visibleMotionPanels = new Set(motionPanels);
+let visibleProofCards = new Set(proofCards);
+let visibleDepthLayers = new Set(depthLayers);
 
 const refreshNavSectionPositions = () => {
   navSectionPositions = navSections
@@ -51,17 +58,30 @@ const initLenis = () => {
   });
 
   lenis.on("scroll", () => {
-    setHeaderState();
-    requestScrollMotion();
-    requestAuthMotion();
+    lenisLastActive = performance.now();
+    requestScrollState();
   });
 
   const raf = (time) => {
+    lenisFrame = null;
     lenis?.raf(time);
-    requestAnimationFrame(raf);
+    const velocity = Math.abs(lenis?.velocity || 0);
+    if (!document.hidden && (velocity > 0.001 || time - lenisLastActive < 220)) {
+      lenisFrame = requestAnimationFrame(raf);
+    }
   };
 
-  requestAnimationFrame(raf);
+  requestLenisFrame = () => {
+    if (!lenis || lenisFrame || document.hidden) return;
+    lenisLastActive = performance.now();
+    lenisFrame = requestAnimationFrame(raf);
+  };
+
+  window.addEventListener("wheel", requestLenisFrame, { passive: true });
+  window.addEventListener("touchmove", requestLenisFrame, { passive: true });
+  window.addEventListener("keydown", requestLenisFrame);
+
+  requestLenisFrame();
 };
 
 const animateLoader = () => {
@@ -114,6 +134,16 @@ const setHeaderState = () => {
   updateNavPill();
 };
 
+const requestScrollState = () => {
+  if (scrollStateFrame) return;
+  scrollStateFrame = requestAnimationFrame(() => {
+    scrollStateFrame = null;
+    setHeaderState();
+    requestScrollMotion();
+    requestAuthMotion();
+  });
+};
+
 const closeMobileNav = () => {
   header?.classList.remove("is-open");
   navToggle?.classList.remove("is-open");
@@ -126,6 +156,8 @@ const scrollToTarget = (target) => {
   const top = target.getBoundingClientRect().top + window.scrollY - offset;
 
   if (lenis && !prefersReducedMotion) {
+    lenisLastActive = performance.now();
+    requestLenisFrame();
     lenis.scrollTo(top, { duration: 0.9, easing: (t) => 1 - Math.pow(1 - t, 3) });
   } else {
     window.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
@@ -184,6 +216,7 @@ const initHeroRotatingWord = () => {
   if (prefersReducedMotion) return;
 
   window.setInterval(() => {
+    if (document.hidden) return;
     word.classList.remove("is-entering");
     word.classList.add("is-exiting");
 
@@ -429,6 +462,7 @@ const initMicroInteractions = () => {
     if (prefersReducedMotion) return;
 
     window.setInterval(() => {
+      if (document.hidden) return;
       map.classList.add("is-scanning");
       window.setTimeout(() => map.classList.remove("is-scanning"), 740);
     }, 2600);
@@ -436,23 +470,64 @@ const initMicroInteractions = () => {
 };
 
 const initAnimationVisibility = () => {
-  const animatedTracks = [...document.querySelectorAll(".testimonial-track")];
-  if (!animatedTracks.length || typeof IntersectionObserver === "undefined") return;
+  const pauseGroups = [
+    { roots: document.querySelectorAll(".testimonial-marquee"), targets: ".testimonial-track" },
+    { roots: document.querySelectorAll(".signal-strip"), targets: ".signal-track" },
+    { roots: document.querySelectorAll(".pricing-section"), targets: ".pricing-sparkles span, .badge-gem, .pack-gem" },
+  ];
 
-  animatedTracks.forEach((track) => track.classList.add("is-paused"));
+  pauseGroups.forEach(({ roots, targets }) => {
+    roots.forEach((root) => root.querySelectorAll(targets).forEach((target) => target.classList.add("is-paused")));
+  });
+
+  if (typeof IntersectionObserver === "undefined") {
+    pauseGroups.forEach(({ roots, targets }) => {
+      roots.forEach((root) => root.querySelectorAll(targets).forEach((target) => target.classList.remove("is-paused")));
+    });
+    return;
+  }
 
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
+        const group = pauseGroups.find(({ roots }) => [...roots].includes(entry.target));
+        if (!group) return;
         entry.target
-          .querySelectorAll(".testimonial-track")
-          .forEach((track) => track.classList.toggle("is-paused", !entry.isIntersecting));
+          .querySelectorAll(group.targets)
+          .forEach((target) => target.classList.toggle("is-paused", !entry.isIntersecting || document.hidden));
       });
     },
     { rootMargin: "180px 0px" }
   );
 
-  document.querySelectorAll(".testimonial-marquee").forEach((marquee) => observer.observe(marquee));
+  pauseGroups.forEach(({ roots }) => roots.forEach((root) => observer.observe(root)));
+};
+
+const initMotionVisibility = () => {
+  if (typeof IntersectionObserver === "undefined") return;
+
+  const observeGroup = (items, visibleSet, rootMargin = "160px 0px") => {
+    if (!items.length) return;
+    visibleSet.clear();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            visibleSet.add(entry.target);
+          } else {
+            visibleSet.delete(entry.target);
+          }
+        });
+        requestScrollMotion();
+      },
+      { rootMargin }
+    );
+    items.forEach((item) => observer.observe(item));
+  };
+
+  observeGroup(depthLayers, visibleDepthLayers, "240px 0px");
+  observeGroup(motionPanels, visibleMotionPanels);
+  observeGroup(proofCards, visibleProofCards);
 };
 
 const updateScrollMotion = () => {
@@ -461,19 +536,20 @@ const updateScrollMotion = () => {
 
   const velocity = lenis?.velocity || 0;
 
-  depthLayers.forEach((layer) => {
+  visibleDepthLayers.forEach((layer) => {
     const speed = Number(layer.dataset.depth || 0.025);
     layer.style.setProperty("--depth-y", `${window.scrollY * speed + velocity * 2}px`);
   });
 
-  motionPanels.forEach((panel) => {
+  visibleMotionPanels.forEach((panel) => {
     const rect = panel.getBoundingClientRect();
     const center = rect.top + rect.height / 2;
     const distance = (center - window.innerHeight / 2) / window.innerHeight;
     panel.style.setProperty("--motion-y", `${clamp(distance * -30 + velocity * 5, -28, 28)}px`);
   });
 
-  proofCards.forEach((card, index) => {
+  visibleProofCards.forEach((card) => {
+    const index = proofCards.indexOf(card);
     const rect = card.getBoundingClientRect();
     const progress = clamp((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0, 1);
     card.style.setProperty("--proof-y", `${(0.5 - progress) * (index === 0 ? 24 : 36)}px`);
@@ -823,17 +899,22 @@ const initForm = () => {
 };
 
 const init = () => {
+  const hasHomeContent = Boolean(document.querySelector(".hero"));
+
   animateLoader();
   initNavigation();
-  initHeroRotatingWord();
-  initReveals();
-  initCounters();
-  initSocialMetrics();
-  initMicroInteractions();
-  initAnimationVisibility();
-  initPlanSwitch();
-  initPricingReveal();
-  initWhatsappFloat();
+  if (hasHomeContent) {
+    initHeroRotatingWord();
+    initReveals();
+    initCounters();
+    initSocialMetrics();
+    initMicroInteractions();
+    initAnimationVisibility();
+    initMotionVisibility();
+    initPlanSwitch();
+    initPricingReveal();
+    initWhatsappFloat();
+  }
   initAuthForms();
   initForm();
   refreshNavSectionPositions();
@@ -843,15 +924,23 @@ const init = () => {
   initLenis();
 
   window.addEventListener("scroll", () => {
-    setHeaderState();
-    requestScrollMotion();
-    requestAuthMotion();
+    requestScrollState();
   }, { passive: true });
   window.addEventListener("resize", () => {
     refreshNavSectionPositions();
     requestScrollMotion();
     requestAuthMotion();
   }, { passive: true });
+
+  document.addEventListener("visibilitychange", () => {
+    document.body.classList.toggle("is-page-hidden", document.hidden);
+    if (!document.hidden) {
+      requestScrollState();
+    } else if (lenisFrame) {
+      cancelAnimationFrame(lenisFrame);
+      lenisFrame = null;
+    }
+  });
 };
 
 init();
