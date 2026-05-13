@@ -199,13 +199,16 @@ const initNavigation = () => {
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (event) => {
-      const target = document.querySelector(link.getAttribute("href"));
+      const href = link.getAttribute("href");
+      if (!href || href === "#") return;
+
+      const target = document.querySelector(href);
       if (!target) return;
 
       event.preventDefault();
       closeMobileNav();
       scrollToTarget(target);
-      history.pushState(null, "", link.getAttribute("href"));
+      history.pushState(null, "", href);
     });
   });
 };
@@ -757,6 +760,21 @@ const initAuthForms = () => {
       document.body.classList.add("auth-ready");
     }, prefersReducedMotion ? 0 : 820);
   }
+
+  document.querySelectorAll("[data-auth-provider]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      const provider = button.dataset.authProvider || "este proveedor";
+      const card = button.closest(".auth-card");
+      const status = card?.querySelector("[data-auth-social-status]") || card?.querySelector("[data-auth-status]");
+      button.classList.add("is-pending");
+      window.setTimeout(() => button.classList.remove("is-pending"), 520);
+      if (status) {
+        status.textContent = `Inicio con ${provider} próximamente.`;
+        status.className = "auth-status";
+      }
+    });
+  });
 
   document.querySelectorAll(".auth-switch a").forEach((link) => {
     link.addEventListener("click", (event) => {

@@ -90,12 +90,26 @@
             <p>Continúa con tu panel privado de reputación local.</p>
           </div>
 
-          <button class="auth-google" type="button">
-            <span aria-hidden="true">G</span>
-            Continuar con Google
-          </button>
+          <div class="auth-socials" aria-label="Opciones sociales de inicio de sesiÃ³n">
+            <!-- TODO: conectar con endpoint OAuth real: /auth/google -->
+            <a class="auth-social-button auth-social-google" href="#" data-auth-provider="Google" aria-label="Continuar con Google">
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/google.svg" alt="" /></span>
+              <span>Continuar con Google</span>
+            </a>
+            <!-- TODO: conectar con endpoint OAuth real: /auth/github -->
+            <a class="auth-social-button auth-social-github" href="#" data-auth-provider="GitHub" aria-label="Continuar con GitHub">
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/github.svg" alt="" /></span>
+              <span>Continuar con GitHub</span>
+            </a>
+            <!-- TODO: conectar con endpoint OAuth real: /auth/facebook -->
+            <a class="auth-social-button auth-social-facebook" href="#" data-auth-provider="Facebook" aria-label="Continuar con Facebook">
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/facebook.svg" alt="" /></span>
+              <span>Continuar con Facebook</span>
+            </a>
+          </div>
+          <p class="auth-social-status auth-status" aria-live="polite" data-auth-social-status></p>
 
-          <div class="auth-divider"><span>o continúa con email</span></div>
+          <div class="auth-divider"><span>o inicia sesión con email</span></div>
 
           <form class="auth-form" data-auth-form data-auth-mode="login" novalidate>
             <div class="auth-field" data-auth-field>
