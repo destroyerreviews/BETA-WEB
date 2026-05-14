@@ -499,7 +499,7 @@ const initMicroInteractions = () => {
 
 const initAnimationVisibility = () => {
   const pauseGroups = [
-    { roots: document.querySelectorAll(".hero"), targets: ".reputation-phone, .map-pin, .map-dot, .phone-stars i, .chart-line, .phone-notification, .phone-app-nav span, .button-primary" },
+    { roots: document.querySelectorAll(".hero"), targets: ".reputation-phone, .map-pin, .map-dot, .phone-stars i, .chart-line, .map-route, .phone-notification, .phone-app-nav span, .button-primary" },
     { roots: document.querySelectorAll(".testimonial-marquee"), targets: ".testimonial-track" },
     { roots: document.querySelectorAll(".signal-strip"), targets: ".signal-track" },
     { roots: document.querySelectorAll(".pricing-section"), targets: ".pricing-sparkles span, .badge-gem, .pack-gem" },
@@ -943,6 +943,30 @@ const initForm = () => {
   });
 };
 
+const initPhoneTime = () => {
+  const timeNodes = document.querySelectorAll("[data-phone-time]");
+  if (!timeNodes.length) return;
+
+  const formatTime = () => {
+    const now = new Date();
+    return new Intl.DateTimeFormat("es-ES", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: false,
+    }).format(now);
+  };
+
+  const updateTime = () => {
+    const time = formatTime();
+    timeNodes.forEach((node) => {
+      node.textContent = time;
+    });
+  };
+
+  updateTime();
+  window.setInterval(updateTime, 60 * 1000);
+};
+
 const initPerfDebug = () => {
   if (!perfDebug) return;
 
@@ -968,6 +992,7 @@ const init = () => {
   initNavigation();
   if (hasHomeContent) {
     initHeroRotatingWord();
+    initPhoneTime();
     initReveals();
     initCounters();
     initSocialMetrics();
