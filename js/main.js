@@ -946,6 +946,7 @@ const initForm = () => {
 const initPhoneTime = () => {
   const timeNodes = document.querySelectorAll("[data-phone-time]");
   if (!timeNodes.length) return;
+  let phoneTimeTimer;
 
   const formatTime = () => {
     const now = new Date();
@@ -963,8 +964,25 @@ const initPhoneTime = () => {
     });
   };
 
+  const scheduleNextMinute = () => {
+    window.clearTimeout(phoneTimeTimer);
+    const now = new Date();
+    const msUntilNextMinute = ((60 - now.getSeconds()) * 1000) - now.getMilliseconds() + 80;
+    phoneTimeTimer = window.setTimeout(() => {
+      updateTime();
+      scheduleNextMinute();
+    }, Math.max(msUntilNextMinute, 1000));
+  };
+
   updateTime();
-  window.setInterval(updateTime, 60 * 1000);
+  scheduleNextMinute();
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      updateTime();
+      scheduleNextMinute();
+    }
+  });
 };
 
 const initPerfDebug = () => {
