@@ -499,7 +499,7 @@ const initMicroInteractions = () => {
 
 const initAnimationVisibility = () => {
   const pauseGroups = [
-    { roots: document.querySelectorAll(".hero"), targets: ".reputation-phone, .map-pin, .map-dot, .phone-stars i, .chart-line, .phone-reviews article, .button-primary" },
+    { roots: document.querySelectorAll(".hero"), targets: ".reputation-phone, .map-pin, .map-dot, .phone-stars i, .chart-line, .phone-notification, .phone-app-nav span, .button-primary" },
     { roots: document.querySelectorAll(".testimonial-marquee"), targets: ".testimonial-track" },
     { roots: document.querySelectorAll(".signal-strip"), targets: ".signal-track" },
     { roots: document.querySelectorAll(".pricing-section"), targets: ".pricing-sparkles span, .badge-gem, .pack-gem" },

@@ -12,7 +12,7 @@
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
-  <body>
+  <body class="home-page">
     <div class="loader" aria-hidden="true" data-loader>
       <div class="loader-tags">
         <span>LOCAL</span>
@@ -81,7 +81,15 @@
 
         <div class="section-inner hero-inner">
           <div class="hero-copy">
-            <p class="eyebrow reveal">REPUTACIÓN LOCAL PARA GOOGLE MAPS</p>
+            <p class="eyebrow hero-badge reveal">
+              <span class="hero-badge-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M12 3.2 19 6v5.2c0 4.4-2.7 7.9-7 9.6-4.3-1.7-7-5.2-7-9.6V6l7-2.8Z" />
+                  <path d="m9.7 12.2 1.5 1.5 3.3-4" />
+                </svg>
+              </span>
+              PLATAFORMA #1 EN REPUTACIÓN LOCAL
+            </p>
             <h1 class="hero-title reveal">
               <span class="sr-only">Reputación local que genera clientes.</span>
               <span class="hero-title-visible" aria-hidden="true">
@@ -107,6 +115,35 @@
               </a>
               <a class="button button-secondary magnetic" href="#planes">Ver packs</a>
             </div>
+
+            <div class="hero-trust-strip reveal" aria-label="Señales de confianza">
+              <article>
+                <span class="hero-trust-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 3.4 20 7v5.6c0 4.2-3.1 7-8 8.2-4.9-1.2-8-4-8-8.2V7l8-3.6Z" />
+                    <path d="m8.8 12.1 2.1 2.1 4.6-5" />
+                  </svg>
+                </span>
+                <span><strong>100% Seguro</strong><small>Sin accesos compartidos</small></span>
+              </article>
+              <article>
+                <span class="hero-trust-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M13 2 4.5 13.2h6.3L9.8 22 19.5 9.8h-6.6L13 2Z" />
+                  </svg>
+                </span>
+                <span><strong>Resultados reales</strong><small>Estrategia comprobada</small></span>
+              </article>
+              <article>
+                <span class="hero-trust-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 21a9 9 0 1 0-9-9 9 9 0 0 0 9 9Z" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                </span>
+                <span><strong>Activación rápida</strong><small>Empieza en 24h</small></span>
+              </article>
+            </div>
           </div>
 
           <aside class="hero-phone-wrap reveal" data-tilt data-motion-panel aria-label="Vista móvil de reputación local">
@@ -117,8 +154,14 @@
                 <div class="phone-screen">
                   <div class="phone-status">
                     <span>9:41</span>
-                    <span class="phone-notch"></span>
-                    <span class="phone-bars">● ● ▬</span>
+                    <span class="phone-notch">
+                      <i class="phone-camera"></i>
+                    </span>
+                    <span class="phone-system-icons" aria-hidden="true">
+                      <i class="phone-signal"></i>
+                      <i class="phone-wifi"></i>
+                      <i class="phone-battery"></i>
+                    </span>
                   </div>
 
                   <div class="phone-map">
@@ -135,33 +178,27 @@
                   </div>
 
                   <div class="phone-header">
-                    <span class="phone-menu"></span>
+                    <span class="phone-menu" aria-hidden="true"></span>
                     <div>
                       <strong>Visibilidad Local</strong>
-                      <p>Reputación activa</p>
+                      <p>Desempeño en Google Maps</p>
                     </div>
-                    <span class="phone-bell"></span>
-                  </div>
-
-                  <div class="business-card">
-                    <div class="business-icon">DR</div>
-                    <div>
-                      <strong>Tu negocio</strong>
-                      <p>Negocio local</p>
-                    </div>
-                    <span>Perfil verificado</span>
+                    <span class="phone-bell" aria-hidden="true"></span>
                   </div>
 
                   <section class="phone-reputation">
                     <div class="reputation-score">
-                      <span>REPUTACIÓN EN CRECIMIENTO</span>
+                      <span>REPUTACIÓN GENERAL</span>
                       <strong data-counter="4.8" data-decimal="true">0</strong>
+                      <em class="score-lift">+0.6</em>
                       <div class="phone-stars" aria-label="5 estrellas">
                         <i>★</i><i>★</i><i>★</i><i>★</i><i>★</i>
                       </div>
-                      <p>246 reseñas <b>+58 nuevas</b></p>
+                      <p>128 reseñas</p>
                     </div>
                     <div class="phone-chart" aria-hidden="true">
+                      <span>Evolución</span>
+                      <small>Últimos 30 días</small>
                       <svg viewBox="0 0 160 84" role="img">
                         <defs>
                           <linearGradient id="chartGlow" x1="0" x2="1" y1="0" y2="0">
@@ -175,10 +212,46 @@
                     </div>
                   </section>
 
-                  <div class="phone-metrics">
-                    <span>Visibilidad <b>+73%</b></span>
-                    <span>Solicitudes <b>+62%</b></span>
-                    <span>Valoración <b>+0.6</b></span>
+                  <div class="phone-map-card">
+                    <div class="phone-notification">
+                      <span class="phone-review-icon" aria-hidden="true">★</span>
+                      <div>
+                        <strong>Nueva reseña</strong>
+                        <p>+1 review</p>
+                      </div>
+                      <time>ahora</time>
+                      <i aria-hidden="true"></i>
+                    </div>
+
+                    <div class="phone-business-card">
+                      <img src="assets/hero/cafeteria.webp" alt="" loading="eager" decoding="async" />
+                      <div>
+                        <h3>Cafetería Aurora <span aria-hidden="true">✓</span></h3>
+                        <p>Café · Desayunos · Wi-Fi</p>
+                        <strong>4.8 <span>★★★★★</span> <small>(128)</small></strong>
+                        <em>Abierto · Cierra 21:00</em>
+                      </div>
+                    </div>
+
+                    <span class="map-pin map-pin-main"></span>
+                    <span class="map-dot map-dot-a"></span>
+                    <span class="map-dot map-dot-b"></span>
+                    <span class="map-dot map-dot-c"></span>
+                    <span class="map-dot map-dot-d"></span>
+                  </div>
+
+                  <div class="phone-metrics phone-bottom-stats">
+                    <span><small>Posición promedio</small><b>Top 3</b><em>↑ 12 posiciones</em></span>
+                    <span><small>Visualizaciones</small><b>2.4K</b><em>↑ 38%</em></span>
+                    <span><small>Solicitudes de ruta</small><b>843</b><em>↑ 27%</em></span>
+                  </div>
+
+                  <div class="phone-app-nav" aria-label="Navegación de la app">
+                    <span class="is-active">Resumen</span>
+                    <span>Reseñas</span>
+                    <span class="phone-add-button">+</span>
+                    <span>Insights</span>
+                    <span>Más</span>
                   </div>
 
                   <div class="phone-reviews">
