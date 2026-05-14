@@ -9,8 +9,8 @@
     />
     <title>Crear cuenta | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
-    <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="../styles.css" />
+    <link rel="icon" type="image/png" href="../assets/brand/favicon.png" />
+    <link rel="stylesheet" href="../css/styles.css" />
   </head>
   <body class="auth-page auth-page--register">
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
@@ -21,9 +21,12 @@
         <span class="liquid-nav__glass" aria-hidden="true"></span>
 
         <div class="liquid-nav__content">
-          <a class="nav-brand" href="../index.html" aria-label="Destroyer Reviews">
-            <span class="nav-logo">DR</span>
-            <span class="nav-brand-text">Destroyer Reviews</span>
+          <a class="brand-logo nav-brand" href="../index.html" aria-label="Destroyer Reviews">
+            <picture class="brand-symbol-picture">
+              <source srcset="../assets/brand/dr-symbol-white.webp" type="image/webp" />
+              <img src="../assets/brand/dr-symbol-white.png" alt="" class="brand-symbol-img" width="500" height="500" aria-hidden="true" />
+            </picture>
+            <span class="brand-wordmark">Destroyer Reviews</span>
           </a>
 
           <div class="nav-links" data-nav>
@@ -85,6 +88,12 @@
 
         <section class="auth-card reveal" aria-label="Formulario de registro">
           <div class="auth-card__header">
+            <a class="brand-logo auth-brand" href="../index.html" aria-label="Destroyer Reviews">
+              <picture class="brand-logo-picture">
+                <source srcset="../assets/brand/dr-logo-white.webp" type="image/webp" />
+                <img src="../assets/brand/dr-logo-white.png" alt="Destroyer Reviews" class="brand-logo-full-img" width="666" height="375" />
+              </picture>
+            </a>
             <p class="eyebrow">CREA TU CUENTA</p>
             <h2>Crear cuenta</h2>
             <p>Activa un espacio privado para seguir tus reseñas y soporte.</p>
@@ -93,17 +102,17 @@
           <div class="auth-socials" aria-label="Opciones sociales de registro">
             <!-- TODO: conectar con endpoint OAuth real: /auth/google -->
             <a class="auth-social-button auth-social-google" href="#" data-auth-provider="Google" aria-label="Continuar con Google">
-              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/google.svg" alt="" /></span>
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/google.svg" alt="" /></span>
               <span>Continuar con Google</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/github -->
             <a class="auth-social-button auth-social-github" href="#" data-auth-provider="GitHub" aria-label="Continuar con GitHub">
-              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/github.svg" alt="" /></span>
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/github.svg" alt="" /></span>
               <span>Continuar con GitHub</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/facebook -->
             <a class="auth-social-button auth-social-facebook" href="#" data-auth-provider="Facebook" aria-label="Continuar con Facebook">
-              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/facebook.svg" alt="" /></span>
+              <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/facebook.svg" alt="" /></span>
               <span>Continuar con Facebook</span>
             </a>
           </div>
@@ -169,6 +178,6 @@
     </main>
 
     <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script defer src="../script.js"></script>
+    <script defer src="../js/main.js"></script>
   </body>
 </html>
