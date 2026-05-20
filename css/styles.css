@@ -7298,6 +7298,11 @@ body.is-page-hidden *::after {
   select {
     cursor: auto;
   }
+
+  .liquid-nav a,
+  .nav-mobile-toggle {
+    cursor: pointer;
+  }
 }
 
 @media (max-height: 760px) and (min-width: 900px) {
