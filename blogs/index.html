@@ -41,7 +41,10 @@
       }
 
       .blogs-page main::after {
-        content: "";
+        content: none;
+      }
+
+      .blogs-page-frame {
         position: fixed;
         inset: 96px 16px 16px;
         z-index: -1;
@@ -53,6 +56,8 @@
           linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
         background-size: 80px 80px;
         mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
+        transform: translate3d(0, var(--depth-y, 0px), 0);
+        will-change: transform;
       }
 
       .blogs-hero {
@@ -861,6 +866,8 @@
     </header>
 
     <main id="contenido">
+      <div class="blogs-page-frame" aria-hidden="true" data-depth="0.04"></div>
+
       <section class="blogs-hero" aria-labelledby="blogs-title">
         <div class="section-inner blogs-hero__inner">
           <div class="blogs-hero__copy">
