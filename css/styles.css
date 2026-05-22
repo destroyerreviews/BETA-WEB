@@ -1434,8 +1434,56 @@ textarea:focus-visible {
     transform 180ms ease;
 }
 
+.money-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.money-trigger {
+  position: relative;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 12px 0 14px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.money-trigger__chevron,
+.mobile-money-trigger svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.money-dropdown.is-open .money-trigger__chevron,
+.mobile-money-dropdown.is-open .mobile-money-trigger svg {
+  transform: rotate(180deg);
+}
+
 .nav-links a:hover,
-.nav-links a.is-active {
+.nav-links a.is-active,
+.money-dropdown:hover .money-trigger,
+.money-dropdown.is-open .money-trigger {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -1445,6 +1493,118 @@ textarea:focus-visible {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 0 22px rgba(37, 99, 255, 0.12);
+}
+
+.money-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: min(360px, calc(100vw - 32px));
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.16), transparent 34%),
+    rgba(10, 14, 28, 0.88);
+  box-shadow: 0 20px 60px rgba(37, 99, 235, 0.18), 0 20px 50px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  transition:
+    opacity 210ms ease-out,
+    visibility 210ms ease-out,
+    transform 210ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.money-dropdown.is-open .money-menu,
+.money-dropdown:hover .money-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.money-menu__item {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 96px;
+  padding: 13px;
+  border-radius: 14px;
+  color: #fff;
+  text-decoration: none;
+  transition:
+    background 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.money-menu__item:hover,
+.money-menu__item:focus-visible {
+  background: rgba(37, 99, 235, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.money-menu__icon {
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(125, 165, 255, 0.24);
+  border-radius: 13px;
+  background: rgba(37, 99, 235, 0.11);
+  color: #7da5ff;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.money-menu__icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.money-menu__item:hover .money-menu__icon,
+.money-menu__item:focus-visible .money-menu__icon {
+  border-color: rgba(125, 165, 255, 0.5);
+  color: #aac1ff;
+  box-shadow: 0 0 24px rgba(37, 99, 235, 0.3);
+  transform: scale(1.03);
+}
+
+.money-menu__item strong,
+.money-menu__item small {
+  display: block;
+  letter-spacing: 0;
+}
+
+.money-menu__item strong {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.22;
+}
+
+.money-menu__item small {
+  margin-top: 5px;
+  color: rgba(216, 223, 240, 0.72);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .nav-auth {
@@ -1569,6 +1729,76 @@ textarea:focus-visible {
   color: #fff;
 }
 
+.mobile-money-dropdown {
+  display: grid;
+  gap: 4px;
+}
+
+.mobile-money-trigger {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 14px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+}
+
+.mobile-money-trigger:hover,
+.mobile-money-dropdown.is-open .mobile-money-trigger {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.mobile-money-menu {
+  display: grid;
+  max-height: 0;
+  opacity: 0;
+  padding-inline: 2px;
+  overflow: hidden;
+  transition:
+    max-height 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+
+.mobile-money-dropdown.is-open .mobile-money-menu {
+  max-height: 360px;
+  opacity: 1;
+}
+
+.mobile-menu .mobile-money-menu {
+  margin-top: 2px;
+}
+
+.mobile-menu .money-menu__item {
+  grid-template-columns: 38px minmax(0, 1fr);
+  min-height: auto;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.mobile-menu .money-menu__icon {
+  width: 38px;
+  height: 38px;
+}
+
+.mobile-menu .money-menu__item strong {
+  font-size: 13.5px;
+}
+
+.mobile-menu .money-menu__item small {
+  font-size: 12px;
+}
+
 .site-header.is-open {
   transform: translateY(0) !important;
 }
@@ -1579,6 +1809,8 @@ textarea:focus-visible {
 }
 
 .liquid-nav a:focus-visible,
+.money-trigger:focus-visible,
+.mobile-money-trigger:focus-visible,
 .nav-mobile-toggle:focus-visible {
   outline: 2px solid rgba(125, 165, 255, 0.9);
   outline-offset: 3px;
@@ -1838,6 +2070,340 @@ textarea:focus-visible {
   gap: 14px;
   min-width: 0;
   padding: 0 22px;
+}
+
+.money-page main {
+  position: relative;
+  isolation: isolate;
+}
+
+.money-page main::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 78% 12%, rgba(37, 99, 235, 0.24), transparent 34%),
+    radial-gradient(ellipse at 18% 42%, rgba(23, 59, 255, 0.13), transparent 30%);
+}
+
+.money-hero {
+  position: relative;
+  min-height: 86svh;
+  padding: 164px 0 78px;
+  overflow: hidden;
+}
+
+.money-hero__grid {
+  position: absolute;
+  inset: 96px 16px 16px;
+  z-index: -1;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(ellipse at 72% 16%, rgba(37, 99, 235, 0.22), transparent 34%);
+  background-size: 80px 80px, 80px 80px, auto;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
+}
+
+.money-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+  gap: clamp(32px, 6vw, 86px);
+  align-items: end;
+}
+
+.money-hero__copy {
+  max-width: 880px;
+}
+
+.money-hero__title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(48px, 6.4vw, 96px);
+  font-weight: 850;
+  letter-spacing: -0.07em;
+  line-height: 0.94;
+}
+
+.money-hero__lead {
+  max-width: 720px;
+  margin: 28px 0 0;
+  color: #c8ccd8;
+  font-size: clamp(17px, 1.25vw, 21px);
+  letter-spacing: -0.02em;
+  line-height: 1.58;
+}
+
+.money-signal-card {
+  position: relative;
+  min-height: 280px;
+  display: grid;
+  align-content: end;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(125, 165, 255, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+    rgba(8, 12, 28, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 28px 90px rgba(0, 0, 0, 0.34),
+    0 0 64px rgba(37, 99, 235, 0.16);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  overflow: hidden;
+}
+
+.money-signal-card::before {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(125, 165, 255, 0.16);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: 0.7;
+}
+
+.money-signal-card span,
+.money-signal-card strong,
+.money-signal-card p {
+  position: relative;
+  z-index: 1;
+}
+
+.money-signal-card span {
+  color: #7da5ff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.money-signal-card strong {
+  margin-top: 8px;
+  color: #fff;
+  font-size: clamp(34px, 4vw, 54px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.money-signal-card p {
+  max-width: 290px;
+  margin: 18px 0 0;
+  color: rgba(216, 223, 240, 0.76);
+}
+
+.money-section {
+  padding: clamp(70px, 9vw, 116px) 0;
+}
+
+.money-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(280px, 0.7fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+}
+
+.money-metric-grid,
+.money-card-grid,
+.money-compare {
+  display: grid;
+  gap: 14px;
+}
+
+.money-metric-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.money-mini-card,
+.money-benefit-card,
+.money-compare-card {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    rgba(8, 12, 28, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 54px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.money-mini-card {
+  min-height: 142px;
+  display: grid;
+  align-content: space-between;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+.money-mini-card span,
+.money-card-icon {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 30px;
+  border: 1px solid rgba(125, 165, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #8fb0ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.money-mini-card strong {
+  color: #fff;
+  font-size: clamp(22px, 2.3vw, 31px);
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.money-card-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 32px;
+}
+
+.money-benefit-card {
+  min-height: 270px;
+  padding: 22px;
+  border-radius: 22px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.money-benefit-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(125, 165, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 24px 70px rgba(0, 0, 0, 0.3),
+    0 0 44px rgba(37, 99, 235, 0.12);
+}
+
+.money-benefit-card h3 {
+  margin: 48px 0 0;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.money-benefit-card p {
+  margin: 14px 0 0;
+  color: rgba(216, 223, 240, 0.74);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.money-compare {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 32px;
+}
+
+.money-compare-card {
+  padding: clamp(24px, 4vw, 38px);
+  border-radius: 24px;
+}
+
+.money-compare-card--after {
+  border-color: rgba(125, 165, 255, 0.28);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
+    rgba(8, 12, 28, 0.72);
+}
+
+.money-compare-card h3 {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 850;
+  letter-spacing: -0.055em;
+}
+
+.money-compare-card ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.money-compare-card li {
+  position: relative;
+  padding-left: 28px;
+  color: rgba(232, 237, 248, 0.82);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.money-compare-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
+}
+
+.money-compare-card--after li::before {
+  background: #4f82ff;
+  box-shadow: 0 0 18px rgba(37, 99, 235, 0.55);
+}
+
+.money-final {
+  padding: 90px 0 120px;
+}
+
+.money-final__inner {
+  position: relative;
+  padding: clamp(32px, 6vw, 68px);
+  border: 1px solid rgba(125, 165, 255, 0.2);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 76% 12%, rgba(37, 99, 235, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.03)),
+    rgba(8, 12, 28, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 28px 90px rgba(0, 0, 0, 0.34),
+    0 0 70px rgba(37, 99, 235, 0.14);
+  overflow: hidden;
+}
+
+.money-final__inner h2 {
+  max-width: 780px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(38px, 5vw, 76px);
+  font-weight: 850;
+  letter-spacing: -0.065em;
+  line-height: 0.95;
+}
+
+.money-final__inner p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 22px 0 30px;
+  color: rgba(216, 223, 240, 0.78);
+  font-size: clamp(16px, 1.2vw, 19px);
+  line-height: 1.6;
 }
 
 .hero-trust-strip article:first-child {
@@ -7233,6 +7799,26 @@ body.is-page-hidden *::after {
     align-items: center;
     justify-content: center;
   }
+
+  .money-hero {
+    min-height: auto;
+    padding: 146px 0 60px;
+  }
+
+  .money-hero__inner,
+  .money-two-col,
+  .money-card-grid,
+  .money-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .money-signal-card {
+    min-height: 220px;
+  }
+
+  .money-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
@@ -7247,6 +7833,32 @@ body.is-page-hidden *::after {
   .nav-brand .brand-symbol-img {
     width: 32px;
     height: 32px;
+  }
+
+  .money-hero__title {
+    font-size: clamp(42px, 14vw, 58px);
+    letter-spacing: -0.055em;
+  }
+
+  .money-metric-grid,
+  .money-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .money-section {
+    padding: 58px 0;
+  }
+
+  .money-benefit-card {
+    min-height: auto;
+  }
+
+  .money-benefit-card h3 {
+    margin-top: 34px;
+  }
+
+  .money-final {
+    padding: 62px 0 82px;
   }
 }
 

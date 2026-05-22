@@ -5,6 +5,7 @@ const scrollMeter = document.querySelector(".scroll-meter");
 const loader = document.querySelector("[data-loader]");
 const loaderCount = document.querySelector("[data-loader-count]");
 const navLinks = [...document.querySelectorAll("[data-nav-link]")];
+const moneyDropdowns = [...document.querySelectorAll("[data-money-dropdown]")];
 const navSectionLinks = navLinks.filter((link) => {
   const href = link.getAttribute("href") || "";
   return href.startsWith("#") && href.length > 1;
@@ -169,10 +170,26 @@ const requestScrollState = () => {
   });
 };
 
+const setMoneyDropdownState = (dropdown, isOpen) => {
+  if (!dropdown) return;
+  const trigger = dropdown.querySelector("[data-money-trigger]");
+  dropdown.classList.toggle("is-open", isOpen);
+  trigger?.setAttribute("aria-expanded", String(isOpen));
+};
+
+const closeMoneyDropdowns = (exceptDropdown = null) => {
+  moneyDropdowns.forEach((dropdown) => {
+    if (dropdown !== exceptDropdown) setMoneyDropdownState(dropdown, false);
+  });
+};
+
 const closeMobileNav = () => {
   header?.classList.remove("is-open");
   navToggle?.classList.remove("is-open");
   navToggle?.setAttribute("aria-expanded", "false");
+  moneyDropdowns
+    .filter((dropdown) => dropdown.classList.contains("mobile-money-dropdown"))
+    .forEach((dropdown) => setMoneyDropdownState(dropdown, false));
   navToggle?.setAttribute("aria-label", "Abrir menú");
 };
 
@@ -195,6 +212,86 @@ const initNavigation = () => {
     navToggle.classList.toggle("is-open", isOpen);
     navToggle.setAttribute("aria-expanded", String(isOpen));
     navToggle.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
+  });
+
+  moneyDropdowns.forEach((dropdown) => {
+    const trigger = dropdown.querySelector("[data-money-trigger]");
+    const menu = dropdown.querySelector("[data-money-menu]");
+    const menuItems = [...dropdown.querySelectorAll('[role="menuitem"]')];
+    let closeTimer = null;
+
+    const open = () => {
+      window.clearTimeout(closeTimer);
+      closeMoneyDropdowns(dropdown);
+      setMoneyDropdownState(dropdown, true);
+    };
+
+    const close = () => {
+      window.clearTimeout(closeTimer);
+      setMoneyDropdownState(dropdown, false);
+    };
+
+    const closeSoftly = () => {
+      window.clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(close, 180);
+    };
+
+    trigger?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const isOpen = dropdown.classList.contains("is-open");
+      closeMoneyDropdowns(dropdown);
+      setMoneyDropdownState(dropdown, !isOpen);
+    });
+
+    if (hasFinePointer && dropdown.classList.contains("money-dropdown")) {
+      dropdown.addEventListener("mouseenter", open);
+      dropdown.addEventListener("mouseleave", closeSoftly);
+      menu?.addEventListener("mouseenter", open);
+      menu?.addEventListener("mouseleave", closeSoftly);
+    }
+
+    trigger?.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowDown" && event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      open();
+      menuItems[0]?.focus();
+    });
+
+    menuItems.forEach((item, index) => {
+      item.addEventListener("click", () => {
+        close();
+        if (dropdown.classList.contains("mobile-money-dropdown")) closeMobileNav();
+      });
+
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          menuItems[(index + 1) % menuItems.length]?.focus();
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          menuItems[(index - 1 + menuItems.length) % menuItems.length]?.focus();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close();
+          trigger?.focus();
+        }
+      });
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (moneyDropdowns.some((dropdown) => dropdown.contains(event.target))) return;
+    closeMoneyDropdowns();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    closeMoneyDropdowns();
   });
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {

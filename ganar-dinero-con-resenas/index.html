@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Cómo las reseñas y una presencia cuidada en Google Maps pueden ayudar a negocios locales a generar más confianza, contactos y oportunidades de venta."
+    />
+    <title>Cómo las reseñas pueden ayudarte a vender más | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" type="image/png" href="../assets/brand/favicon.png" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+      .money-page {
+        background: #030303;
+      }
+
+      .money-page .reveal {
+        opacity: 1;
+        filter: none;
+        transform: none;
+      }
+
+      .money-page main {
+        position: relative;
+        isolation: isolate;
+      }
+
+      .money-page main::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        background:
+          radial-gradient(ellipse at 76% 12%, rgba(37, 99, 235, 0.24), transparent 34%),
+          radial-gradient(ellipse at 14% 44%, rgba(23, 59, 255, 0.13), transparent 30%);
+      }
+
+      .money-hero {
+        position: relative;
+        min-height: 88svh;
+        padding: 164px 0 78px;
+        overflow: hidden;
+      }
+
+      .money-hero__grid {
+        position: absolute;
+        inset: 96px 16px 16px;
+        z-index: -1;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: var(--radius);
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          radial-gradient(ellipse at 72% 16%, rgba(37, 99, 235, 0.22), transparent 34%);
+        background-size: 80px 80px, 80px 80px, auto;
+        mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+      }
+
+      .money-hero__inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+        gap: clamp(32px, 6vw, 86px);
+        align-items: end;
+      }
+
+      .money-hero__copy {
+        max-width: 900px;
+      }
+
+      .money-hero__title {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(46px, 6.2vw, 96px);
+        font-weight: 850;
+        letter-spacing: -0.07em;
+        line-height: 0.94;
+      }
+
+      .money-hero__lead {
+        max-width: 760px;
+        margin: 28px 0 0;
+        color: #c8ccd8;
+        font-size: clamp(17px, 1.25vw, 21px);
+        letter-spacing: -0.02em;
+        line-height: 1.58;
+      }
+
+      .money-page .section-title {
+        line-height: 1.04;
+        padding-bottom: clamp(18px, 2.2vw, 30px);
+      }
+
+      .money-page .section-title + .money-grid,
+      .money-page .section-title + .money-compare,
+      .money-page .section-title + .money-faq {
+        margin-top: clamp(18px, 2.2vw, 30px);
+      }
+
+      .money-signal-card,
+      .money-card,
+      .money-compare-card,
+      .money-step,
+      .money-metric,
+      .money-faq details,
+      .money-final__inner {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+          rgba(8, 12, 28, 0.68);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 18px 54px rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(18px) saturate(150%);
+        -webkit-backdrop-filter: blur(18px) saturate(150%);
+      }
+
+      .money-signal-card {
+        min-height: 300px;
+        display: grid;
+        align-content: end;
+        padding: 26px;
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at 28% 18%, rgba(125, 165, 255, 0.2), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+          rgba(8, 12, 28, 0.72);
+        overflow: hidden;
+      }
+
+      .money-signal-card span,
+      .money-card__number {
+        width: fit-content;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 30px;
+        border: 1px solid rgba(125, 165, 255, 0.24);
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.12);
+        color: #8fb0ff;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .money-signal-card strong {
+        margin-top: 12px;
+        color: #fff;
+        font-size: clamp(34px, 4vw, 54px);
+        font-weight: 900;
+        letter-spacing: -0.06em;
+        line-height: 0.95;
+      }
+
+      .money-signal-card p {
+        max-width: 290px;
+        margin: 18px 0 0;
+        color: rgba(216, 223, 240, 0.76);
+      }
+
+      .money-section {
+        padding: clamp(70px, 9vw, 116px) 0;
+      }
+
+      .money-section--tight {
+        padding-top: 42px;
+      }
+
+      .money-section > .section-inner + .section-inner {
+        margin-top: clamp(38px, 5vw, 64px);
+      }
+
+      .money-two-col {
+        display: grid;
+        grid-template-columns: minmax(0, 0.88fr) minmax(320px, 0.7fr);
+        gap: clamp(28px, 5vw, 72px);
+        align-items: center;
+      }
+
+      .money-copy-stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .money-copy-stack p {
+        margin: 0;
+      }
+
+      .money-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .money-grid--four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .money-grid--five {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .money-card {
+        min-height: 250px;
+        padding: 22px;
+        border-radius: 22px;
+        transition:
+          transform 180ms ease,
+          border-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      .money-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(125, 165, 255, 0.28);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.1),
+          0 24px 70px rgba(0, 0, 0, 0.3),
+          0 0 44px rgba(37, 99, 235, 0.12);
+      }
+
+      .money-card h3,
+      .money-step h3 {
+        margin: 46px 0 0;
+        color: #fff;
+        font-size: 22px;
+        font-weight: 850;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+      }
+
+      .money-card p,
+      .money-step p,
+      .money-compare-card li,
+      .money-proof p,
+      .money-faq p {
+        color: rgba(216, 223, 240, 0.76);
+      }
+
+      .money-card p,
+      .money-step p {
+        margin: 14px 0 0;
+        font-size: 14.5px;
+        line-height: 1.55;
+      }
+
+      .money-compare {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 32px;
+      }
+
+      .money-compare-card {
+        padding: clamp(24px, 4vw, 38px);
+        border-radius: 24px;
+      }
+
+      .money-compare-card--after {
+        border-color: rgba(125, 165, 255, 0.28);
+        background:
+          radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.2), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
+          rgba(8, 12, 28, 0.72);
+      }
+
+      .money-compare-card h3 {
+        margin: 0 0 20px;
+        color: #fff;
+        font-size: clamp(28px, 3vw, 42px);
+        font-weight: 850;
+        letter-spacing: -0.055em;
+      }
+
+      .money-compare-card ul {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .money-compare-card li {
+        position: relative;
+        padding-left: 28px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .money-compare-card li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.55em;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      .money-compare-card--after li::before {
+        background: #4f82ff;
+        box-shadow: 0 0 18px rgba(37, 99, 235, 0.55);
+      }
+
+      .money-proof {
+        max-width: 880px;
+        margin: 28px auto 0;
+        text-align: center;
+      }
+
+      .money-proof p {
+        margin: 0;
+        font-size: clamp(16px, 1.2vw, 19px);
+        line-height: 1.6;
+      }
+
+      .money-steps {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .money-step {
+        min-height: 240px;
+        padding: 22px;
+        border-radius: 22px;
+      }
+
+      .money-metrics-band {
+        padding: 42px 0;
+      }
+
+      .money-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .money-metric {
+        min-height: 130px;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        border-radius: 22px;
+        text-align: center;
+      }
+
+      .money-metric strong {
+        color: #fff;
+        font-size: clamp(22px, 2.8vw, 38px);
+        font-weight: 900;
+        letter-spacing: -0.05em;
+      }
+
+      .money-metric-note {
+        max-width: 820px;
+        margin: 26px auto 0;
+        color: rgba(216, 223, 240, 0.76);
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .money-faq {
+        display: grid;
+        gap: 12px;
+        max-width: 900px;
+        margin: 32px auto 0;
+      }
+
+      .money-faq details {
+        border-radius: 18px;
+        padding: 18px 20px;
+      }
+
+      .money-faq summary {
+        color: #fff;
+        font-size: 17px;
+        font-weight: 850;
+        letter-spacing: -0.025em;
+      }
+
+      .money-faq p {
+        margin: 12px 0 0;
+        line-height: 1.6;
+      }
+
+      .money-final {
+        padding: 80px 0 120px;
+      }
+
+      .money-final__inner {
+        position: relative;
+        padding: clamp(32px, 6vw, 68px);
+        border-color: rgba(125, 165, 255, 0.2);
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at 76% 12%, rgba(37, 99, 235, 0.22), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.03)),
+          rgba(8, 12, 28, 0.78);
+      }
+
+      .money-final__inner h2 {
+        max-width: 840px;
+        margin: 0;
+        color: #fff;
+        font-size: clamp(38px, 5vw, 76px);
+        font-weight: 850;
+        letter-spacing: -0.065em;
+        line-height: 0.95;
+      }
+
+      .money-final__inner p:not(.eyebrow):not(.money-final__micro) {
+        max-width: 680px;
+        margin: 22px 0 30px;
+        color: rgba(216, 223, 240, 0.78);
+        font-size: clamp(16px, 1.2vw, 19px);
+        line-height: 1.6;
+      }
+
+      .money-final__micro {
+        margin: 16px 0 0;
+        color: rgba(216, 223, 240, 0.58);
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      @media (max-width: 1120px) {
+        .money-grid--four,
+        .money-steps {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .money-grid--five {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 980px) {
+        .money-hero {
+          min-height: auto;
+          padding: 146px 0 60px;
+        }
+
+        .money-hero__inner,
+        .money-two-col,
+        .money-compare {
+          grid-template-columns: 1fr;
+        }
+
+        .money-signal-card {
+          min-height: 220px;
+        }
+
+        .money-metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .money-hero__title {
+          font-size: clamp(42px, 14vw, 58px);
+          letter-spacing: -0.055em;
+        }
+
+        .money-grid--four,
+        .money-grid--five,
+        .money-steps,
+        .money-metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .money-section {
+          padding: 58px 0;
+        }
+
+        .money-card,
+        .money-step {
+          min-height: auto;
+        }
+
+        .money-card h3,
+        .money-step h3 {
+          margin-top: 34px;
+        }
+
+        .money-final {
+          padding: 62px 0 82px;
+        }
+      }
+    </style>
+  </head>
+  <body class="money-page">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <div class="promo-bar">
+        <span>Solicita una prueba gratuita de 2 reseñas</span>
+        <a href="../index.html#contacto">Solicitar prueba</a>
+      </div>
+
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="brand-logo nav-brand" href="../index.html" aria-label="Destroyer Reviews">
+            <picture class="brand-symbol-picture">
+              <source srcset="../assets/brand/dr-symbol-white.webp" type="image/webp" />
+              <img src="../assets/brand/dr-symbol-white.png" alt="" class="brand-symbol-img" width="500" height="500" aria-hidden="true" />
+            </picture>
+            <span class="brand-wordmark">Destroyer Reviews</span>
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="../index.html" data-nav-link>Inicio</a>
+            <a href="../index.html#resultados" data-nav-link>Blogs</a>
+            <a href="../index.html#planes" data-nav-link>Precios</a>
+            <a href="../index.html#contacto" data-nav-link>Contáctanos</a>
+            <div class="money-dropdown" data-money-dropdown>
+              <button class="money-trigger" type="button" aria-haspopup="menu" aria-expanded="false" data-money-trigger>
+                <span>Gana dinero</span>
+                <svg class="money-trigger__chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                  <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
+                </svg>
+              </button>
+              <div class="money-menu" role="menu" data-money-menu>
+                <a class="money-menu__item" href="./index.html" role="menuitem">
+                  <span class="money-menu__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.9.5 5.2L12 16.1l-4.7 2.1.5-5.2-3.5-3.9L9.4 8 12 3.5Z" />
+                      <path d="M8.8 12.4h6.4" />
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>¿Cómo ganar más dinero con reseñas?</strong>
+                    <small>Descubre cómo una ficha con más confianza puede ayudarte a convertir más búsquedas en clientes.</small>
+                  </span>
+                </a>
+                <a class="money-menu__item" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer" role="menuitem">
+                  <span class="money-menu__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M6 18.2 4.8 21l3-1A8.2 8.2 0 1 0 3.8 13" />
+                      <path d="M8.8 9.2c.2 3 2.7 5.3 5.7 5.8l1.4-1.4-2.2-1-1 1c-1.1-.4-2-1.3-2.4-2.4l1-1-1-2.2-1.5 1.2Z" />
+                    </svg>
+                  </span>
+                  <span>
+                    <strong>Empezar a ganar dinero ahora</strong>
+                    <small>Habla con nosotros para colaborar y recibir más información.</small>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-auth">
+            <a class="nav-login" href="../login.html">Iniciar sesión</a>
+            <a class="nav-register" href="../register.html">Registrarse</a>
+          </div>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="../index.html">Inicio</a>
+          <a href="../index.html#resultados">Blogs</a>
+          <a href="../index.html#planes">Precios</a>
+          <a href="../index.html#contacto">Contáctanos</a>
+          <div class="mobile-money-dropdown" data-money-dropdown>
+            <button class="mobile-money-trigger" type="button" aria-haspopup="menu" aria-expanded="false" data-money-trigger>
+              <span>Gana dinero</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
+              </svg>
+            </button>
+            <div class="mobile-money-menu" role="menu" data-money-menu>
+              <a class="money-menu__item" href="./index.html" role="menuitem">
+                <span class="money-menu__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.9.5 5.2L12 16.1l-4.7 2.1.5-5.2-3.5-3.9L9.4 8 12 3.5Z" />
+                    <path d="M8.8 12.4h6.4" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>¿Cómo ganar más dinero con reseñas?</strong>
+                  <small>Descubre cómo una ficha con más confianza puede ayudarte a convertir más búsquedas en clientes.</small>
+                </span>
+              </a>
+              <a class="money-menu__item" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer" role="menuitem">
+                <span class="money-menu__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M6 18.2 4.8 21l3-1A8.2 8.2 0 1 0 3.8 13" />
+                    <path d="M8.8 9.2c.2 3 2.7 5.3 5.7 5.8l1.4-1.4-2.2-1-1 1c-1.1-.4-2-1.3-2.4-2.4l1-1-1-2.2-1.5 1.2Z" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>Empezar a ganar dinero ahora</strong>
+                  <small>Habla con nosotros para colaborar y recibir más información.</small>
+                </span>
+              </a>
+            </div>
+          </div>
+          <a href="../login.html">Iniciar sesión</a>
+          <a class="mobile-register" href="../register.html">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="money-hero">
+        <div class="money-hero__grid" aria-hidden="true"></div>
+        <div class="section-inner money-hero__inner">
+          <div class="money-hero__copy">
+            <p class="eyebrow hero-badge reveal">REPUTACIÓN LOCAL Y CONVERSIÓN</p>
+            <h1 class="money-hero__title reveal">Cómo las reseñas pueden ayudarte a vender más</h1>
+            <p class="money-hero__lead reveal">
+              Cuando un cliente busca un negocio en Google Maps, decide en segundos en quién confiar. Una ficha con reseñas recientes, buena valoración y una presencia cuidada puede convertir más búsquedas en llamadas, visitas y clientes.
+            </p>
+            <div class="hero-actions reveal">
+              <a class="button button-primary magnetic" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+              <a class="button button-secondary magnetic" href="../index.html#planes">Ver packs</a>
+            </div>
+          </div>
+          <div class="money-signal-card reveal" aria-label="Resumen de reputación local">
+            <span>Perfil activo</span>
+            <strong>+ confianza</strong>
+            <p>Una presencia más cuidada reduce dudas antes del primer contacto y ayuda a que el cliente avance.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-section">
+        <div class="section-inner money-two-col">
+          <div>
+            <p class="eyebrow reveal">Impacto en ingresos</p>
+            <h2 class="section-title reveal">Por qué las reseñas influyen en tus ingresos</h2>
+          </div>
+          <div class="money-copy-stack section-copy reveal">
+            <p>Las reseñas funcionan como una prueba de confianza antes del primer contacto. Cuando una persona compara varios negocios cercanos, suele elegir el que transmite más seguridad: mejor valoración, comentarios recientes, respuestas cuidadas y una ficha activa.</p>
+            <p>Por eso, mejorar la reputación local no es solo una cuestión de imagen. Es una forma de reducir la duda del cliente y aumentar la probabilidad de que contacte contigo.</p>
+          </div>
+        </div>
+
+        <div class="section-inner money-grid money-grid--four">
+          <article class="money-card reveal">
+            <span class="money-card__number">01</span>
+            <h3>Más confianza</h3>
+            <p>Una ficha con opiniones recientes transmite seguridad desde el primer vistazo.</p>
+          </article>
+          <article class="money-card reveal">
+            <span class="money-card__number">02</span>
+            <h3>Más contactos</h3>
+            <p>Cuanta más confianza genera tu perfil, más fácil es que el usuario llame, reserve o visite.</p>
+          </article>
+          <article class="money-card reveal">
+            <span class="money-card__number">03</span>
+            <h3>Más autoridad local</h3>
+            <p>Una presencia activa ayuda a que tu negocio parezca más relevante frente a competidores cercanos.</p>
+          </article>
+          <article class="money-card reveal">
+            <span class="money-card__number">04</span>
+            <h3>Mejor percepción</h3>
+            <p>Las reseñas bien presentadas refuerzan la sensación de profesionalidad y calidad.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="money-section money-section--tight">
+        <div class="section-inner">
+          <p class="eyebrow reveal">Antes / Después</p>
+          <h2 class="section-title reveal">La reputación cambia cómo te comparan</h2>
+          <div class="money-compare">
+            <article class="money-compare-card reveal">
+              <h3>Antes</h3>
+              <ul>
+                <li>Ficha poco activa</li>
+                <li>Pocas señales de confianza</li>
+                <li>Comentarios antiguos o escasos</li>
+                <li>Menor diferenciación frente a competidores</li>
+                <li>Más dudas antes de contactar</li>
+              </ul>
+            </article>
+            <article class="money-compare-card money-compare-card--after reveal">
+              <h3>Después</h3>
+              <ul>
+                <li>Ficha más viva y cuidada</li>
+                <li>Reseñas recientes y mejor presentadas</li>
+                <li>Mayor confianza en búsquedas locales</li>
+                <li>Imagen más profesional</li>
+                <li>Más oportunidades de contacto</li>
+              </ul>
+            </article>
+          </div>
+          <div class="money-proof reveal">
+            <p>La diferencia no está solo en tener más reseñas. Está en construir una presencia que parezca activa, fiable y preparada para convertir visitas en clientes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-section">
+        <div class="section-inner">
+          <p class="eyebrow reveal">Recorrido del cliente</p>
+          <h2 class="section-title reveal">Cómo se traduce en más oportunidades</h2>
+          <div class="money-grid money-steps">
+            <article class="money-step reveal">
+              <span class="money-card__number">1</span>
+              <h3>El cliente busca</h3>
+              <p>Encuentra negocios cercanos en Google Maps o en búsquedas locales.</p>
+            </article>
+            <article class="money-step reveal">
+              <span class="money-card__number">2</span>
+              <h3>Compara opciones</h3>
+              <p>Revisa valoración, número de reseñas, textos, fotos y actividad de la ficha.</p>
+            </article>
+            <article class="money-step reveal">
+              <span class="money-card__number">3</span>
+              <h3>Decide en quién confiar</h3>
+              <p>La ficha que transmite más seguridad suele tener más posibilidades de recibir el contacto.</p>
+            </article>
+            <article class="money-step reveal">
+              <span class="money-card__number">4</span>
+              <h3>Contacta o visita</h3>
+              <p>Una reputación más cuidada puede ayudarte a convertir búsquedas en llamadas, reservas o visitas.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-section money-section--tight">
+        <div class="section-inner">
+          <p class="eyebrow reveal">Casos locales</p>
+          <h2 class="section-title reveal">Beneficios por tipo de negocio</h2>
+          <div class="money-grid money-grid--five">
+            <article class="money-card reveal">
+              <span class="money-card__number">01</span>
+              <h3>Clínicas y estética</h3>
+              <p>Más confianza antes de pedir cita.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">02</span>
+              <h3>Restaurantes y cafeterías</h3>
+              <p>Mejor percepción antes de reservar o visitar.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">03</span>
+              <h3>Talleres y servicios locales</h3>
+              <p>Más autoridad frente a negocios cercanos.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">04</span>
+              <h3>Tiendas y comercios</h3>
+              <p>Más seguridad para clientes que aún no te conocen.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">05</span>
+              <h3>Profesionales independientes</h3>
+              <p>Una imagen más sólida desde el primer contacto.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-section">
+        <div class="section-inner">
+          <p class="eyebrow reveal">Estrategia de ficha</p>
+          <h2 class="section-title reveal">Qué hacemos por tu ficha</h2>
+          <div class="money-grid money-grid--four">
+            <article class="money-card reveal">
+              <span class="money-card__number">01</span>
+              <h3>Planificación progresiva</h3>
+              <p>Trabajamos la reputación de forma ordenada, evitando cambios bruscos y manteniendo una evolución natural.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">02</span>
+              <h3>Textos cuidados</h3>
+              <p>Las reseñas deben sonar reales, concretas y coherentes con el tipo de negocio.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">03</span>
+              <h3>Publicación controlada</h3>
+              <p>La estrategia se organiza para que la ficha se vea activa sin parecer forzada.</p>
+            </article>
+            <article class="money-card reveal">
+              <span class="money-card__number">04</span>
+              <h3>Imagen profesional</h3>
+              <p>El objetivo es que tu negocio transmita confianza desde Google Maps.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-metrics-band">
+        <div class="section-inner">
+          <div class="money-metrics">
+            <div class="money-metric reveal"><strong>+ confianza percibida</strong></div>
+            <div class="money-metric reveal"><strong>+ llamadas potenciales</strong></div>
+            <div class="money-metric reveal"><strong>+ visitas al perfil</strong></div>
+            <div class="money-metric reveal"><strong>+ autoridad local</strong></div>
+          </div>
+          <p class="money-metric-note reveal">
+            No prometemos resultados mágicos. Creamos una presencia más cuidada para que tu negocio tenga más posibilidades de convertir cuando un cliente te encuentra.
+          </p>
+        </div>
+      </section>
+
+      <section class="money-section">
+        <div class="section-inner">
+          <p class="eyebrow reveal">FAQ</p>
+          <h2 class="section-title reveal">Preguntas frecuentes</h2>
+          <div class="money-faq">
+            <details class="reveal">
+              <summary>¿Las reseñas ayudan a vender más?</summary>
+              <p>Ayudan a generar confianza. Y cuando una ficha transmite más confianza, es más probable que el usuario contacte, reserve o visite el negocio.</p>
+            </details>
+            <details class="reveal">
+              <summary>¿Sirve para cualquier negocio local?</summary>
+              <p>Sí, especialmente para negocios que dependen de Google Maps, búsquedas locales, llamadas, reservas o visitas físicas.</p>
+            </details>
+            <details class="reveal">
+              <summary>¿Cuánto tarda en notarse?</summary>
+              <p>Depende del estado inicial de la ficha, la competencia y el volumen del plan. Lo recomendable es trabajar la reputación de forma progresiva.</p>
+            </details>
+            <details class="reveal">
+              <summary>¿Por qué no hacerlo todo de golpe?</summary>
+              <p>Porque una mejora natural y ordenada transmite más credibilidad que un cambio brusco.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="money-final">
+        <div class="section-inner money-final__inner reveal">
+          <p class="eyebrow">Presencia local</p>
+          <h2>Empieza a convertir más búsquedas en clientes</h2>
+          <p>Si tu ficha de Google Maps no transmite suficiente confianza, podemos ayudarte a mejorar su presencia con una estrategia progresiva, cuidada y adaptada a tu negocio.</p>
+          <a class="button button-primary magnetic" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+          <p class="money-final__micro">Respuesta rápida · Sin compromiso · Asesoramiento personalizado</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="section-inner footer-grid">
+        <a class="brand-logo footer-brand" href="../index.html" aria-label="Destroyer Reviews">
+          <picture class="brand-logo-picture">
+            <source srcset="../assets/brand/dr-logo-white.webp" type="image/webp" />
+            <img src="../assets/brand/dr-logo-white.png" alt="Destroyer Reviews" class="brand-logo-full-img" width="666" height="375" decoding="async" />
+          </picture>
+        </a>
+        <p>Reputación local, SEO en Google Maps y conversión para negocios que quieren parecer tan buenos como son.</p>
+        <div class="footer-links">
+          <a href="../index.html#servicios">Servicios</a>
+          <a href="../index.html#planes">Planes</a>
+          <a href="../index.html#contacto">Contacto</a>
+        </div>
+      </div>
+    </footer>
+
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="../js/main.js"></script>
+  </body>
+</html>
