@@ -1153,48 +1153,80 @@
           return inside;
         };
 
+        const distanceToSegment = (x, y, a, b) => {
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const lengthSq = dx * dx + dy * dy || 1;
+          const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / lengthSq));
+          const px = a.x + t * dx;
+          const py = a.y + t * dy;
+          return Math.hypot(x - px, y - py);
+        };
+
+        const distanceToPolygon = (x, y, polygon) => polygon.reduce((closest, point, index) => {
+          const next = polygon[(index + 1) % polygon.length];
+          return Math.min(closest, distanceToSegment(x, y, point, next));
+        }, Infinity);
+
+        const addParticle = (baseX, baseY, polygon, index, layer = 0) => {
+          const edgeDistance = distanceToPolygon(baseX, baseY, polygon);
+          const edge = edgeDistance < Math.max(7, Math.min(width, height) * 0.018);
+          const colorKey = (index * 7 + layer * 3) % 8;
+          const whiteAccent = colorKey === 0 || (edge && colorKey === 3);
+
+          particles.push({
+            baseX,
+            baseY,
+            x: baseX,
+            y: baseY,
+            vx: 0,
+            vy: 0,
+            radius: edge ? 2.35 : (whiteAccent ? 2.15 : 1.62 + (colorKey % 3) * 0.12),
+            alpha: edge ? 0.86 : (whiteAccent ? 0.78 : 0.5 + (colorKey % 4) * 0.07),
+            phase: index * 0.37 + layer * 1.9,
+            drift: edge ? 0.8 : 1.25 + (colorKey % 3) * 0.18,
+            color: whiteAccent ? "235, 242, 255" : (colorKey <= 4 ? "125, 165, 255" : "71, 118, 255"),
+          });
+        };
+
         const buildParticles = () => {
           particles.length = 0;
           const size = Math.min(width, height);
-          const padding = size * 0.18;
           const centerX = width / 2;
           const centerY = height / 2;
-          const radius = size * 0.38;
-          const polygon = starPolygon(centerX, centerY, radius, radius * 0.44);
-          const spacing = Math.max(7, radius / 15);
-          const minX = centerX - radius - padding * 0.15;
-          const maxX = centerX + radius + padding * 0.15;
-          const minY = centerY - radius - padding * 0.15;
-          const maxY = centerY + radius + padding * 0.15;
+          const outerRadius = size * 0.38;
+          const innerRadius = outerRadius * 0.43;
+          const polygon = starPolygon(centerX, centerY, outerRadius, innerRadius);
+          const spacing = Math.max(11, Math.min(15.5, size / 48));
+          const rowHeight = spacing * 0.86;
+          const minX = centerX - outerRadius;
+          const maxX = centerX + outerRadius;
+          const minY = centerY - outerRadius;
+          const maxY = centerY + outerRadius;
           let index = 0;
 
-          for (let y = minY; y <= maxY; y += spacing) {
-            for (let x = minX; x <= maxX; x += spacing) {
-              const offsetX = ((index * 13) % 9 - 4) * 0.45;
-              const offsetY = ((index * 17) % 9 - 4) * 0.45;
-              const px = x + offsetX;
-              const py = y + offsetY;
-              if (!isInside(px, py, polygon)) {
-                index += 1;
-                continue;
+          for (let y = minY; y <= maxY; y += rowHeight) {
+            const row = Math.round((y - minY) / rowHeight);
+            const offset = row % 2 === 0 ? 0 : spacing / 2;
+            for (let x = minX + offset; x <= maxX; x += spacing) {
+              if (isInside(x, y, polygon)) {
+                addParticle(x, y, polygon, index, 0);
               }
-
-              const accent = index % 9 === 0;
-              particles.push({
-                baseX: px,
-                baseY: py,
-                x: px,
-                y: py,
-                vx: 0,
-                vy: 0,
-                radius: accent ? 2.35 : 1.45 + (index % 4) * 0.14,
-                alpha: accent ? 0.94 : 0.5 + (index % 5) * 0.065,
-                phase: index * 0.23,
-                color: accent ? "235, 242, 255" : (index % 3 === 0 ? "125, 165, 255" : "71, 118, 255"),
-              });
               index += 1;
             }
           }
+
+          const outlineSteps = 18;
+          polygon.forEach((point, pointIndex) => {
+            const next = polygon[(pointIndex + 1) % polygon.length];
+            for (let step = 1; step < outlineSteps; step += 1) {
+              const t = step / outlineSteps;
+              const x = point.x + (next.x - point.x) * t;
+              const y = point.y + (next.y - point.y) * t;
+              addParticle(x, y, polygon, index, 1);
+              index += 1;
+            }
+          });
         };
 
         const resize = () => {
@@ -1222,10 +1254,10 @@
           ctx.fillRect(0, 0, width, height);
 
           particles.forEach((particle) => {
-            const breatheX = Math.cos(frame * 0.012 + particle.phase) * 1.1;
-            const breatheY = Math.sin(frame * 0.01 + particle.phase) * 1.1;
-            let targetX = particle.baseX + breatheX;
-            let targetY = particle.baseY + breatheY;
+            const idleX = reduceMotion ? 0 : Math.cos(frame * 0.014 + particle.phase) * particle.drift;
+            const idleY = reduceMotion ? 0 : Math.sin(frame * 0.011 + particle.phase * 1.17) * particle.drift;
+            let targetX = particle.baseX + idleX;
+            let targetY = particle.baseY + idleY;
 
             if (pointer.active && !reduceMotion) {
               const dx = targetX - pointer.x;
@@ -1233,16 +1265,16 @@
               const distance = Math.hypot(dx, dy);
               const radius = Math.min(width, height) * 0.18;
               if (distance < radius && distance > 0.01) {
-                const force = Math.pow(1 - distance / radius, 2) * 42;
+                const force = Math.pow(1 - distance / radius, 2) * 46;
                 targetX += (dx / distance) * force;
                 targetY += (dy / distance) * force;
               }
             }
 
-            particle.vx += (targetX - particle.x) * 0.055;
-            particle.vy += (targetY - particle.y) * 0.055;
-            particle.vx *= 0.78;
-            particle.vy *= 0.78;
+            particle.vx += (targetX - particle.x) * 0.05;
+            particle.vy += (targetY - particle.y) * 0.05;
+            particle.vx *= 0.8;
+            particle.vy *= 0.8;
             particle.x += particle.vx;
             particle.y += particle.vy;
 
