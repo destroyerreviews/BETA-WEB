@@ -118,17 +118,17 @@
             <!-- TODO: conectar con endpoint OAuth real: /auth/google -->
             <a class="auth-social-button auth-social-google" href="#" data-auth-provider="Google" aria-label="Continuar con Google">
               <span class="auth-social-icon" aria-hidden="true"><img src="assets/icons/social/google.svg" alt="" /></span>
-              <span>Continuar con Google</span>
+              <span>Google</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/github -->
             <a class="auth-social-button auth-social-github" href="#" data-auth-provider="GitHub" aria-label="Continuar con GitHub">
               <span class="auth-social-icon" aria-hidden="true"><img src="assets/icons/social/github.svg" alt="" /></span>
-              <span>Continuar con GitHub</span>
+              <span>GitHub</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/facebook -->
             <a class="auth-social-button auth-social-facebook" href="#" data-auth-provider="Facebook" aria-label="Continuar con Facebook">
               <span class="auth-social-icon" aria-hidden="true"><img src="assets/icons/social/facebook.svg" alt="" /></span>
-              <span>Continuar con Facebook</span>
+              <span>Facebook</span>
             </a>
           </div>
           <p class="auth-social-status auth-status" aria-live="polite" data-auth-social-status></p>
@@ -136,13 +136,13 @@
           <div class="auth-divider"><span>o inicia sesión con email</span></div>
 
           <form class="auth-form" data-auth-form data-auth-mode="login" novalidate>
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--email" data-auth-field>
               <label for="login-email">Email</label>
               <input id="login-email" name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
               <p class="auth-error" data-error-for="email"></p>
             </div>
 
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--password" data-auth-field>
               <div class="auth-label-row">
                 <label for="login-password">Contraseña</label>
                 <a href="login.html">¿Has olvidado tu contraseña?</a>
