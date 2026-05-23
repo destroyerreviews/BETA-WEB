@@ -22,14 +22,16 @@
         transform: none;
       }
 
-      .blogs-page main {
+      .blogs-page main,
+      .blogs-page-content {
         position: relative;
         isolation: isolate;
         z-index: 1;
         min-height: 100svh;
       }
 
-      .blogs-page main::before {
+      .blogs-page main::before,
+      .blogs-page-content::before {
         content: none;
       }
 
@@ -48,18 +50,23 @@
         content: none;
       }
 
-      .blogs-page-frame {
+      .blogs-fixed-background-frame {
         position: fixed;
-        inset: 96px 16px 16px;
+        top: 70px;
+        left: 16px;
+        right: 16px;
+        height: calc(100vh - 86px);
         z-index: 0;
         pointer-events: none;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: var(--radius);
         background:
+          radial-gradient(ellipse at 74% 16%, rgba(37, 99, 235, 0.16), transparent 40%),
           linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-        background-size: 80px 80px;
+        background-size: auto, 80px 80px, 80px 80px;
         mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 76%, transparent 100%);
         transform: none;
         will-change: auto;
       }
@@ -867,7 +874,7 @@
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
     <div class="scroll-meter" aria-hidden="true"></div>
     <div class="blogs-page-background" aria-hidden="true"></div>
-    <div class="blogs-page-frame" aria-hidden="true"></div>
+    <div class="blogs-fixed-background-frame" aria-hidden="true"></div>
 
     <header class="site-header" data-header>
       <div class="promo-bar">
@@ -984,7 +991,7 @@
       </nav>
     </header>
 
-    <main id="contenido">
+    <main class="blogs-page-content" id="contenido">
       <section class="blogs-hero" aria-labelledby="blogs-title">
         <div class="section-inner blogs-hero__inner">
           <div class="blogs-hero__copy">
