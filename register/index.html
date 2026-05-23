@@ -118,17 +118,17 @@
             <!-- TODO: conectar con endpoint OAuth real: /auth/google -->
             <a class="auth-social-button auth-social-google" href="#" data-auth-provider="Google" aria-label="Continuar con Google">
               <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/google.svg" alt="" /></span>
-              <span>Continuar con Google</span>
+              <span>Google</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/github -->
             <a class="auth-social-button auth-social-github" href="#" data-auth-provider="GitHub" aria-label="Continuar con GitHub">
               <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/github.svg" alt="" /></span>
-              <span>Continuar con GitHub</span>
+              <span>GitHub</span>
             </a>
             <!-- TODO: conectar con endpoint OAuth real: /auth/facebook -->
             <a class="auth-social-button auth-social-facebook" href="#" data-auth-provider="Facebook" aria-label="Continuar con Facebook">
               <span class="auth-social-icon" aria-hidden="true"><img src="../assets/icons/social/facebook.svg" alt="" /></span>
-              <span>Continuar con Facebook</span>
+              <span>Facebook</span>
             </a>
           </div>
           <p class="auth-social-status auth-status" aria-live="polite" data-auth-social-status></p>
@@ -136,25 +136,25 @@
           <div class="auth-divider"><span>o crea tu cuenta con email</span></div>
 
           <form class="auth-form" data-auth-form data-auth-mode="register" novalidate>
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--name" data-auth-field>
               <label for="register-name">Nombre</label>
               <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Tu nombre" required />
               <p class="auth-error" data-error-for="name"></p>
             </div>
 
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--email" data-auth-field>
               <label for="register-email">Email</label>
               <input id="register-email" name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
               <p class="auth-error" data-error-for="email"></p>
             </div>
 
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--whatsapp" data-auth-field>
               <label for="register-whatsapp">WhatsApp <span>opcional</span></label>
               <input id="register-whatsapp" name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" />
               <p class="auth-error" data-error-for="whatsapp"></p>
             </div>
 
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--password" data-auth-field>
               <label for="register-password">Contraseña</label>
               <div class="auth-password-control">
                 <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required minlength="8" />
@@ -163,7 +163,7 @@
               <p class="auth-error" data-error-for="password"></p>
             </div>
 
-            <div class="auth-field" data-auth-field>
+            <div class="auth-field auth-field--confirm" data-auth-field>
               <label for="register-confirm">Confirmar contraseña</label>
               <div class="auth-password-control">
                 <input id="register-confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repite la contraseña" required />
