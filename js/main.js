@@ -758,35 +758,54 @@ const initProcessTimeline = () => {
   const steps = [...document.querySelectorAll("[data-process-step]")];
   if (!timeline || !steps.length) return;
 
+  const firstNode = steps[0]?.querySelector(".process-node");
+  const lastNode = steps[steps.length - 1]?.querySelector(".process-node");
+  if (!firstNode || !lastNode) return;
+
+  const getNodeCenter = (node, timelineRect = timeline.getBoundingClientRect()) => {
+    const nodeRect = node.getBoundingClientRect();
+    return nodeRect.top - timelineRect.top + nodeRect.height / 2;
+  };
+
+  const updateLineMetrics = () => {
+    const timelineRect = timeline.getBoundingClientRect();
+    const firstCenter = getNodeCenter(firstNode, timelineRect);
+    const lastCenter = getNodeCenter(lastNode, timelineRect);
+    timeline.style.setProperty("--process-line-top", `${firstCenter}px`);
+    timeline.style.setProperty("--process-line-height", `${Math.max(1, lastCenter - firstCenter)}px`);
+  };
+
   updateProcessTimeline = () => {
     const rect = timeline.getBoundingClientRect();
-    const start = window.innerHeight * 0.72;
-    const end = window.innerHeight * 0.2;
-    const travel = Math.max(1, rect.height - (start - end));
-    const progress = clamp((start - rect.top) / travel, 0, 1);
+    const firstCenter = getNodeCenter(firstNode, rect);
+    const lastCenter = getNodeCenter(lastNode, rect);
+    timeline.style.setProperty("--process-line-top", `${firstCenter}px`);
+    timeline.style.setProperty("--process-line-height", `${Math.max(1, lastCenter - firstCenter)}px`);
+    const triggerY = window.innerHeight * (window.innerWidth < 768 ? 0.6 : 0.55);
+    const firstViewportCenter = rect.top + firstCenter;
+    const totalDistance = Math.max(1, lastCenter - firstCenter);
+    const progress = clamp((triggerY - firstViewportCenter) / totalDistance, 0, 1);
     timeline.style.setProperty("--process-progress", progress.toFixed(3));
+
+    steps.forEach((step) => {
+      const node = step.querySelector(".process-node");
+      if (!node) return;
+      const nodeCenter = rect.top + getNodeCenter(node, rect);
+      step.classList.toggle("is-active", nodeCenter <= triggerY);
+    });
   };
 
   if (prefersReducedMotion) {
     timeline.style.setProperty("--process-progress", "1");
     steps.forEach((step) => step.classList.add("is-active"));
+    updateLineMetrics();
     return;
   }
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-active");
-        } else if (entry.boundingClientRect.top > window.innerHeight * 0.78) {
-          entry.target.classList.remove("is-active");
-        }
-      });
-    },
-    { threshold: 0.42, rootMargin: "-10% 0px -24% 0px" }
-  );
+  const resizeObserver = new ResizeObserver(() => requestProcessTimeline());
+  resizeObserver.observe(timeline);
+  steps.forEach((step) => resizeObserver.observe(step));
 
-  steps.forEach((step) => observer.observe(step));
   updateProcessTimeline();
 };
 
