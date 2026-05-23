@@ -32,8 +32,10 @@ let authMotionFrame = null;
 let navSectionPositions = [];
 let scrollStateFrame = null;
 let lenisFrame = null;
+let processTimelineFrame = null;
 let lenisLastActive = 0;
 let requestLenisFrame = () => {};
+let updateProcessTimeline = () => {};
 let visibleMotionPanels = new Set(motionPanels);
 let visibleProofCards = new Set(proofCards);
 let visibleDepthLayers = new Set(depthLayers);
@@ -167,6 +169,15 @@ const requestScrollState = () => {
     setHeaderState();
     requestScrollMotion();
     requestAuthMotion();
+    requestProcessTimeline();
+  });
+};
+
+const requestProcessTimeline = () => {
+  if (processTimelineFrame) return;
+  processTimelineFrame = requestAnimationFrame(() => {
+    processTimelineFrame = null;
+    updateProcessTimeline();
   });
 };
 
@@ -742,6 +753,43 @@ const initPricingReveal = () => {
   observer.observe(pricingSection);
 };
 
+const initProcessTimeline = () => {
+  const timeline = document.querySelector("[data-process-section] .process-timeline");
+  const steps = [...document.querySelectorAll("[data-process-step]")];
+  if (!timeline || !steps.length) return;
+
+  updateProcessTimeline = () => {
+    const rect = timeline.getBoundingClientRect();
+    const start = window.innerHeight * 0.72;
+    const end = window.innerHeight * 0.2;
+    const travel = Math.max(1, rect.height - (start - end));
+    const progress = clamp((start - rect.top) / travel, 0, 1);
+    timeline.style.setProperty("--process-progress", progress.toFixed(3));
+  };
+
+  if (prefersReducedMotion) {
+    timeline.style.setProperty("--process-progress", "1");
+    steps.forEach((step) => step.classList.add("is-active"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-active");
+        } else if (entry.boundingClientRect.top > window.innerHeight * 0.78) {
+          entry.target.classList.remove("is-active");
+        }
+      });
+    },
+    { threshold: 0.42, rootMargin: "-10% 0px -24% 0px" }
+  );
+
+  steps.forEach((step) => observer.observe(step));
+  updateProcessTimeline();
+};
+
 const initWhatsappFloat = () => {
   const button = document.querySelector("[data-whatsapp-float]");
   if (!button) return;
@@ -1116,6 +1164,7 @@ const init = () => {
     initMotionVisibility();
     initPlanSwitch();
     initPricingReveal();
+    initProcessTimeline();
     initWhatsappFloat();
   }
   initAuthForms();
@@ -1134,11 +1183,13 @@ const init = () => {
     refreshNavSectionPositions();
     requestScrollMotion();
     requestAuthMotion();
+    requestProcessTimeline();
   }, { passive: true });
 
   window.addEventListener("load", () => {
     refreshNavSectionPositions();
     requestScrollState();
+    requestProcessTimeline();
   }, { passive: true });
 
   document.addEventListener("visibilitychange", () => {
