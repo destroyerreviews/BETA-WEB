@@ -1314,11 +1314,38 @@ textarea:focus-visible {
   line-height: 0;
 }
 
+.brand-logo-img,
 .brand-logo-full-img {
   display: block;
-  width: 136px;
   height: auto;
   object-fit: contain;
+  max-width: none;
+  flex-shrink: 0;
+}
+
+.brand-logo--nav {
+  width: 164px;
+  max-height: 38px;
+  filter: drop-shadow(0 0 14px rgba(125, 165, 255, 0.12));
+}
+
+.brand-logo--auth {
+  width: 148px;
+  max-height: 36px;
+}
+
+.brand-logo--footer {
+  width: 136px;
+  max-height: 34px;
+}
+
+.brand-logo--compact {
+  width: 50px;
+  max-height: 14px;
+}
+
+.brand-logo-full-img {
+  width: 136px;
 }
 
 .auth-brand {
@@ -1352,6 +1379,7 @@ textarea:focus-visible {
 }
 
 .brand-logo img,
+.brand-logo-img,
 .brand-symbol-img,
 .brand-logo-full-img,
 .testimonial-brand-img {
@@ -1384,16 +1412,10 @@ textarea:focus-visible {
   gap: 12px;
 }
 
-.home-page .brand-symbol-img {
-  width: 40px;
-  height: 40px;
-  filter: drop-shadow(0 0 14px rgba(125, 165, 255, 0.16));
-}
-
-.home-page .brand-wordmark {
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: -0.04em;
+.home-page .brand-logo--nav {
+  width: 184px;
+  max-height: 42px;
+  filter: drop-shadow(0 0 16px rgba(125, 165, 255, 0.16));
 }
 
 .nav-links {
@@ -5649,8 +5671,8 @@ body.is-page-hidden *::after {
 }
 
 .testimonial-brand-mark {
-  width: 46px;
-  height: 46px;
+  width: 68px;
+  height: 38px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -6979,6 +7001,11 @@ body.is-page-hidden *::after {
   width: 110px;
 }
 
+.auth-page--register .auth-brand .brand-logo--auth,
+.auth-page--login .auth-brand .brand-logo--auth {
+  width: 142px;
+}
+
 .auth-page--register .auth-card__header h2,
 .auth-page--login .auth-card__header h2 {
   margin-top: 6px;
@@ -8062,8 +8089,8 @@ body.is-page-hidden *::after {
   }
 
   .testimonial-brand-mark {
-    width: 44px;
-    height: 44px;
+    width: 62px;
+    height: 36px;
   }
 
   .testimonial-brand-img {
@@ -8173,13 +8200,9 @@ body.is-page-hidden *::after {
     min-width: auto;
   }
 
-  .brand-wordmark {
-    display: none;
-  }
-
-  .nav-brand .brand-symbol-img {
-    width: 32px;
-    height: 32px;
+  .brand-logo--nav {
+    width: 134px;
+    max-height: 34px;
   }
 
   .money-hero__title {
@@ -8210,6 +8233,19 @@ body.is-page-hidden *::after {
 }
 
 @media (max-width: 768px) {
+  .brand-logo--nav {
+    width: 146px;
+    max-height: 36px;
+  }
+
+  .brand-logo--auth {
+    width: 140px;
+  }
+
+  .brand-logo--footer {
+    width: 126px;
+  }
+
   .brand-logo-full-img {
     width: 128px;
   }
@@ -8415,9 +8451,9 @@ body.is-page-hidden *::after {
     min-width: 0;
   }
 
-  .home-page .brand-symbol-img {
-    width: 36px;
-    height: 36px;
+  .home-page .brand-logo--nav {
+    width: 160px;
+    max-height: 38px;
   }
 
   .hero-trust-strip {
