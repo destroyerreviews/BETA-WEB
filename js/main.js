@@ -5,7 +5,6 @@ const scrollMeter = document.querySelector(".scroll-meter");
 const loader = document.querySelector("[data-loader]");
 const loaderCount = document.querySelector("[data-loader-count]");
 const navLinks = [...document.querySelectorAll("[data-nav-link]")];
-const moneyDropdowns = [...document.querySelectorAll("[data-money-dropdown]")];
 const navSectionLinks = navLinks.filter((link) => {
   const href = link.getAttribute("href") || "";
   return href.startsWith("#") && href.length > 1;
@@ -181,26 +180,11 @@ const requestProcessTimeline = () => {
   });
 };
 
-const setMoneyDropdownState = (dropdown, isOpen) => {
-  if (!dropdown) return;
-  const trigger = dropdown.querySelector("[data-money-trigger]");
-  dropdown.classList.toggle("is-open", isOpen);
-  trigger?.setAttribute("aria-expanded", String(isOpen));
-};
-
-const closeMoneyDropdowns = (exceptDropdown = null) => {
-  moneyDropdowns.forEach((dropdown) => {
-    if (dropdown !== exceptDropdown) setMoneyDropdownState(dropdown, false);
-  });
-};
-
 const closeMobileNav = () => {
   header?.classList.remove("is-open");
   navToggle?.classList.remove("is-open");
   navToggle?.setAttribute("aria-expanded", "false");
-  moneyDropdowns
-    .filter((dropdown) => dropdown.classList.contains("mobile-money-dropdown"))
-    .forEach((dropdown) => setMoneyDropdownState(dropdown, false));
+  navToggle?.classList.remove("is-open");
   navToggle?.setAttribute("aria-label", "Abrir menú");
 };
 
@@ -223,86 +207,6 @@ const initNavigation = () => {
     navToggle.classList.toggle("is-open", isOpen);
     navToggle.setAttribute("aria-expanded", String(isOpen));
     navToggle.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
-  });
-
-  moneyDropdowns.forEach((dropdown) => {
-    const trigger = dropdown.querySelector("[data-money-trigger]");
-    const menu = dropdown.querySelector("[data-money-menu]");
-    const menuItems = [...dropdown.querySelectorAll('[role="menuitem"]')];
-    let closeTimer = null;
-
-    const open = () => {
-      window.clearTimeout(closeTimer);
-      closeMoneyDropdowns(dropdown);
-      setMoneyDropdownState(dropdown, true);
-    };
-
-    const close = () => {
-      window.clearTimeout(closeTimer);
-      setMoneyDropdownState(dropdown, false);
-    };
-
-    const closeSoftly = () => {
-      window.clearTimeout(closeTimer);
-      closeTimer = window.setTimeout(close, 180);
-    };
-
-    trigger?.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const isOpen = dropdown.classList.contains("is-open");
-      closeMoneyDropdowns(dropdown);
-      setMoneyDropdownState(dropdown, !isOpen);
-    });
-
-    if (hasFinePointer && dropdown.classList.contains("money-dropdown")) {
-      dropdown.addEventListener("mouseenter", open);
-      dropdown.addEventListener("mouseleave", closeSoftly);
-      menu?.addEventListener("mouseenter", open);
-      menu?.addEventListener("mouseleave", closeSoftly);
-    }
-
-    trigger?.addEventListener("keydown", (event) => {
-      if (event.key !== "ArrowDown" && event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      open();
-      menuItems[0]?.focus();
-    });
-
-    menuItems.forEach((item, index) => {
-      item.addEventListener("click", () => {
-        close();
-        if (dropdown.classList.contains("mobile-money-dropdown")) closeMobileNav();
-      });
-
-      item.addEventListener("keydown", (event) => {
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-          menuItems[(index + 1) % menuItems.length]?.focus();
-        }
-
-        if (event.key === "ArrowUp") {
-          event.preventDefault();
-          menuItems[(index - 1 + menuItems.length) % menuItems.length]?.focus();
-        }
-
-        if (event.key === "Escape") {
-          event.preventDefault();
-          close();
-          trigger?.focus();
-        }
-      });
-    });
-  });
-
-  document.addEventListener("click", (event) => {
-    if (moneyDropdowns.some((dropdown) => dropdown.contains(event.target))) return;
-    closeMoneyDropdowns();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    closeMoneyDropdowns();
   });
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
@@ -809,6 +713,166 @@ const initProcessTimeline = () => {
   updateProcessTimeline();
 };
 
+const initCart = () => {
+  const drawer = document.querySelector("[data-cart-drawer]");
+  const overlay = document.querySelector("[data-cart-overlay]");
+  const toggles = [...document.querySelectorAll("[data-cart-toggle]")];
+  const closeButtons = [...document.querySelectorAll("[data-cart-close]")];
+  const countNodes = [...document.querySelectorAll("[data-cart-count]")];
+  const itemsNode = document.querySelector("[data-cart-items]");
+  const emptyNode = document.querySelector("[data-cart-empty]");
+  const summaryNode = document.querySelector("[data-cart-summary]");
+  const totalNode = document.querySelector("[data-cart-total]");
+  const checkoutNode = document.querySelector("[data-cart-checkout]");
+  const continueNode = document.querySelector("[data-cart-continue]");
+  const toast = document.querySelector("[data-cart-toast]");
+  const addButtons = [...document.querySelectorAll("[data-add-cart]")];
+  const storageKey = "destroyerReviewsCart";
+  const whatsappNumber = "34603826428";
+  let cart = [];
+  let toastTimer = null;
+
+  if (!drawer || !overlay) return;
+
+  const readCart = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      cart = Array.isArray(stored) ? stored.filter((item) => item && item.name) : [];
+    } catch {
+      cart = [];
+    }
+  };
+
+  const saveCart = () => {
+    localStorage.setItem(storageKey, JSON.stringify(cart));
+  };
+
+  const formatPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
+  const cartCount = () => cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const cartTotal = () => cart.reduce((total, item) => total + (Number(item.price) || 0) * (item.quantity || 1), 0);
+
+  const updateCheckout = () => {
+    if (!checkoutNode) return;
+    const detail = cart.map((item) => `${item.quantity || 1}x ${item.name} (${item.reviews}) - ${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}`).join("; ");
+    const message = `Hola, quiero contratar estos packs: ${detail}. ¿Me podéis ayudar?`;
+    checkoutNode.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  };
+
+  const renderCart = () => {
+    const count = cartCount();
+    countNodes.forEach((node) => {
+      node.textContent = String(count);
+      node.hidden = count === 0;
+    });
+
+    toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", drawer.classList.contains("is-open") ? "true" : "false"));
+
+    const hasItems = cart.length > 0;
+    if (emptyNode) emptyNode.hidden = hasItems;
+    if (summaryNode) summaryNode.hidden = !hasItems;
+    if (totalNode) totalNode.textContent = formatPrice(cartTotal());
+
+    if (itemsNode) {
+      itemsNode.innerHTML = cart.map((item) => `
+        <article class="cart-item">
+          <div class="cart-item__meta">
+            <span>${item.reviews}</span>
+            <h3>${item.name}</h3>
+            <p>${formatPrice(item.price)} · cantidad ${item.quantity || 1}</p>
+          </div>
+          <div class="cart-item__side">
+            <strong>${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}</strong>
+            <button type="button" aria-label="Eliminar ${item.name}" data-remove-cart="${item.id}">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    updateCheckout();
+  };
+
+  const openCart = () => {
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
+    overlay.hidden = false;
+    requestAnimationFrame(() => overlay.classList.add("is-visible"));
+    document.body.classList.add("cart-is-open");
+    closeMobileNav();
+    renderCart();
+  };
+
+  const closeCart = () => {
+    drawer.classList.remove("is-open");
+    drawer.setAttribute("aria-hidden", "true");
+    overlay.classList.remove("is-visible");
+    document.body.classList.remove("cart-is-open");
+    toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", "false"));
+    window.setTimeout(() => {
+      if (!drawer.classList.contains("is-open")) overlay.hidden = true;
+    }, 260);
+  };
+
+  const showToast = (message) => {
+    if (!toast) return;
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.hidden = false;
+    toast.classList.add("is-visible");
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove("is-visible");
+      window.setTimeout(() => {
+        if (!toast.classList.contains("is-visible")) toast.hidden = true;
+      }, 220);
+    }, 2200);
+  };
+
+  addButtons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      const item = {
+        id: (button.dataset.packName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"),
+        name: button.dataset.packName || "Pack",
+        reviews: button.dataset.packReviews || "Reseñas",
+        price: Number(button.dataset.packPrice || 0),
+        quantity: 1,
+      };
+      const existing = cart.find((cartItem) => cartItem.id === item.id);
+      if (existing) existing.quantity = (existing.quantity || 1) + 1;
+      else cart.push(item);
+      saveCart();
+      renderCart();
+      button.classList.add("is-added");
+      window.setTimeout(() => button.classList.remove("is-added"), 620);
+      showToast(`${item.name} añadido al carrito`);
+      openCart();
+    });
+  });
+
+  itemsNode?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-cart]");
+    if (!removeButton) return;
+    cart = cart.filter((item) => item.id !== removeButton.dataset.removeCart);
+    saveCart();
+    renderCart();
+  });
+
+  toggles.forEach((button) => button.addEventListener("click", () => {
+    if (drawer.classList.contains("is-open")) closeCart();
+    else openCart();
+  }));
+  closeButtons.forEach((button) => button.addEventListener("click", closeCart));
+  overlay.addEventListener("click", closeCart);
+  continueNode?.addEventListener("click", closeCart);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && drawer.classList.contains("is-open")) closeCart();
+  });
+
+  readCart();
+  renderCart();
+};
+
 const initWhatsappFloat = () => {
   const button = document.querySelector("[data-whatsapp-float]");
   if (!button) return;
@@ -1172,6 +1236,7 @@ const init = () => {
 
   animateLoader();
   initNavigation();
+  initCart();
   if (hasHomeContent) {
     initHeroRotatingWord();
     initPhoneTime();

@@ -45,46 +45,26 @@
             <a href="./blogs/" data-nav-link>Blogs</a>
             <a href="#planes" data-nav-link>Precios</a>
             <a href="#contacto" data-nav-link>Contáctanos</a>
-            <div class="money-dropdown" data-money-dropdown>
-              <button class="money-trigger" type="button" aria-haspopup="menu" aria-expanded="false" data-money-trigger>
-                <span>Gana dinero</span>
-                <svg class="money-trigger__chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-                  <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
-                </svg>
-              </button>
-              <div class="money-menu" role="menu" data-money-menu>
-                <a class="money-menu__item" href="./ganar-dinero-con-resenas/index.html" role="menuitem">
-                  <span class="money-menu__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                      <path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.9.5 5.2L12 16.1l-4.7 2.1.5-5.2-3.5-3.9L9.4 8 12 3.5Z" />
-                      <path d="M8.8 12.4h6.4" />
-                    </svg>
-                  </span>
-                  <span>
-                    <strong>¿Cómo ganar más dinero con reseñas?</strong>
-                    <small>Descubre cómo una ficha con más confianza puede ayudarte a convertir más búsquedas en clientes.</small>
-                  </span>
-                </a>
-                <a class="money-menu__item" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer" role="menuitem">
-                  <span class="money-menu__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                      <path d="M6 18.2 4.8 21l3-1A8.2 8.2 0 1 0 3.8 13" />
-                      <path d="M8.8 9.2c.2 3 2.7 5.3 5.7 5.8l1.4-1.4-2.2-1-1 1c-1.1-.4-2-1.3-2.4-2.4l1-1-1-2.2-1.5 1.2Z" />
-                    </svg>
-                  </span>
-                  <span>
-                    <strong>Empezar a ganar dinero ahora</strong>
-                    <small>Habla con nosotros para colaborar y recibir más información.</small>
-                  </span>
-                </a>
-              </div>
-            </div>
-          </div>
 
+          </div>
           <div class="nav-auth">
+            <button class="cart-button cart-button--desktop" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+              <span class="cart-count" data-cart-count hidden>0</span>
+            </button>
             <a class="nav-login" href="login.html">Iniciar sesión</a>
             <a class="nav-register" href="register.html">Registrarse</a>
           </div>
+          <button class="cart-button cart-button--mobile" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+              <span class="cart-count" data-cart-count hidden>0</span>
+            </button>
 
           <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
             <span></span>
@@ -97,47 +77,55 @@
           <a href="./blogs/">Blogs</a>
           <a href="#planes">Precios</a>
           <a href="#contacto">Contáctanos</a>
-          <div class="mobile-money-dropdown" data-money-dropdown>
-            <button class="mobile-money-trigger" type="button" aria-haspopup="menu" aria-expanded="false" data-money-trigger>
-              <span>Gana dinero</span>
-              <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-                <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
+          <button class="mobile-cart-link" type="button" data-cart-toggle>
+            <span class="mobile-cart-link__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
               </svg>
-            </button>
-            <div class="mobile-money-menu" role="menu" data-money-menu>
-              <a class="money-menu__item" href="./ganar-dinero-con-resenas/index.html" role="menuitem">
-                <span class="money-menu__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false">
-                    <path d="M12 3.5 14.6 8l5.1 1.1-3.5 3.9.5 5.2L12 16.1l-4.7 2.1.5-5.2-3.5-3.9L9.4 8 12 3.5Z" />
-                    <path d="M8.8 12.4h6.4" />
-                  </svg>
-                </span>
-                <span>
-                  <strong>¿Cómo ganar más dinero con reseñas?</strong>
-                  <small>Descubre cómo una ficha con más confianza puede ayudarte a convertir más búsquedas en clientes.</small>
-                </span>
-              </a>
-              <a class="money-menu__item" href="https://wa.me/34603826428?text=Hola%2C%20nos%20gustar%C3%ADa%20trabajar%20con%20ustedes%20y%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer" role="menuitem">
-                <span class="money-menu__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false">
-                    <path d="M6 18.2 4.8 21l3-1A8.2 8.2 0 1 0 3.8 13" />
-                    <path d="M8.8 9.2c.2 3 2.7 5.3 5.7 5.8l1.4-1.4-2.2-1-1 1c-1.1-.4-2-1.3-2.4-2.4l1-1-1-2.2-1.5 1.2Z" />
-                  </svg>
-                </span>
-                <span>
-                  <strong>Empezar a ganar dinero ahora</strong>
-                  <small>Habla con nosotros para colaborar y recibir más información.</small>
-                </span>
-              </a>
-            </div>
-          </div>
+            </span>
+            <span>Carrito</span>
+            <span class="mobile-cart-count" data-cart-count hidden>0</span>
+          </button>
+
           <a href="login.html">Iniciar sesión</a>
           <a class="mobile-register" href="register.html">Registrarse</a>
         </div>
       </nav>
     </header>
 
-    <main>
+    <div class="cart-overlay" data-cart-overlay hidden></div>
+    <aside class="cart-drawer" aria-label="Carrito de compra" aria-hidden="true" data-cart-drawer>
+      <div class="cart-drawer__glow" aria-hidden="true"></div>
+      <header class="cart-drawer__header">
+        <div>
+          <span>Carrito</span>
+          <h2>Tu pedido</h2>
+        </div>
+        <button class="cart-close" type="button" aria-label="Cerrar carrito" data-cart-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="cart-drawer__body" data-cart-body>
+        <div class="cart-empty" data-cart-empty>
+          <div class="cart-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" /><path d="M9.2 19.2h.01M16.2 19.2h.01" /></svg>
+          </div>
+          <h3>Tu carrito está vacío</h3>
+          <p>Elige un pack para empezar.</p>
+          <a class="button button-primary cart-empty__button" href="#planes" data-cart-prices>Ver precios</a>
+        </div>
+        <div class="cart-list" data-cart-items></div>
+      </div>
+      <footer class="cart-summary" data-cart-summary hidden>
+        <div class="cart-total-row"><span>Total</span><strong data-cart-total>0 €</strong></div>
+        <a class="button button-primary cart-checkout" href="#" target="_blank" rel="noopener noreferrer" data-cart-checkout>Finalizar pedido</a>
+        <button class="button button-secondary cart-continue" type="button" data-cart-continue>Seguir viendo packs</button>
+      </footer>
+    </aside>
+    <div class="cart-toast" role="status" aria-live="polite" data-cart-toast hidden></div>
+
+<main>
       <section class="hero" id="inicio">
         <div class="hero-grid" aria-hidden="true" data-depth="0.04"></div>
 
@@ -689,7 +677,7 @@
               <li>Cuenta real</li>
               <li>Pago seguro</li>
             </ul>
-            <a class="button button-secondary card-button magnetic" href="#contacto">Probar con 1 reseña</a>
+            <a class="button button-secondary card-button magnetic" href="#contacto" data-add-cart data-pack-name="Ámbar" data-pack-reviews="1 reseña" data-pack-price="4">Probar con 1 reseña</a>
           </article>
 
           <article class="price-card reveal reveal-item hover-glow">
@@ -718,7 +706,7 @@
               <li>Cuentas reales geolocalizadas</li>
               <li>Garantía de 1 mes</li>
             </ul>
-            <a class="button button-secondary card-button magnetic" href="#contacto">Empezar con 10 reseñas</a>
+            <a class="button button-secondary card-button magnetic" href="#contacto" data-add-cart data-pack-name="Amatista" data-pack-reviews="10 reseñas" data-pack-price="37">Empezar con 10 reseñas</a>
           </article>
 
           <article class="price-card featured reveal reveal-item hover-glow">
@@ -756,7 +744,7 @@
               <li>Confidencialidad incluida</li>
               <li>Pago seguro</li>
             </ul>
-            <a class="button button-primary card-button magnetic" href="#contacto">Elegir pack recomendado</a>
+            <a class="button button-primary card-button magnetic" href="#contacto" data-add-cart data-pack-name="Diamante" data-pack-reviews="25 reseñas" data-pack-price="87">Elegir pack recomendado</a>
           </article>
 
           <article class="price-card reveal reveal-item hover-glow">
@@ -785,7 +773,7 @@
               <li>Garantía de publicación</li>
               <li>Pago seguro</li>
             </ul>
-            <a class="button button-secondary card-button magnetic" href="#contacto">Acelerar autoridad</a>
+            <a class="button button-secondary card-button magnetic" href="#contacto" data-add-cart data-pack-name="Rubí" data-pack-reviews="50 reseñas" data-pack-price="166">Acelerar autoridad</a>
           </article>
         </div>
 
