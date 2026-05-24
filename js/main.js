@@ -725,6 +725,7 @@ const initCart = () => {
   const totalNode = document.querySelector("[data-cart-total]");
   const checkoutNode = document.querySelector("[data-cart-checkout]");
   const continueNode = document.querySelector("[data-cart-continue]");
+  const pricesLinks = [...document.querySelectorAll("[data-cart-prices]")];
   const toast = document.querySelector("[data-cart-toast]");
   const addButtons = [...document.querySelectorAll("[data-add-cart]")];
   const storageKey = "destroyerReviewsCart";
@@ -814,6 +815,28 @@ const initCart = () => {
     }, 260);
   };
 
+  const scrollToPricing = () => {
+    const pricingGrid = document.querySelector(".pricing-grid-wrap") || document.querySelector(".pricing-grid");
+    const pricingSection = document.querySelector("#planes") || document.querySelector(".pricing-section");
+    const target = pricingGrid || pricingSection;
+    if (!target) return;
+
+    const headerHeight = header?.offsetHeight || 76;
+    const viewportPadding = window.innerWidth < 768 ? 18 : 28;
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = targetRect.top + window.scrollY;
+    const targetCenterOffset = Math.max(0, (window.innerHeight - targetRect.height) * 0.28);
+    const top = Math.max(0, targetTop - headerHeight - viewportPadding - targetCenterOffset);
+
+    if (lenis && !prefersReducedMotion) {
+      lenisLastActive = performance.now();
+      requestLenisFrame();
+      lenis.scrollTo(top, { duration: 0.95, easing: (t) => 1 - Math.pow(1 - t, 3) });
+    } else {
+      window.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    }
+  };
+
   const showToast = (message) => {
     if (!toast) return;
     window.clearTimeout(toastTimer);
@@ -831,6 +854,8 @@ const initCart = () => {
   addButtons.forEach((button) => {
     button.addEventListener("click", (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      const currentScroll = window.scrollY;
       const item = {
         id: (button.dataset.packName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"),
         name: button.dataset.packName || "Pack",
@@ -847,6 +872,11 @@ const initCart = () => {
       window.setTimeout(() => button.classList.remove("is-added"), 620);
       showToast(`${item.name} añadido al carrito`);
       openCart();
+      requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - currentScroll) > 2) {
+          window.scrollTo(0, currentScroll);
+        }
+      });
     });
   });
 
@@ -865,6 +895,13 @@ const initCart = () => {
   closeButtons.forEach((button) => button.addEventListener("click", closeCart));
   overlay.addEventListener("click", closeCart);
   continueNode?.addEventListener("click", closeCart);
+  pricesLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeCart();
+      window.setTimeout(scrollToPricing, prefersReducedMotion ? 0 : 220);
+    });
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && drawer.classList.contains("is-open")) closeCart();
   });
