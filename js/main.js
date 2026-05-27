@@ -727,11 +727,14 @@ const initCart = () => {
   const continueNode = document.querySelector("[data-cart-continue]");
   const pricesLinks = [...document.querySelectorAll("[data-cart-prices]")];
   const toast = document.querySelector("[data-cart-toast]");
+  const drawerNotice = document.querySelector("[data-cart-notice]");
   const addButtons = [...document.querySelectorAll("[data-add-cart]")];
   const storageKey = "destroyerReviewsCart";
   const whatsappNumber = "34603826428";
+  const removeAnimationMs = 320;
   let cart = [];
   let toastTimer = null;
+  let noticeTimer = null;
 
   if (!drawer || !overlay) return;
 
@@ -751,6 +754,26 @@ const initCart = () => {
   const formatPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
   const cartCount = () => cart.reduce((total, item) => total + (item.quantity || 1), 0);
   const cartTotal = () => cart.reduce((total, item) => total + (Number(item.price) || 0) * (item.quantity || 1), 0);
+  const packVisuals = {
+    ambar: { image: "assets/icons/packs/ambar.webp", color: "#f59e0b", label: "Ámbar" },
+    amatista: { image: "assets/icons/packs/amatista.webp", color: "#a855f7", label: "Amatista" },
+    diamante: { image: "assets/icons/packs/diamante.webp", color: "#58a6ff", label: "Diamante" },
+    rubi: { image: "assets/icons/packs/rubi.webp", color: "#fb4d6d", label: "Rubí" },
+  };
+
+  const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[char]);
+
+  const getPackVisual = (item) => packVisuals[item.id] || {
+    image: "assets/icons/packs/diamante.webp",
+    color: "#58a6ff",
+    label: item.name || "Pack",
+  };
 
   const updateCheckout = () => {
     if (!checkoutNode) return;
@@ -775,16 +798,28 @@ const initCart = () => {
 
     if (itemsNode) {
       itemsNode.innerHTML = cart.map((item) => `
-        <article class="cart-item">
+        <article class="cart-item" style="--pack-accent: ${getPackVisual(item).color};" data-cart-item="${escapeHtml(item.id)}">
+          <div class="cart-item__icon" aria-hidden="true">
+            <img src="${getPackVisual(item).image}" alt="" loading="lazy" decoding="async" />
+          </div>
           <div class="cart-item__meta">
-            <span>${item.reviews}</span>
-            <h3>${item.name}</h3>
-            <p>${formatPrice(item.price)} · cantidad ${item.quantity || 1}</p>
+            <span class="cart-item__badge">${escapeHtml(item.reviews)}</span>
+            <h3>${escapeHtml(item.name)}</h3>
+            <p>Cantidad ${item.quantity || 1}</p>
           </div>
           <div class="cart-item__side">
             <strong>${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}</strong>
-            <button type="button" aria-label="Eliminar ${item.name}" data-remove-cart="${item.id}">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            <button class="cart-item__remove" type="button" aria-label="Eliminar ${escapeHtml(item.name)}" data-remove-cart="${escapeHtml(item.id)}">
+              <svg class="cart-trash" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <g class="cart-trash__lid">
+                  <path d="M8.5 6.4h7" />
+                  <path d="M10.2 6.4l.55-1.45h2.5l.55 1.45" />
+                </g>
+                <path d="M6.8 8.4h10.4" />
+                <path d="M8.2 8.4l.65 9.25a2 2 0 0 0 2 1.85h2.3a2 2 0 0 0 2-1.85l.65-9.25" />
+                <path d="M10.7 11.15v5.1" />
+                <path d="M13.3 11.15v5.1" />
+              </svg>
             </button>
           </div>
         </article>
@@ -808,6 +843,13 @@ const initCart = () => {
     drawer.classList.remove("is-open");
     drawer.setAttribute("aria-hidden", "true");
     overlay.classList.remove("is-visible");
+    if (drawerNotice) {
+      drawerNotice.classList.remove("is-visible");
+      window.clearTimeout(noticeTimer);
+      window.setTimeout(() => {
+        if (!drawer.classList.contains("is-open")) drawerNotice.hidden = true;
+      }, 220);
+    }
     document.body.classList.remove("cart-is-open");
     toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", "false"));
     window.setTimeout(() => {
@@ -817,9 +859,9 @@ const initCart = () => {
 
   const scrollToPricing = () => {
     const pricingGrid = document.querySelector(".pricing-grid-wrap") || document.querySelector(".pricing-grid");
-    const pricingSection = document.querySelector("#planes") || document.querySelector(".pricing-section");
+    const pricingSection = document.querySelector("#precios") || document.querySelector("#planes") || document.querySelector(".pricing-section");
     const target = pricingGrid || pricingSection;
-    if (!target) return;
+    if (!target) return false;
 
     const headerHeight = header?.offsetHeight || 76;
     const viewportPadding = window.innerWidth < 768 ? 18 : 28;
@@ -835,14 +877,40 @@ const initCart = () => {
     } else {
       window.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
     }
+
+    return true;
+  };
+
+  const goToPricing = (link) => {
+    const fallbackHref = link?.getAttribute("href") || "index.html#planes";
+    closeCart();
+    window.setTimeout(() => {
+      if (scrollToPricing()) return;
+      window.location.href = fallbackHref;
+    }, prefersReducedMotion ? 0 : 220);
   };
 
   const showToast = (message) => {
+    const isDrawerOpen = drawer.classList.contains("is-open");
+    if (isDrawerOpen && drawerNotice) {
+      window.clearTimeout(noticeTimer);
+      drawerNotice.innerHTML = `<span aria-hidden="true">✓</span><strong>${escapeHtml(message)}</strong>`;
+      drawerNotice.hidden = false;
+      requestAnimationFrame(() => drawerNotice.classList.add("is-visible"));
+      noticeTimer = window.setTimeout(() => {
+        drawerNotice.classList.remove("is-visible");
+        window.setTimeout(() => {
+          if (!drawerNotice.classList.contains("is-visible")) drawerNotice.hidden = true;
+        }, 220);
+      }, 1800);
+      return;
+    }
+
     if (!toast) return;
     window.clearTimeout(toastTimer);
-    toast.textContent = message;
+    toast.innerHTML = `<span aria-hidden="true">✓</span><strong>${escapeHtml(message)}</strong>`;
     toast.hidden = false;
-    toast.classList.add("is-visible");
+    requestAnimationFrame(() => toast.classList.add("is-visible"));
     toastTimer = window.setTimeout(() => {
       toast.classList.remove("is-visible");
       window.setTimeout(() => {
@@ -870,8 +938,8 @@ const initCart = () => {
       renderCart();
       button.classList.add("is-added");
       window.setTimeout(() => button.classList.remove("is-added"), 620);
-      showToast(`${item.name} añadido al carrito`);
       openCart();
+      showToast(`${item.name} añadido al carrito`);
       requestAnimationFrame(() => {
         if (Math.abs(window.scrollY - currentScroll) > 2) {
           window.scrollTo(0, currentScroll);
@@ -883,9 +951,15 @@ const initCart = () => {
   itemsNode?.addEventListener("click", (event) => {
     const removeButton = event.target.closest("[data-remove-cart]");
     if (!removeButton) return;
-    cart = cart.filter((item) => item.id !== removeButton.dataset.removeCart);
-    saveCart();
-    renderCart();
+    const itemNode = removeButton.closest(".cart-item");
+    if (!itemNode || itemNode.classList.contains("is-removing")) return;
+    itemNode.style.setProperty("--cart-item-height", `${itemNode.offsetHeight}px`);
+    itemNode.classList.add("is-removing");
+    window.setTimeout(() => {
+      cart = cart.filter((item) => item.id !== removeButton.dataset.removeCart);
+      saveCart();
+      renderCart();
+    }, removeAnimationMs);
   });
 
   toggles.forEach((button) => button.addEventListener("click", () => {
@@ -898,10 +972,13 @@ const initCart = () => {
   pricesLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
-      closeCart();
-      window.setTimeout(scrollToPricing, prefersReducedMotion ? 0 : 220);
+      goToPricing(link);
     });
   });
+
+  if (window.location.hash === "#planes" || window.location.hash === "#precios") {
+    window.setTimeout(scrollToPricing, 260);
+  }
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && drawer.classList.contains("is-open")) closeCart();
   });
