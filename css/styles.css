@@ -8875,7 +8875,11 @@ body.is-page-hidden *::after {
   }
 
   .liquid-nav a,
-  .nav-mobile-toggle {
+  .nav-mobile-toggle,
+  .promo-bar a,
+  .cart-button,
+  .blog-modal__close,
+  .cart-close {
     cursor: pointer;
   }
 }
