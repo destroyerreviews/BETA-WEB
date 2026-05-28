@@ -12,7 +12,6 @@ const navSectionLinks = navLinks.filter((link) => {
 const navSections = navSectionLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
 const motionPanels = [...document.querySelectorAll("[data-motion-panel]")];
 const depthLayers = [...document.querySelectorAll("[data-depth]")];
-const proofCards = [...document.querySelectorAll(".proof-card")];
 const authShell = document.querySelector(".auth-shell");
 const authBackground = document.querySelector(".auth-background");
 const authCard = document.querySelector(".auth-card");
@@ -36,7 +35,6 @@ let lenisLastActive = 0;
 let requestLenisFrame = () => {};
 let updateProcessTimeline = () => {};
 let visibleMotionPanels = new Set(motionPanels);
-let visibleProofCards = new Set(proofCards);
 let visibleDepthLayers = new Set(depthLayers);
 let lastHeaderScrolled = null;
 let lastScrollProgress = -1;
@@ -569,7 +567,6 @@ const initMotionVisibility = () => {
 
   observeGroup(depthLayers, visibleDepthLayers, "240px 0px");
   observeGroup(motionPanels, visibleMotionPanels);
-  observeGroup(proofCards, visibleProofCards);
 };
 
 const updateScrollMotion = () => {
@@ -590,12 +587,6 @@ const updateScrollMotion = () => {
     setStyleVarIfChanged(panel, "--motion-y", clamp(distance * -30 + velocity * 5, -28, 28));
   });
 
-  visibleProofCards.forEach((card) => {
-    const index = proofCards.indexOf(card);
-    const rect = card.getBoundingClientRect();
-    const progress = clamp((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0, 1);
-    setStyleVarIfChanged(card, "--proof-y", (0.5 - progress) * (index === 0 ? 24 : 36));
-  });
 };
 
 const requestScrollMotion = () => {
@@ -1336,7 +1327,6 @@ const initPerfDebug = () => {
       scrollFrameActive: Boolean(scrollStateFrame || motionFrame || authMotionFrame),
       visibleDepthLayers: visibleDepthLayers.size,
       visibleMotionPanels: visibleMotionPanels.size,
-      visibleProofCards: visibleProofCards.size,
       pausedAnimations: document.querySelectorAll(".is-paused, .is-animation-paused").length,
       decodedImages: [...document.images].filter((image) => image.complete).length,
       totalImages: document.images.length,
