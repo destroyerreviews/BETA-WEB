@@ -4578,14 +4578,18 @@ body.cart-is-open .whatsapp-float {
   gap: 9px;
 }
 
+.proof-main figcaption {
+  bottom: clamp(40px, 4vw, 52px);
+}
+
 .proof-badge {
   display: inline-flex;
   width: fit-content;
   padding: 5px 7px 5px 8px;
-  border: 1px solid rgba(60, 120, 255, 0.35);
+  border: 1px solid rgba(84, 133, 255, 0.22);
   border-radius: 6px;
-  background: rgba(8, 14, 28, 0.58);
-  color: #dbe7ff;
+  background: rgba(5, 9, 18, 0.68);
+  color: #edf4ff;
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.12em;
@@ -4611,6 +4615,12 @@ body.cart-is-open .whatsapp-float {
   color: rgba(255, 255, 255, 0.76);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.proof-card:not(.proof-main) figcaption p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  line-height: 1.58;
 }
 
 .proof-main figcaption p {
