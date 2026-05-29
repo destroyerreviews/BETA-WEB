@@ -228,26 +228,213 @@ const initTrialModal = () => {
   const modal = document.querySelector("[data-trial-modal]");
   const overlay = document.querySelector("[data-trial-overlay]");
   const closeButtons = [...document.querySelectorAll("[data-trial-close]")];
-  const primaryAction = modal?.querySelector("[data-trial-primary]");
   let lastFocusedElement = null;
   let closeTimer = null;
+  let activeStep = 1;
+  let activeAccount = "register";
 
   if (!triggers.length || !modal || !overlay) return;
+
+  const steps = [...modal.querySelectorAll("[data-trial-step]")];
+  const progressItems = [...modal.querySelectorAll("[data-trial-progress]")];
+  const accountButtons = [...modal.querySelectorAll("[data-trial-account], [data-trial-account-switch]")];
+  const accountPanels = [...modal.querySelectorAll("[data-trial-account-panel]")];
+  const registerForm = modal.querySelector('[data-trial-account-panel="register"]');
+  const loginForm = modal.querySelector('[data-trial-account-panel="login"]');
+  const localForm = modal.querySelector("[data-trial-local-form]");
+  const teamWritesCheckbox = modal.querySelector("[data-trial-team-writes]");
+  const reviewTextarea = localForm?.elements?.reviewText;
+  const backButton = modal.querySelector("[data-trial-back]");
+  const doneButton = modal.querySelector("[data-trial-done]");
+  const forgotLink = modal.querySelector("[data-trial-forgot]");
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const getFocusableElements = () =>
+    [
+      ...modal.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter((element) => {
+      const step = element.closest("[data-trial-step]");
+      const panel = element.closest("[data-trial-account-panel]");
+      return (!step || step.classList.contains("is-active")) && (!panel || panel.classList.contains("is-active"));
+    });
+
+  const focusFirstField = () => {
+    window.setTimeout(() => {
+      const firstFocusable = getFocusableElements()[0] || modal;
+      firstFocusable.focus?.({ preventScroll: true });
+    }, 70);
+  };
+
+  const getField = (form, name) => form?.elements?.[name] || null;
+
+  const getErrorNode = (form, name) =>
+    form?.querySelector(`[data-trial-error-for="${name}"]`) || modal.querySelector(`[data-trial-error-for="${name}"]`);
+
+  const setFieldError = (form, name, message) => {
+    const field = getField(form, name);
+    const error = getErrorNode(form, name);
+    if (field?.closest(".trial-field")) field.closest(".trial-field").classList.add("is-invalid");
+    if (error) error.textContent = message;
+  };
+
+  const clearFieldError = (form, name) => {
+    const field = getField(form, name);
+    const error = getErrorNode(form, name);
+    if (field?.closest(".trial-field")) field.closest(".trial-field").classList.remove("is-invalid");
+    if (error) error.textContent = "";
+  };
+
+  const clearFormErrors = (form) => {
+    if (!form) return;
+    form.querySelectorAll(".trial-field.is-invalid").forEach((field) => field.classList.remove("is-invalid"));
+    form.querySelectorAll("[data-trial-error-for]").forEach((error) => {
+      error.textContent = "";
+    });
+  };
+
+  const setStep = (stepNumber) => {
+    activeStep = stepNumber;
+    steps.forEach((step) => {
+      const isActive = Number(step.dataset.trialStep) === stepNumber;
+      step.classList.toggle("is-active", isActive);
+      step.setAttribute("aria-hidden", String(!isActive));
+    });
+
+    progressItems.forEach((item) => {
+      const itemStep = Number(item.dataset.trialProgress);
+      item.classList.toggle("is-active", itemStep === stepNumber);
+      item.classList.toggle("is-complete", itemStep < stepNumber);
+    });
+
+    focusFirstField();
+  };
+
+  const setAccountMode = (mode) => {
+    activeAccount = mode;
+    accountButtons.forEach((button) => {
+      const isActive = button.dataset.trialAccount === mode || button.dataset.trialAccountSwitch === mode;
+      button.classList.toggle("is-active", isActive);
+      if (button.hasAttribute("role")) button.setAttribute("aria-selected", String(isActive));
+    });
+    accountPanels.forEach((panel) => {
+      const isActive = panel.dataset.trialAccountPanel === mode;
+      panel.classList.toggle("is-active", isActive);
+      panel.setAttribute("aria-hidden", String(!isActive));
+    });
+    clearFormErrors(registerForm);
+    clearFormErrors(loginForm);
+    focusFirstField();
+  };
+
+  const updateReviewPreference = () => {
+    if (!teamWritesCheckbox || !reviewTextarea) return;
+    const field = reviewTextarea.closest(".trial-field");
+    const teamWrites = teamWritesCheckbox.checked;
+    reviewTextarea.disabled = teamWrites;
+    reviewTextarea.required = !teamWrites;
+    reviewTextarea.placeholder = teamWrites
+      ? "Nuestro equipo preparará un texto natural y cuidado."
+      : "Ejemplo: Buen trato, servicio rápido y atención profesional.";
+    field?.classList.toggle("is-disabled", teamWrites);
+    if (teamWrites) {
+      reviewTextarea.value = "";
+      clearFieldError(localForm, "reviewText");
+    }
+  };
+
+  const resetTrial = () => {
+    modal.querySelectorAll("form").forEach((form) => {
+      form.reset();
+      clearFormErrors(form);
+    });
+    setAccountMode("register");
+    updateReviewPreference();
+    setStep(1);
+  };
+
+  const validateRegister = () => {
+    clearFormErrors(registerForm);
+    let isValid = true;
+    const name = getField(registerForm, "name")?.value.trim() || "";
+    const email = getField(registerForm, "email")?.value.trim() || "";
+    const password = getField(registerForm, "password")?.value || "";
+    const confirmPassword = getField(registerForm, "confirmPassword")?.value || "";
+    const terms = getField(registerForm, "terms")?.checked;
+
+    if (!name) {
+      setFieldError(registerForm, "name", "Introduce tu nombre.");
+      isValid = false;
+    }
+    if (!emailPattern.test(email)) {
+      setFieldError(registerForm, "email", "Introduce un email válido.");
+      isValid = false;
+    }
+    if (password.length < 8) {
+      setFieldError(registerForm, "password", "La contraseña debe tener al menos 8 caracteres.");
+      isValid = false;
+    }
+    if (confirmPassword !== password || !confirmPassword) {
+      setFieldError(registerForm, "confirmPassword", "Las contraseñas deben coincidir.");
+      isValid = false;
+    }
+    if (!terms) {
+      setFieldError(registerForm, "terms", "Debes aceptar los términos para continuar.");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
+  const validateLogin = () => {
+    clearFormErrors(loginForm);
+    let isValid = true;
+    const email = getField(loginForm, "email")?.value.trim() || "";
+    const password = getField(loginForm, "password")?.value || "";
+
+    if (!emailPattern.test(email)) {
+      setFieldError(loginForm, "email", "Introduce un email válido.");
+      isValid = false;
+    }
+    if (!password) {
+      setFieldError(loginForm, "password", "Introduce tu contraseña.");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
+  const validateLocal = () => {
+    clearFormErrors(localForm);
+    let isValid = true;
+    const mapsUrl = getField(localForm, "mapsUrl")?.value.trim() || "";
+    const reviewText = reviewTextarea?.value.trim() || "";
+
+    if (!mapsUrl) {
+      setFieldError(localForm, "mapsUrl", "Pega el enlace de tu perfil de Google Maps.");
+      isValid = false;
+    }
+    if (!teamWritesCheckbox?.checked && !reviewText) {
+      setFieldError(localForm, "reviewText", "Escribe una orientación o marca que lo redacte el equipo.");
+      isValid = false;
+    }
+
+    return isValid;
+  };
 
   const openTrialModal = () => {
     window.clearTimeout(closeTimer);
     lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeMobileNav();
+    resetTrial();
     modal.hidden = false;
     overlay.hidden = false;
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("trial-modal-is-open");
-
-    requestAnimationFrame(() => {
-      overlay.classList.add("is-visible");
-      modal.classList.add("is-open");
-      (primaryAction || modal).focus({ preventScroll: true });
-    });
+    overlay.classList.add("is-visible");
+    modal.classList.add("is-open");
+    focusFirstField();
   };
 
   const closeTrialModal = () => {
@@ -263,6 +450,41 @@ const initTrialModal = () => {
     }, 280);
     lastFocusedElement?.focus?.({ preventScroll: true });
   };
+
+  accountButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const mode = button.dataset.trialAccount || button.dataset.trialAccountSwitch;
+      if (mode) setAccountMode(mode);
+    });
+  });
+
+  registerForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (validateRegister()) setStep(2);
+  });
+
+  loginForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (validateLogin()) setStep(2);
+  });
+
+  localForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (validateLocal()) setStep(3);
+  });
+
+  modal.querySelectorAll("input, textarea").forEach((field) => {
+    field.addEventListener("input", () => {
+      const form = field.closest("form");
+      if (form && field.name) clearFieldError(form, field.name);
+      if (field === reviewTextarea) updateReviewPreference();
+    });
+  });
+
+  teamWritesCheckbox?.addEventListener("change", updateReviewPreference);
+  backButton?.addEventListener("click", () => setStep(1));
+  doneButton?.addEventListener("click", closeTrialModal);
+  forgotLink?.addEventListener("click", (event) => event.preventDefault());
 
   triggers.forEach((trigger) => {
     trigger.addEventListener("click", (event) => {
@@ -282,6 +504,18 @@ const initTrialModal = () => {
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && modal.classList.contains("is-open")) closeTrialModal();
+    if (event.key !== "Tab" || !modal.classList.contains("is-open")) return;
+    const focusableElements = getFocusableElements();
+    if (!focusableElements.length) return;
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
   });
 };
 

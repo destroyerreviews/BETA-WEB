@@ -140,36 +140,134 @@
       <button class="trial-modal__close" type="button" aria-label="Cerrar" data-trial-close>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
-      <header class="trial-modal__header">
+      <header class="trial-modal__top">
         <a class="brand-logo trial-modal__brand" href="index.html" aria-label="Destroyer Reviews">
           <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--auth" width="1495" height="350" loading="lazy" decoding="async" />
         </a>
-        <span class="trial-modal__pill">2 reseñas de prueba · Sin compromiso</span>
-        <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
-        <p>Crea una cuenta o inicia sesión para activar tu prueba de 2 reseñas y seguir el estado desde tu panel.</p>
       </header>
-      <div class="trial-modal__options">
-        <article class="trial-option trial-option--primary">
-          <span class="trial-option__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3.5 19 7v5.2c0 4.3-2.7 7.4-7 8.8-4.3-1.4-7-4.5-7-8.8V7l7-3.5Z" /><path d="M9 12.1l1.9 1.9 4.2-4.7" /></svg>
-          </span>
-          <h3>Soy nuevo</h3>
-          <p>Crea tu cuenta y solicita la prueba desde tu panel privado.</p>
-          <a class="button button-primary" href="register.html" data-trial-primary>Crear cuenta y pedir prueba</a>
-        </article>
-        <article class="trial-option">
-          <span class="trial-option__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><path d="M8.5 11V8.2a3.5 3.5 0 0 1 7 0V11" /><path d="M6.8 11h10.4a1.8 1.8 0 0 1 1.8 1.8v5.4a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 18.2v-5.4A1.8 1.8 0 0 1 6.8 11Z" /><path d="M12 15v1.8" /></svg>
-          </span>
-          <h3>Ya tengo cuenta</h3>
-          <p>Accede a tu panel para solicitar o revisar tu prueba.</p>
-          <a class="button button-secondary" href="login.html">Iniciar sesión</a>
-        </article>
+
+      <div class="trial-progress" aria-label="Progreso de solicitud">
+        <span class="is-active" data-trial-progress="1"><b>1</b> Cuenta</span>
+        <span data-trial-progress="2"><b>2</b> Local</span>
+        <span data-trial-progress="3"><b>3</b> Confirmación</span>
       </div>
-      <p class="trial-modal__whatsapp">
-        También puedes contactarnos por WhatsApp si prefieres ayuda directa.
-        <a href="https://wa.me/34603826428?text=Hola%2C%20quiero%20solicitar%20la%20prueba%20gratuita%20de%202%20rese%C3%B1as" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
-      </p>
+
+      <div class="trial-steps">
+        <section class="trial-step is-active" data-trial-step="1">
+          <span class="trial-modal__pill">2 reseñas de prueba · Sin compromiso</span>
+          <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
+          <p class="trial-step__lead">Crea una cuenta o accede para activar tu prueba de 2 reseñas.</p>
+
+          <div class="trial-account-tabs" role="tablist" aria-label="Acceso a la prueba">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-trial-account="register">Crear cuenta</button>
+            <button type="button" role="tab" aria-selected="false" data-trial-account="login">Iniciar sesión</button>
+          </div>
+
+          <form class="trial-account-form is-active" novalidate data-trial-account-panel="register">
+            <div class="trial-form-grid">
+              <label class="trial-field">
+                <span>Nombre</span>
+                <input type="text" name="name" autocomplete="name" placeholder="Tu nombre" />
+                <small data-trial-error-for="name"></small>
+              </label>
+              <label class="trial-field">
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="email" placeholder="tu@email.com" />
+                <small data-trial-error-for="email"></small>
+              </label>
+              <label class="trial-field">
+                <span>WhatsApp opcional</span>
+                <input type="tel" name="whatsapp" autocomplete="tel" placeholder="+34 600 000 000" />
+                <small data-trial-error-for="whatsapp"></small>
+              </label>
+              <label class="trial-field">
+                <span>Contraseña</span>
+                <input type="password" name="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+                <small data-trial-error-for="password"></small>
+              </label>
+              <label class="trial-field trial-field--wide">
+                <span>Confirmar contraseña</span>
+                <input type="password" name="confirmPassword" autocomplete="new-password" placeholder="Repite la contraseña" />
+                <small data-trial-error-for="confirmPassword"></small>
+              </label>
+            </div>
+            <label class="trial-check">
+              <input type="checkbox" name="terms" />
+              <span class="trial-check__box" aria-hidden="true"></span>
+              <span>Acepto los términos y la política de privacidad</span>
+            </label>
+            <small class="trial-form-error" data-trial-error-for="terms"></small>
+            <button class="button button-primary trial-submit" type="submit">Continuar</button>
+            <p class="trial-switch">¿Ya tienes cuenta? <button type="button" data-trial-account-switch="login">Iniciar sesión</button></p>
+          </form>
+
+          <form class="trial-account-form" novalidate data-trial-account-panel="login">
+            <label class="trial-field">
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="tu@email.com" />
+              <small data-trial-error-for="email"></small>
+            </label>
+            <label class="trial-field">
+              <span>Contraseña</span>
+              <input type="password" name="password" autocomplete="current-password" placeholder="Tu contraseña" />
+              <small data-trial-error-for="password"></small>
+            </label>
+            <div class="trial-row">
+              <label class="trial-check trial-check--compact">
+                <input type="checkbox" name="remember" />
+                <span class="trial-check__box" aria-hidden="true"></span>
+                <span>Recordarme</span>
+              </label>
+              <a href="#" data-trial-forgot>¿Has olvidado tu contraseña?</a>
+            </div>
+            <button class="button button-primary trial-submit" type="submit">Entrar y continuar</button>
+            <p class="trial-switch">¿No tienes cuenta? <button type="button" data-trial-account-switch="register">Crear cuenta</button></p>
+          </form>
+        </section>
+
+        <section class="trial-step" data-trial-step="2" aria-hidden="true">
+          <h2>Cuéntanos dónde activar la prueba</h2>
+          <p class="trial-step__lead">Necesitamos el enlace de tu perfil de Google Maps y una orientación para preparar la reseña.</p>
+          <form class="trial-local-form" novalidate data-trial-local-form>
+            <label class="trial-field trial-field--wide">
+              <span>Enlace de tu local en Google Maps</span>
+              <input type="url" name="mapsUrl" placeholder="Pega aquí el enlace de tu perfil de Google Maps" />
+              <small data-trial-error-for="mapsUrl"></small>
+            </label>
+            <label class="trial-field trial-field--wide">
+              <span>Texto que te gustaría destacar</span>
+              <textarea name="reviewText" rows="3" placeholder="Ejemplo: Buen trato, servicio rápido y atención profesional."></textarea>
+              <small data-trial-error-for="reviewText"></small>
+            </label>
+            <label class="trial-check">
+              <input type="checkbox" name="teamWrites" data-trial-team-writes />
+              <span class="trial-check__box" aria-hidden="true"></span>
+              <span>Prefiero que el equipo redacte el texto por mí</span>
+            </label>
+            <label class="trial-field trial-field--wide">
+              <span>Notas adicionales</span>
+              <textarea name="notes" rows="2" placeholder="Indica cualquier detalle importante sobre tu negocio, servicio o tono."></textarea>
+              <small data-trial-error-for="notes"></small>
+            </label>
+            <div class="trial-actions">
+              <button class="button button-secondary" type="button" data-trial-back>Volver</button>
+              <button class="button button-primary" type="submit">Enviar solicitud</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="trial-step trial-step--success" data-trial-step="3" aria-hidden="true">
+          <span class="trial-success-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="m6.8 12.4 3.4 3.4 7-7.6" /></svg>
+          </span>
+          <h2>Perfecto, solicitud recibida</h2>
+          <p class="trial-step__lead">Revisaremos tu perfil y prepararemos la prueba. En 24–48 h recibirás una actualización sobre el estado de tu solicitud.</p>
+          <div class="trial-actions trial-actions--center">
+            <button class="button button-primary" type="button" data-trial-done>Entendido</button>
+            <a class="button button-secondary" href="https://wa.me/34603826428?text=Hola%2C%20quiero%20consultar%20el%20estado%20de%20mi%20prueba%20gratuita" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+          </div>
+        </section>
+      </div>
     </section>
 
 <main>
