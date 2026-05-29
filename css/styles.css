@@ -3499,6 +3499,244 @@ body.trial-modal-is-open .whatsapp-float {
   }
 }
 
+.trial-modal {
+  border-color: rgba(196, 211, 255, 0.13);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.022) 52%, rgba(48, 92, 190, 0.045)),
+    rgba(5, 8, 19, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 0 0 1px rgba(72, 103, 180, 0.055),
+    0 26px 82px rgba(0, 0, 0, 0.58),
+    0 0 54px rgba(37, 99, 255, 0.095);
+}
+
+.trial-modal__glow,
+.trial-modal::after,
+.trial-progress::before {
+  display: none;
+}
+
+.trial-modal::before {
+  left: 26px;
+  right: 26px;
+  opacity: 0.34;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+}
+
+.trial-modal-overlay {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(36, 88, 255, 0.12), transparent 40%),
+    rgba(0, 0, 0, 0.72);
+}
+
+.trial-progress {
+  gap: 8px;
+}
+
+.trial-progress span {
+  min-height: 31px;
+  border-color: rgba(255, 255, 255, 0.075);
+  color: rgba(221, 230, 250, 0.56);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014)),
+    rgba(3, 6, 16, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.trial-progress span.is-active {
+  border-color: rgba(118, 154, 255, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.024)),
+    rgba(35, 68, 150, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    0 10px 28px rgba(0, 0, 0, 0.16);
+}
+
+.trial-progress span.is-active b,
+.trial-progress span.is-complete b {
+  background: linear-gradient(180deg, #5d86ff, #1f49ff);
+  box-shadow: 0 0 12px rgba(37, 99, 255, 0.24);
+}
+
+.trial-account-tabs {
+  width: min(100%, 520px);
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.012)),
+    rgba(2, 5, 13, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.052);
+}
+
+.trial-account-tabs::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.092), rgba(255, 255, 255, 0.026)),
+    rgba(42, 78, 170, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.trial-socials {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trial-social-button {
+  position: relative;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 999px;
+  color: rgba(238, 244, 255, 0.88);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    rgba(7, 11, 25, 0.66);
+  font-size: 12.5px;
+  font-weight: 850;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  transition:
+    transform 210ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 210ms ease,
+    background 210ms ease,
+    box-shadow 210ms ease;
+}
+
+.trial-social-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 22%, rgba(255, 255, 255, 0.105), transparent 78%);
+  transform: translateX(-120%);
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.trial-social-button:hover,
+.trial-social-button:focus-visible,
+.trial-social-button.is-pending {
+  transform: translateY(-1px);
+  border-color: rgba(118, 154, 255, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.022)),
+    rgba(12, 18, 38, 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.065),
+    0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.trial-social-button:hover::before,
+.trial-social-button:focus-visible::before {
+  transform: translateX(120%);
+}
+
+.trial-social-icon {
+  position: relative;
+  z-index: 1;
+  width: 19px;
+  height: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.trial-social-icon img {
+  width: 19px;
+  height: 19px;
+  display: block;
+  object-fit: contain;
+}
+
+.trial-social-google .trial-social-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.trial-social-google .trial-social-icon img {
+  width: 14px;
+  height: 14px;
+}
+
+.trial-social-button > span {
+  position: relative;
+  z-index: 1;
+}
+
+.trial-social-status {
+  min-height: 14px;
+  margin: 6px 0 0;
+  color: rgba(183, 204, 255, 0.76);
+  font-size: 11.5px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.trial-field small:empty,
+.trial-form-error:empty,
+.trial-social-status:empty {
+  display: none;
+}
+
+.trial-field small:not(:empty),
+.trial-form-error:not(:empty) {
+  display: block;
+  margin-top: 1px;
+}
+
+.trial-account-stage {
+  margin-top: 8px;
+}
+
+.trial-field input,
+.trial-field textarea {
+  border-color: rgba(255, 255, 255, 0.092);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.014)),
+    rgba(4, 7, 17, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.trial-field input:focus,
+.trial-field textarea:focus {
+  border-color: rgba(98, 138, 255, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 0 0 3px rgba(37, 99, 255, 0.1);
+}
+
+.trial-submit {
+  box-shadow:
+    0 14px 34px rgba(23, 59, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.trial-success-icon {
+  box-shadow:
+    0 0 0 10px rgba(34, 197, 94, 0.06),
+    0 0 34px rgba(34, 197, 94, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 760px) {
+  .trial-socials {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .trial-social-button {
+    min-height: 36px;
+  }
+}
+
 body.cart-is-open .whatsapp-float {
   opacity: 0;
   transform: translateY(12px) scale(0.94);

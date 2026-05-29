@@ -1520,7 +1520,7 @@ const initAuthForms = () => {
     button.addEventListener("click", (event) => {
       event.preventDefault();
       const provider = button.dataset.authProvider || "este proveedor";
-      const card = button.closest(".auth-card");
+      const card = button.closest(".auth-card, .trial-modal");
       const status = card?.querySelector("[data-auth-social-status]") || card?.querySelector("[data-auth-status]");
       button.classList.add("is-pending");
       window.setTimeout(() => button.classList.remove("is-pending"), 520);
