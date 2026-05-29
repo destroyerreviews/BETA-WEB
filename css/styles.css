@@ -2799,6 +2799,706 @@ body.trial-modal-is-open .whatsapp-float {
   }
 }
 
+.trial-modal {
+  width: min(840px, calc(100vw - 34px));
+  max-height: min(85dvh, 760px);
+  padding: clamp(18px, 2.5vw, 26px);
+  border-color: rgba(146, 177, 255, 0.15);
+  background:
+    radial-gradient(circle at 72% -8%, rgba(36, 88, 255, 0.22), transparent 42%),
+    radial-gradient(circle at 5% 102%, rgba(37, 99, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.092), rgba(255, 255, 255, 0.026)),
+    rgba(5, 8, 18, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 28px 86px rgba(0, 0, 0, 0.58),
+    0 0 110px rgba(37, 99, 255, 0.18);
+}
+
+.trial-modal::-webkit-scrollbar {
+  width: 7px;
+}
+
+.trial-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trial-modal::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(117, 164, 255, 0.28);
+}
+
+.trial-modal__close {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(6, 10, 24, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.trial-modal__top {
+  min-height: 28px;
+}
+
+.trial-progress {
+  margin: 13px 0 15px;
+}
+
+.trial-progress span {
+  min-height: 34px;
+  padding: 0 9px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
+    rgba(3, 6, 16, 0.72);
+}
+
+.trial-progress span.is-complete {
+  color: rgba(230, 238, 255, 0.82);
+  border-color: rgba(83, 128, 255, 0.22);
+}
+
+.trial-progress b {
+  width: 18px;
+  height: 18px;
+}
+
+.trial-steps,
+.trial-account-stage {
+  position: relative;
+  overflow: hidden;
+  transition: min-height 340ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.trial-account-stage {
+  margin-top: 12px;
+}
+
+.trial-step,
+.trial-account-form {
+  display: none;
+  will-change: transform, opacity, filter;
+}
+
+.trial-step.is-active,
+.trial-step.is-leaving,
+.trial-account-form.is-active,
+.trial-account-form.is-leaving,
+.trial-step.is-measuring,
+.trial-account-form.is-measuring {
+  display: block;
+}
+
+.trial-step.is-active {
+  animation: trialStepInForward 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.trial-modal[data-trial-direction="back"] .trial-step.is-active {
+  animation-name: trialStepInBack;
+}
+
+.trial-step.is-leaving,
+.trial-account-form.is-leaving {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.trial-step.is-leaving {
+  animation: trialStepOutForward 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.trial-modal[data-trial-direction="back"] .trial-step.is-leaving {
+  animation-name: trialStepOutBack;
+}
+
+.trial-account-form {
+  margin-top: 0;
+}
+
+.trial-account-form.is-active {
+  animation: trialAccountInRight 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.trial-modal[data-trial-account-direction="back"] .trial-account-form.is-active {
+  animation-name: trialAccountInLeft;
+}
+
+.trial-account-form.is-leaving {
+  animation: trialAccountOutLeft 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.trial-modal[data-trial-account-direction="back"] .trial-account-form.is-leaving {
+  animation-name: trialAccountOutRight;
+}
+
+.trial-step.is-measuring,
+.trial-account-form.is-measuring {
+  position: absolute;
+  inset: auto 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.trial-step h2 {
+  margin-top: 10px;
+  font-size: clamp(30px, 3.8vw, 42px);
+}
+
+.trial-step__lead {
+  max-width: 610px;
+  margin-top: 8px;
+  color: rgba(220, 229, 248, 0.76);
+  font-size: 14px;
+}
+
+.trial-account-tabs {
+  position: relative;
+  isolation: isolate;
+  margin-top: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+    rgba(2, 5, 14, 0.58);
+}
+
+.trial-account-tabs::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: calc(50% - 5px);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.038)),
+    rgba(37, 99, 255, 0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 30px rgba(37, 99, 255, 0.16);
+  transform: translateX(var(--trial-tab-x, 0%));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.trial-account-tabs button.is-active {
+  background: transparent;
+  box-shadow: none;
+}
+
+.trial-form-grid {
+  gap: 8px 10px;
+}
+
+.trial-field input {
+  height: 42px;
+}
+
+.trial-field textarea {
+  min-height: 74px;
+  max-height: 108px;
+}
+
+.trial-field input,
+.trial-field textarea {
+  border-radius: 15px;
+}
+
+.trial-submit {
+  min-height: 44px;
+}
+
+.trial-actions {
+  margin-top: 10px;
+}
+
+.trial-step--success {
+  min-height: 340px;
+  display: none;
+  place-items: center;
+  padding: 18px 0 4px;
+}
+
+.trial-step--success.is-active,
+.trial-step--success.is-leaving {
+  display: grid;
+}
+
+.trial-step--success h2 {
+  margin-top: 0;
+}
+
+.trial-success-icon {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 18px;
+}
+
+.trial-success-icon::before {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  border-radius: inherit;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  opacity: 0;
+  animation: trialSuccessRing 760ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+@keyframes trialStepInForward {
+  from {
+    opacity: 0;
+    transform: translateX(36px) scale(0.985);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes trialStepOutForward {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-34px) scale(0.985);
+    filter: blur(8px);
+  }
+}
+
+@keyframes trialStepInBack {
+  from {
+    opacity: 0;
+    transform: translateX(-36px) scale(0.985);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes trialStepOutBack {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(34px) scale(0.985);
+    filter: blur(8px);
+  }
+}
+
+@keyframes trialAccountInRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes trialAccountOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-26px);
+    filter: blur(7px);
+  }
+}
+
+@keyframes trialAccountInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes trialAccountOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(26px);
+    filter: blur(7px);
+  }
+}
+
+@keyframes trialSuccessRing {
+  from {
+    opacity: 0.8;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trial-step.is-active,
+  .trial-step.is-leaving,
+  .trial-account-form.is-active,
+  .trial-account-form.is-leaving,
+  .trial-success-icon,
+  .trial-success-icon::before {
+    animation: none !important;
+    filter: none !important;
+  }
+}
+
+.trial-modal {
+  width: min(920px, calc(100vw - 28px));
+  max-height: calc(100dvh - 38px);
+  overflow: hidden;
+  padding: clamp(18px, 2.2vw, 24px);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 76% -16%, rgba(36, 88, 255, 0.28), transparent 39%),
+    radial-gradient(circle at 0% 106%, rgba(37, 99, 255, 0.14), transparent 32%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.098), rgba(255, 255, 255, 0.024) 54%, rgba(37, 99, 255, 0.055)),
+    rgba(4, 7, 18, 0.93);
+}
+
+.trial-modal-overlay {
+  background:
+    radial-gradient(circle at 48% 24%, rgba(36, 88, 255, 0.18), transparent 38%),
+    radial-gradient(circle at 82% 72%, rgba(37, 99, 255, 0.12), transparent 38%),
+    rgba(0, 0, 0, 0.68);
+}
+
+.trial-modal__glow {
+  inset: -28% -18% auto 48%;
+  height: 330px;
+  opacity: 0.9;
+  background:
+    radial-gradient(circle, rgba(74, 121, 255, 0.22), transparent 62%);
+}
+
+.trial-modal::after {
+  content: "";
+  position: absolute;
+  inset: 74px 20px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(117, 164, 255, 0.22), transparent);
+  pointer-events: none;
+}
+
+.trial-modal__top {
+  min-height: 30px;
+}
+
+.trial-modal__brand .brand-logo-img {
+  max-height: 28px;
+}
+
+.trial-modal__close {
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+}
+
+.trial-progress {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+
+.trial-progress::before {
+  left: 13%;
+  right: 13%;
+  top: 16px;
+}
+
+.trial-progress span {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
+}
+
+.trial-modal__pill {
+  min-height: 28px;
+  padding: 0 11px;
+  font-size: 11.5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.028)),
+    rgba(37, 99, 255, 0.13);
+}
+
+.trial-step h2 {
+  max-width: 640px;
+  margin-top: 10px;
+  font-size: clamp(32px, 4vw, 46px);
+  letter-spacing: -0.056em;
+}
+
+.trial-step__lead,
+.trial-step__sublead {
+  max-width: 660px;
+  margin: 8px 0 0;
+  color: rgba(221, 230, 250, 0.75);
+  font-size: 13.5px;
+  line-height: 1.46;
+}
+
+.trial-step__sublead {
+  margin-inline: auto;
+  color: rgba(221, 230, 250, 0.6);
+}
+
+.trial-account-tabs {
+  width: min(100%, 560px);
+  min-height: 42px;
+  margin-top: 13px;
+  padding: 4px;
+}
+
+.trial-account-tabs button {
+  min-height: 34px;
+  font-size: 12.5px;
+}
+
+.trial-account-stage {
+  margin-top: 11px;
+}
+
+.trial-form-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.trial-account-form .trial-field {
+  grid-column: span 3;
+}
+
+[data-trial-account-panel="register"] .trial-field:nth-child(1),
+[data-trial-account-panel="register"] .trial-field:nth-child(2),
+[data-trial-account-panel="register"] .trial-field:nth-child(3) {
+  grid-column: span 2;
+}
+
+[data-trial-account-panel="register"] .trial-field--wide {
+  grid-column: span 3;
+}
+
+.trial-local-form .trial-field,
+.trial-local-form .trial-field--wide {
+  grid-column: 1 / -1;
+}
+
+.trial-field {
+  gap: 5px;
+}
+
+.trial-field span {
+  font-size: 11.5px;
+}
+
+.trial-field input {
+  height: 40px;
+  padding: 0 13px;
+}
+
+.trial-field textarea {
+  min-height: 64px;
+  max-height: 76px;
+  padding: 10px 13px;
+}
+
+.trial-field input,
+.trial-field textarea {
+  border-radius: 14px;
+  font-size: 13px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018)),
+    rgba(3, 6, 16, 0.78);
+}
+
+.trial-field small,
+.trial-form-error {
+  min-height: 12px;
+  font-size: 10.8px;
+}
+
+.trial-check {
+  margin-top: 9px;
+  font-size: 12px;
+}
+
+.trial-check__box {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+}
+
+.trial-check__box::after {
+  left: 4px;
+  top: 2px;
+}
+
+.trial-check-help {
+  display: block;
+  max-height: 0;
+  margin: 0 0 0 27px;
+  overflow: hidden;
+  color: rgba(183, 204, 255, 0.72);
+  font-size: 11.5px;
+  line-height: 1.3;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    max-height 220ms ease,
+    margin 220ms ease,
+    opacity 180ms ease,
+    transform 220ms ease;
+}
+
+.trial-check-help.is-visible {
+  max-height: 32px;
+  margin-bottom: 2px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.trial-submit {
+  min-height: 42px;
+  margin-top: 11px;
+  box-shadow:
+    0 16px 44px rgba(23, 59, 255, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.trial-switch {
+  margin-top: 9px;
+  font-size: 12.5px;
+}
+
+.trial-row {
+  margin-top: 10px;
+}
+
+.trial-local-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 12px;
+}
+
+.trial-local-form .trial-check,
+.trial-local-form .trial-check-help {
+  grid-column: 1 / -1;
+}
+
+.trial-actions {
+  gap: 10px;
+  margin-top: 7px;
+}
+
+.trial-actions .button {
+  min-height: 42px;
+  padding-inline: 18px;
+}
+
+.trial-step--success {
+  min-height: 312px;
+  padding: 8px 0 0;
+}
+
+.trial-step--success .trial-actions {
+  margin-top: 18px;
+}
+
+.trial-success-icon {
+  width: 84px;
+  height: 84px;
+  margin-bottom: 16px;
+  box-shadow:
+    0 0 0 12px rgba(34, 197, 94, 0.075),
+    0 0 46px rgba(34, 197, 94, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+@media (max-width: 760px) {
+  .trial-modal {
+    width: calc(100vw - 22px);
+    max-height: calc(100dvh - 20px);
+    padding: 16px 14px;
+    border-radius: 24px;
+  }
+
+  .trial-progress {
+    gap: 5px;
+  }
+
+  .trial-progress span {
+    padding: 0 6px;
+    font-size: 10.5px;
+  }
+
+  .trial-step h2 {
+    font-size: clamp(27px, 8.5vw, 36px);
+  }
+
+  .trial-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .trial-account-form .trial-field,
+  [data-trial-account-panel="register"] .trial-field:nth-child(1),
+  [data-trial-account-panel="register"] .trial-field:nth-child(2),
+  [data-trial-account-panel="register"] .trial-field:nth-child(3),
+  [data-trial-account-panel="register"] .trial-field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .trial-field input {
+    height: 38px;
+  }
+
+  .trial-field textarea {
+    min-height: 58px;
+    max-height: 66px;
+  }
+
+  .trial-check {
+    margin-top: 7px;
+  }
+
+  .trial-submit {
+    min-height: 40px;
+    margin-top: 8px;
+  }
+
+  .trial-step--success {
+    min-height: 286px;
+  }
+}
+
 body.cart-is-open .whatsapp-float {
   opacity: 0;
   transform: translateY(12px) scale(0.94);
@@ -10238,7 +10938,7 @@ body.is-page-hidden *::after {
   }
 
   .trial-field input {
-    height: 44px;
+    height: 42px;
   }
 
   .trial-field textarea {

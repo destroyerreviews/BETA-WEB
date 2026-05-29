@@ -244,10 +244,17 @@ const initTrialModal = () => {
   const localForm = modal.querySelector("[data-trial-local-form]");
   const teamWritesCheckbox = modal.querySelector("[data-trial-team-writes]");
   const reviewTextarea = localForm?.elements?.reviewText;
+  const teamWritesHelp = modal.querySelector("[data-trial-team-help]");
   const backButton = modal.querySelector("[data-trial-back]");
   const doneButton = modal.querySelector("[data-trial-done]");
   const forgotLink = modal.querySelector("[data-trial-forgot]");
+  const stepsWrapper = modal.querySelector(".trial-steps");
+  const accountStage = modal.querySelector("[data-trial-account-stage]");
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const transitionMs = 390;
+  const accountTransitionMs = 320;
+  let stepTimer = null;
+  let accountTimer = null;
 
   const getFocusableElements = () =>
     [
@@ -294,25 +301,109 @@ const initTrialModal = () => {
     });
   };
 
-  const setStep = (stepNumber) => {
-    activeStep = stepNumber;
-    steps.forEach((step) => {
-      const isActive = Number(step.dataset.trialStep) === stepNumber;
-      step.classList.toggle("is-active", isActive);
-      step.setAttribute("aria-hidden", String(!isActive));
-    });
-
+  const updateProgress = (stepNumber) => {
     progressItems.forEach((item) => {
       const itemStep = Number(item.dataset.trialProgress);
       item.classList.toggle("is-active", itemStep === stepNumber);
       item.classList.toggle("is-complete", itemStep < stepNumber);
     });
+  };
+
+  const measureHiddenElement = (element) => {
+    if (!element) return 0;
+    const wasMeasuring = element.classList.contains("is-measuring");
+    element.classList.add("is-measuring");
+    const height = element.offsetHeight;
+    if (!wasMeasuring) element.classList.remove("is-measuring");
+    return height;
+  };
+
+  const setStep = (stepNumber) => {
+    if (stepNumber === activeStep) {
+      steps.forEach((step) => {
+        const isActive = Number(step.dataset.trialStep) === stepNumber;
+        step.classList.toggle("is-active", isActive);
+        step.classList.remove("is-leaving");
+        step.setAttribute("aria-hidden", String(!isActive));
+      });
+      updateProgress(stepNumber);
+      focusFirstField();
+      return;
+    }
+
+    const previousStep = activeStep;
+    const currentStep = steps.find((step) => Number(step.dataset.trialStep) === previousStep);
+    const nextStep = steps.find((step) => Number(step.dataset.trialStep) === stepNumber);
+    if (!nextStep) return;
+
+    window.clearTimeout(stepTimer);
+    modal.dataset.trialDirection = stepNumber < previousStep ? "back" : "forward";
+    const currentHeight = currentStep?.offsetHeight || 0;
+    const nextHeight = measureHiddenElement(nextStep);
+    if (stepsWrapper) stepsWrapper.style.minHeight = `${Math.max(currentHeight, nextHeight)}px`;
+
+    steps.forEach((step) => step.classList.remove("is-leaving"));
+    if (currentStep && currentStep !== nextStep) {
+      currentStep.classList.add("is-leaving");
+      currentStep.classList.remove("is-active");
+      currentStep.setAttribute("aria-hidden", "true");
+    }
+
+    nextStep.classList.add("is-active");
+    nextStep.setAttribute("aria-hidden", "false");
+    activeStep = stepNumber;
+    updateProgress(stepNumber);
+
+    stepTimer = window.setTimeout(() => {
+      steps.forEach((step) => step.classList.remove("is-leaving", "is-measuring"));
+      if (stepsWrapper) stepsWrapper.style.minHeight = "";
+    }, transitionMs);
 
     focusFirstField();
   };
 
   const setAccountMode = (mode) => {
+    if (mode === activeAccount) return;
+    const currentPanel = accountPanels.find((panel) => panel.dataset.trialAccountPanel === activeAccount);
+    const nextPanel = accountPanels.find((panel) => panel.dataset.trialAccountPanel === mode);
+    if (!nextPanel) return;
+
+    window.clearTimeout(accountTimer);
+    modal.dataset.trialAccountDirection = mode === "register" ? "back" : "forward";
+    if (accountStage) {
+      const currentHeight = currentPanel?.offsetHeight || 0;
+      const nextHeight = measureHiddenElement(nextPanel);
+      accountStage.style.minHeight = `${Math.max(currentHeight, nextHeight)}px`;
+    }
+
     activeAccount = mode;
+    accountButtons.forEach((button) => {
+      const isActive = button.dataset.trialAccount === mode || button.dataset.trialAccountSwitch === mode;
+      button.classList.toggle("is-active", isActive);
+      if (button.hasAttribute("role")) button.setAttribute("aria-selected", String(isActive));
+    });
+    modal.style.setProperty("--trial-tab-x", mode === "login" ? "100%" : "0%");
+    accountPanels.forEach((panel) => {
+      const isActive = panel.dataset.trialAccountPanel === mode;
+      panel.classList.remove("is-leaving");
+      if (panel === currentPanel && currentPanel !== nextPanel) panel.classList.add("is-leaving");
+      panel.classList.toggle("is-active", isActive);
+      panel.setAttribute("aria-hidden", String(!isActive && panel !== currentPanel));
+    });
+    clearFormErrors(registerForm);
+    clearFormErrors(loginForm);
+    accountTimer = window.setTimeout(() => {
+      accountPanels.forEach((panel) => panel.classList.remove("is-leaving", "is-measuring"));
+      accountPanels.forEach((panel) => panel.setAttribute("aria-hidden", String(!panel.classList.contains("is-active"))));
+      if (accountStage) accountStage.style.minHeight = "";
+    }, accountTransitionMs);
+    focusFirstField();
+  };
+
+  const resetAccountMode = (mode = "register") => {
+    activeAccount = mode;
+    modal.dataset.trialAccountDirection = "forward";
+    modal.style.setProperty("--trial-tab-x", mode === "login" ? "100%" : "0%");
     accountButtons.forEach((button) => {
       const isActive = button.dataset.trialAccount === mode || button.dataset.trialAccountSwitch === mode;
       button.classList.toggle("is-active", isActive);
@@ -321,11 +412,10 @@ const initTrialModal = () => {
     accountPanels.forEach((panel) => {
       const isActive = panel.dataset.trialAccountPanel === mode;
       panel.classList.toggle("is-active", isActive);
+      panel.classList.remove("is-leaving", "is-measuring");
       panel.setAttribute("aria-hidden", String(!isActive));
     });
-    clearFormErrors(registerForm);
-    clearFormErrors(loginForm);
-    focusFirstField();
+    if (accountStage) accountStage.style.minHeight = "";
   };
 
   const updateReviewPreference = () => {
@@ -338,6 +428,7 @@ const initTrialModal = () => {
       ? "Nuestro equipo preparará un texto natural y cuidado."
       : "Ejemplo: Buen trato, servicio rápido y atención profesional.";
     field?.classList.toggle("is-disabled", teamWrites);
+    teamWritesHelp?.classList.toggle("is-visible", teamWrites);
     if (teamWrites) {
       reviewTextarea.value = "";
       clearFieldError(localForm, "reviewText");
@@ -349,7 +440,7 @@ const initTrialModal = () => {
       form.reset();
       clearFormErrors(form);
     });
-    setAccountMode("register");
+    resetAccountMode("register");
     updateReviewPreference();
     setStep(1);
   };
