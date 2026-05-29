@@ -4830,8 +4830,8 @@ body.cart-is-open .whatsapp-float {
   min-height: 590px;
   display: grid;
   align-content: center;
-  gap: 8px;
-  perspective: 1300px;
+  gap: 2px;
+  perspective: 1500px;
   transform-style: preserve-3d;
 }
 
@@ -4842,10 +4842,11 @@ body.cart-is-open .whatsapp-float {
   z-index: -1;
   border-radius: 42%;
   background:
-    radial-gradient(circle at 50% 48%, rgba(47, 99, 255, 0.24), transparent 58%),
-    radial-gradient(circle at 65% 38%, rgba(157, 183, 255, 0.1), transparent 36%);
-  filter: blur(34px);
-  opacity: 0.62;
+    radial-gradient(circle at 50% 48%, rgba(47, 99, 255, 0.3), transparent 58%),
+    radial-gradient(circle at 66% 34%, rgba(157, 183, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 34% 72%, rgba(37, 99, 255, 0.12), transparent 38%);
+  filter: blur(40px);
+  opacity: 0.72;
 }
 
 .layers-visual::after {
@@ -4855,10 +4856,10 @@ body.cart-is-open .whatsapp-float {
   right: 4%;
   bottom: 8%;
   z-index: -2;
-  height: 40px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.42);
-  filter: blur(28px);
+  background: rgba(0, 0, 0, 0.48);
+  filter: blur(30px);
   transform: rotate(-2deg);
 }
 
@@ -4866,27 +4867,30 @@ body.cart-is-open .whatsapp-float {
   position: relative;
   min-height: 92px;
   display: grid;
-  grid-template-columns: 38px 46px minmax(0, 1fr);
+  grid-template-columns: 34px 48px minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
-  width: min(100%, 610px);
-  padding: 16px 20px;
-  border: 1px solid rgba(125, 165, 255, 0.2);
+  justify-self: center;
+  gap: 17px;
+  width: min(var(--layer-width, 100%), 620px);
+  padding: 17px 21px;
+  border: 1px solid rgba(125, 165, 255, 0.19);
   border-radius: 18px;
   background:
-    linear-gradient(100deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.038) 48%, rgba(37, 99, 255, 0.055)),
-    rgba(7, 10, 20, 0.78);
+    linear-gradient(105deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 46%, rgba(37, 99, 255, 0.07)),
+    rgba(7, 10, 20, 0.8);
   box-shadow:
-    0 18px 36px rgba(0, 0, 0, 0.26),
-    0 10px 28px rgba(37, 99, 255, 0.045),
-    inset 0 1px 0 rgba(255, 255, 255, 0.11),
-    inset 0 -1px 0 rgba(125, 165, 255, 0.055);
+    0 22px 42px rgba(0, 0, 0, 0.3),
+    0 14px 34px rgba(37, 99, 255, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(125, 165, 255, 0.06);
   backdrop-filter: blur(20px) saturate(155%);
   -webkit-backdrop-filter: blur(20px) saturate(155%);
   opacity: 0;
   transform:
-    translate3d(calc((var(--layer-index) - 2) * 18px), 36px, calc(var(--layer-index) * -24px))
-    rotateX(0deg);
+    translate3d(var(--layer-x, 0px), 34px, var(--layer-z, 0px))
+    rotateX(0deg)
+    rotateY(-4deg)
+    rotateZ(var(--layer-tilt, 0deg));
   transform-origin: center;
   transition:
     opacity 680ms ease,
@@ -4896,15 +4900,55 @@ body.cart-is-open .whatsapp-float {
     filter 260ms ease;
 }
 
+.trust-layer:nth-child(1) {
+  --layer-x: -34px;
+  --layer-y: 0px;
+  --layer-z: 42px;
+  --layer-tilt: -1.1deg;
+  --layer-width: 94%;
+}
+
+.trust-layer:nth-child(2) {
+  --layer-x: 18px;
+  --layer-y: -9px;
+  --layer-z: 22px;
+  --layer-tilt: 0.7deg;
+  --layer-width: 98%;
+}
+
+.trust-layer:nth-child(3) {
+  --layer-x: -8px;
+  --layer-y: -18px;
+  --layer-z: 0px;
+  --layer-tilt: -0.25deg;
+  --layer-width: 100%;
+}
+
+.trust-layer:nth-child(4) {
+  --layer-x: 30px;
+  --layer-y: -27px;
+  --layer-z: -22px;
+  --layer-tilt: 0.9deg;
+  --layer-width: 96%;
+}
+
+.trust-layer:nth-child(5) {
+  --layer-x: -24px;
+  --layer-y: -36px;
+  --layer-z: -44px;
+  --layer-tilt: -0.75deg;
+  --layer-width: 92%;
+}
+
 .trust-layer::before {
   content: "";
   position: absolute;
-  inset: auto 18px -12px 18px;
-  height: 16px;
+  inset: auto 22px -14px 22px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.32);
-  filter: blur(12px);
-  opacity: 0.72;
+  background: rgba(0, 0, 0, 0.38);
+  filter: blur(13px);
+  opacity: 0.74;
   pointer-events: none;
 }
 
@@ -4922,10 +4966,10 @@ body.cart-is-open .whatsapp-float {
 .layers-visual.is-visible .trust-layer {
   opacity: 1;
   transform:
-    translate3d(calc((var(--layer-index) - 2) * 20px), calc(var(--layer-index) * -10px), calc(var(--layer-index) * -26px))
-    rotateX(6deg)
-    rotateY(-7deg)
-    rotateZ(calc((var(--layer-index) - 2) * -0.55deg));
+    translate3d(var(--layer-x, 0px), var(--layer-y, 0px), var(--layer-z, 0px))
+    rotateX(7deg)
+    rotateY(-8deg)
+    rotateZ(var(--layer-tilt, 0deg));
   animation: trustLayerFloat 7600ms ease-in-out infinite;
   animation-delay: calc(var(--layer-index) * 120ms + 720ms);
 }
@@ -4937,22 +4981,22 @@ body.cart-is-open .whatsapp-float {
 .layers-visual.is-visible .trust-layer:nth-child(5) { transition-delay: 480ms; }
 
 .layers-visual:has(.trust-layer:hover) .trust-layer:not(:hover) {
-  opacity: 0.52;
-  filter: saturate(0.72) brightness(0.9);
+  opacity: 0.45;
+  filter: saturate(0.68) brightness(0.84);
 }
 
 .trust-layer:hover {
-  border-color: rgba(125, 165, 255, 0.55);
+  border-color: rgba(125, 165, 255, 0.62);
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.32),
-    0 0 52px rgba(37, 99, 255, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(125, 165, 255, 0.1);
+    0 28px 58px rgba(0, 0, 0, 0.36),
+    0 0 64px rgba(37, 99, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(125, 165, 255, 0.12);
   transform:
-    translate3d(calc((var(--layer-index) - 2) * 20px), calc(var(--layer-index) * -10px - 4px), calc(var(--layer-index) * -26px + 18px))
-    rotateX(6deg)
-    rotateY(-7deg)
-    rotateZ(calc((var(--layer-index) - 2) * -0.55deg));
+    translate3d(var(--layer-x, 0px), calc(var(--layer-y, 0px) - 5px), calc(var(--layer-z, 0px) + 22px))
+    rotateX(7deg)
+    rotateY(-8deg)
+    rotateZ(var(--layer-tilt, 0deg));
 }
 
 .trust-layer:hover::after {
@@ -4960,8 +5004,14 @@ body.cart-is-open .whatsapp-float {
 }
 
 .layer-number {
-  align-self: start;
-  padding-top: 3px;
+  align-self: center;
+  width: 30px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(125, 165, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(37, 99, 255, 0.055);
   color: rgba(157, 183, 255, 0.68);
   font-size: 10px;
   font-weight: 950;
@@ -4979,7 +5029,7 @@ body.cart-is-open .whatsapp-float {
   background:
     radial-gradient(circle at 50% 0%, rgba(125, 165, 255, 0.14), transparent 58%),
     rgba(37, 99, 255, 0.085);
-  transition: color 260ms ease, border-color 260ms ease, box-shadow 260ms ease;
+  transition: color 260ms ease, border-color 260ms ease, box-shadow 260ms ease, transform 260ms ease;
 }
 
 .layer-icon svg {
@@ -4999,24 +5049,26 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer:hover .layer-icon {
   color: #dbe6ff;
-  border-color: rgba(125, 165, 255, 0.48);
-  box-shadow: 0 0 30px rgba(37, 99, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(125, 165, 255, 0.58);
+  box-shadow: 0 0 34px rgba(37, 99, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .trust-layer strong {
   display: block;
   color: #f8faff;
-  font-size: 18px;
+  font-size: clamp(17px, 1.45vw, 20px);
+  font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .trust-layer p {
-  max-width: 390px;
+  max-width: 360px;
   margin: 7px 0 0;
-  color: rgba(174, 184, 205, 0.8);
-  font-size: 12px;
-  line-height: 1.4;
+  color: rgba(174, 184, 205, 0.72);
+  font-size: 11.5px;
+  line-height: 1.35;
 }
 
 .split-heading {
@@ -8730,9 +8782,15 @@ body.is-page-hidden *::after {
   .trust-layer,
   .layers-visual.is-visible .trust-layer,
   .trust-layer:hover {
+    --layer-x: 0px;
+    --layer-y: 0px;
+    --layer-z: 0px;
+    --layer-tilt: 0deg;
+    --layer-width: 100%;
     min-height: auto;
     grid-template-columns: 34px 38px minmax(0, 1fr);
     gap: 10px;
+    width: 100%;
     padding: 14px;
     border-radius: 18px;
     transform: none;
