@@ -877,9 +877,9 @@
     <div class="blogs-fixed-background-frame" aria-hidden="true"></div>
 
     <header class="site-header" data-header>
-      <div class="promo-bar">
+      <div class="promo-bar" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="trial-modal" data-trial-trigger>
         <span>Solicita una prueba gratuita de 2 reseñas</span>
-        <a href="../index.html#contacto">Solicitar prueba</a>
+        <button type="button">Solicitar prueba</button>
       </div>
 
       <nav class="liquid-nav" aria-label="Navegación principal">
@@ -974,6 +974,53 @@
       </footer>
     </aside>
     <div class="cart-toast" role="status" aria-live="polite" data-cart-toast hidden></div>
+
+    <div class="trial-modal-overlay" data-trial-overlay hidden></div>
+    <section
+      class="trial-modal"
+      id="trial-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="trial-modal-title"
+      tabindex="-1"
+      data-trial-modal
+    >
+      <div class="trial-modal__glow" aria-hidden="true"></div>
+      <button class="trial-modal__close" type="button" aria-label="Cerrar" data-trial-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+      <header class="trial-modal__header">
+        <a class="brand-logo trial-modal__brand" href="../index.html" aria-label="Destroyer Reviews">
+          <img src="../assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--auth" width="1495" height="350" loading="lazy" decoding="async" />
+        </a>
+        <span class="trial-modal__pill">2 reseñas de prueba · Sin compromiso</span>
+        <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
+        <p>Crea una cuenta o inicia sesión para activar tu prueba de 2 reseñas y seguir el estado desde tu panel.</p>
+      </header>
+      <div class="trial-modal__options">
+        <article class="trial-option trial-option--primary">
+          <span class="trial-option__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3.5 19 7v5.2c0 4.3-2.7 7.4-7 8.8-4.3-1.4-7-4.5-7-8.8V7l7-3.5Z" /><path d="M9 12.1l1.9 1.9 4.2-4.7" /></svg>
+          </span>
+          <h3>Soy nuevo</h3>
+          <p>Crea tu cuenta y solicita la prueba desde tu panel privado.</p>
+          <a class="button button-primary" href="../register.html" data-trial-primary>Crear cuenta y pedir prueba</a>
+        </article>
+        <article class="trial-option">
+          <span class="trial-option__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M8.5 11V8.2a3.5 3.5 0 0 1 7 0V11" /><path d="M6.8 11h10.4a1.8 1.8 0 0 1 1.8 1.8v5.4a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 18.2v-5.4A1.8 1.8 0 0 1 6.8 11Z" /><path d="M12 15v1.8" /></svg>
+          </span>
+          <h3>Ya tengo cuenta</h3>
+          <p>Accede a tu panel para solicitar o revisar tu prueba.</p>
+          <a class="button button-secondary" href="../login.html">Iniciar sesión</a>
+        </article>
+      </div>
+      <p class="trial-modal__whatsapp">
+        También puedes contactarnos por WhatsApp si prefieres ayuda directa.
+        <a href="https://wa.me/34603826428?text=Hola%2C%20quiero%20solicitar%20la%20prueba%20gratuita%20de%202%20rese%C3%B1as" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+      </p>
+    </section>
 
 <main class="blogs-page-content" id="contenido">
       <section class="blogs-hero" aria-labelledby="blogs-title">

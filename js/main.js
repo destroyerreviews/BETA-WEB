@@ -223,6 +223,68 @@ const initNavigation = () => {
   });
 };
 
+const initTrialModal = () => {
+  const triggers = [...document.querySelectorAll("[data-trial-trigger]")];
+  const modal = document.querySelector("[data-trial-modal]");
+  const overlay = document.querySelector("[data-trial-overlay]");
+  const closeButtons = [...document.querySelectorAll("[data-trial-close]")];
+  const primaryAction = modal?.querySelector("[data-trial-primary]");
+  let lastFocusedElement = null;
+  let closeTimer = null;
+
+  if (!triggers.length || !modal || !overlay) return;
+
+  const openTrialModal = () => {
+    window.clearTimeout(closeTimer);
+    lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeMobileNav();
+    modal.hidden = false;
+    overlay.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("trial-modal-is-open");
+
+    requestAnimationFrame(() => {
+      overlay.classList.add("is-visible");
+      modal.classList.add("is-open");
+      (primaryAction || modal).focus({ preventScroll: true });
+    });
+  };
+
+  const closeTrialModal = () => {
+    overlay.classList.remove("is-visible");
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("trial-modal-is-open");
+    closeTimer = window.setTimeout(() => {
+      if (!modal.classList.contains("is-open")) {
+        modal.hidden = true;
+        overlay.hidden = true;
+      }
+    }, 280);
+    lastFocusedElement?.focus?.({ preventScroll: true });
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      openTrialModal();
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openTrialModal();
+    });
+  });
+
+  closeButtons.forEach((button) => button.addEventListener("click", closeTrialModal));
+  overlay.addEventListener("click", closeTrialModal);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) closeTrialModal();
+  });
+};
+
 const initHeroRotatingWord = () => {
   const word = document.querySelector("[data-rotating-word]");
   if (!word) return;
@@ -670,6 +732,32 @@ const initProcessTimeline = () => {
     timeline.style.setProperty("--process-line-height", `${Math.max(1, lastCenter - firstCenter)}px`);
   };
 
+  const clearHoveredStep = () => {
+    timeline.classList.remove("is-segment-hovered");
+    steps.forEach((step) => step.classList.remove("is-hovered"));
+  };
+
+  const setHoveredStep = (targetStep) => {
+    const timelineRect = timeline.getBoundingClientRect();
+    const centers = steps.map((step) => {
+      const node = step.querySelector(".process-node");
+      return node ? getNodeCenter(node, timelineRect) : 0;
+    });
+    const index = steps.indexOf(targetStep);
+    if (index < 0) return;
+
+    const currentCenter = centers[index];
+    const previousCenter = centers[index - 1];
+    const nextCenter = centers[index + 1];
+    const segmentTop = index === 0 ? currentCenter : (previousCenter + currentCenter) / 2;
+    const segmentBottom = index === steps.length - 1 ? currentCenter : (currentCenter + nextCenter) / 2;
+
+    steps.forEach((step) => step.classList.toggle("is-hovered", step === targetStep));
+    timeline.style.setProperty("--process-hover-top", `${Math.max(0, segmentTop)}px`);
+    timeline.style.setProperty("--process-hover-height", `${Math.max(1, segmentBottom - segmentTop)}px`);
+    timeline.classList.add("is-segment-hovered");
+  };
+
   updateProcessTimeline = () => {
     const rect = timeline.getBoundingClientRect();
     const firstCenter = getNodeCenter(firstNode, rect);
@@ -700,6 +788,15 @@ const initProcessTimeline = () => {
   const resizeObserver = new ResizeObserver(() => requestProcessTimeline());
   resizeObserver.observe(timeline);
   steps.forEach((step) => resizeObserver.observe(step));
+
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    steps.forEach((step) => {
+      const card = step.querySelector(".process-card");
+      if (!card) return;
+      card.addEventListener("mouseenter", () => setHoveredStep(step));
+      card.addEventListener("mouseleave", clearHoveredStep);
+    });
+  }
 
   updateProcessTimeline();
 };
@@ -1340,6 +1437,7 @@ const init = () => {
 
   animateLoader();
   initNavigation();
+  initTrialModal();
   initCart();
   if (hasHomeContent) {
     initHeroRotatingWord();
