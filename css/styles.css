@@ -4827,10 +4827,10 @@ body.cart-is-open .whatsapp-float {
 
 .layers-visual {
   position: relative;
-  min-height: 590px;
+  min-height: 612px;
   display: grid;
   align-content: center;
-  gap: 2px;
+  gap: 10px;
   perspective: 1500px;
   transform-style: preserve-3d;
 }
@@ -4842,11 +4842,11 @@ body.cart-is-open .whatsapp-float {
   z-index: -1;
   border-radius: 42%;
   background:
-    radial-gradient(circle at 50% 48%, rgba(47, 99, 255, 0.3), transparent 58%),
-    radial-gradient(circle at 66% 34%, rgba(157, 183, 255, 0.12), transparent 34%),
-    radial-gradient(circle at 34% 72%, rgba(37, 99, 255, 0.12), transparent 38%);
-  filter: blur(40px);
-  opacity: 0.72;
+    radial-gradient(circle at 50% 48%, rgba(47, 99, 255, 0.32), transparent 58%),
+    radial-gradient(circle at 66% 34%, rgba(157, 183, 255, 0.13), transparent 34%),
+    radial-gradient(circle at 34% 72%, rgba(37, 99, 255, 0.13), transparent 38%);
+  filter: blur(42px);
+  opacity: 0.74;
 }
 
 .layers-visual::after {
@@ -4865,29 +4865,29 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer {
   position: relative;
-  min-height: 92px;
+  min-height: 96px;
   display: grid;
-  grid-template-columns: 34px 48px minmax(0, 1fr);
+  grid-template-columns: 36px 50px minmax(0, 1fr);
   align-items: center;
   justify-self: center;
-  gap: 17px;
+  gap: 18px;
   width: min(var(--layer-width, 100%), 620px);
-  padding: 17px 21px;
+  padding: 18px 22px;
   border: 1px solid rgba(125, 165, 255, 0.19);
   border-radius: 18px;
   background:
     linear-gradient(105deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 46%, rgba(37, 99, 255, 0.07)),
     rgba(7, 10, 20, 0.8);
   box-shadow:
-    0 22px 42px rgba(0, 0, 0, 0.3),
-    0 14px 34px rgba(37, 99, 255, 0.055),
+    0 24px 46px rgba(0, 0, 0, 0.32),
+    0 16px 36px rgba(37, 99, 255, 0.065),
     inset 0 1px 0 rgba(255, 255, 255, 0.13),
     inset 0 -1px 0 rgba(125, 165, 255, 0.06);
   backdrop-filter: blur(20px) saturate(155%);
   -webkit-backdrop-filter: blur(20px) saturate(155%);
   opacity: 0;
   transform:
-    translate3d(var(--layer-x, 0px), 34px, var(--layer-z, 0px))
+    translate3d(var(--layer-x, 0px), 38px, var(--layer-z, 0px))
     rotateX(0deg)
     rotateY(-4deg)
     rotateZ(var(--layer-tilt, 0deg));
@@ -4897,7 +4897,8 @@ body.cart-is-open .whatsapp-float {
     transform 680ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 260ms ease,
     box-shadow 260ms ease,
-    filter 260ms ease;
+    filter 260ms ease,
+    background-color 260ms ease;
 }
 
 .trust-layer:nth-child(1) {
@@ -4910,7 +4911,7 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer:nth-child(2) {
   --layer-x: 18px;
-  --layer-y: -9px;
+  --layer-y: -5px;
   --layer-z: 22px;
   --layer-tilt: 0.7deg;
   --layer-width: 98%;
@@ -4918,7 +4919,7 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer:nth-child(3) {
   --layer-x: -8px;
-  --layer-y: -18px;
+  --layer-y: -10px;
   --layer-z: 0px;
   --layer-tilt: -0.25deg;
   --layer-width: 100%;
@@ -4926,7 +4927,7 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer:nth-child(4) {
   --layer-x: 30px;
-  --layer-y: -27px;
+  --layer-y: -15px;
   --layer-z: -22px;
   --layer-tilt: 0.9deg;
   --layer-width: 96%;
@@ -4934,7 +4935,7 @@ body.cart-is-open .whatsapp-float {
 
 .trust-layer:nth-child(5) {
   --layer-x: -24px;
-  --layer-y: -36px;
+  --layer-y: -20px;
   --layer-z: -44px;
   --layer-tilt: -0.75deg;
   --layer-width: 92%;
@@ -4943,12 +4944,12 @@ body.cart-is-open .whatsapp-float {
 .trust-layer::before {
   content: "";
   position: absolute;
-  inset: auto 22px -14px 22px;
-  height: 18px;
+  inset: auto 24px -16px 24px;
+  height: 20px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.38);
-  filter: blur(13px);
-  opacity: 0.74;
+  filter: blur(15px);
+  opacity: 0.78;
   pointer-events: none;
 }
 
@@ -4981,19 +4982,23 @@ body.cart-is-open .whatsapp-float {
 .layers-visual.is-visible .trust-layer:nth-child(5) { transition-delay: 480ms; }
 
 .layers-visual:has(.trust-layer:hover) .trust-layer:not(:hover) {
-  opacity: 0.45;
-  filter: saturate(0.68) brightness(0.84);
+  opacity: 0.42;
+  filter: saturate(0.64) brightness(0.8);
 }
 
 .trust-layer:hover {
-  border-color: rgba(125, 165, 255, 0.62);
+  border-color: rgba(125, 165, 255, 0.68);
+  background:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.145), rgba(255, 255, 255, 0.052) 46%, rgba(37, 99, 255, 0.092)),
+    rgba(8, 12, 24, 0.86);
   box-shadow:
-    0 28px 58px rgba(0, 0, 0, 0.36),
-    0 0 64px rgba(37, 99, 255, 0.2),
+    0 32px 68px rgba(0, 0, 0, 0.4),
+    0 0 74px rgba(37, 99, 255, 0.24),
+    0 14px 34px rgba(125, 165, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 -1px 0 rgba(125, 165, 255, 0.12);
   transform:
-    translate3d(var(--layer-x, 0px), calc(var(--layer-y, 0px) - 5px), calc(var(--layer-z, 0px) + 22px))
+    translate3d(var(--layer-x, 0px), calc(var(--layer-y, 0px) - 8px), calc(var(--layer-z, 0px) + 30px))
     rotateX(7deg)
     rotateY(-8deg)
     rotateZ(var(--layer-tilt, 0deg));
@@ -5005,27 +5010,28 @@ body.cart-is-open .whatsapp-float {
 
 .layer-number {
   align-self: center;
-  width: 30px;
-  height: 24px;
+  width: 32px;
+  height: 25px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(125, 165, 255, 0.16);
+  border: 1px solid rgba(125, 165, 255, 0.24);
   border-radius: 999px;
-  background: rgba(37, 99, 255, 0.055);
-  color: rgba(157, 183, 255, 0.68);
+  background: rgba(37, 99, 255, 0.08);
+  color: rgba(198, 213, 255, 0.84);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.08em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .layer-icon {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(125, 165, 255, 0.22);
+  border: 1px solid rgba(125, 165, 255, 0.28);
   border-radius: 14px;
-  color: #9db7ff;
+  color: #b4c8ff;
   background:
     radial-gradient(circle at 50% 0%, rgba(125, 165, 255, 0.14), transparent 58%),
     rgba(37, 99, 255, 0.085);
@@ -5048,10 +5054,10 @@ body.cart-is-open .whatsapp-float {
 }
 
 .trust-layer:hover .layer-icon {
-  color: #dbe6ff;
-  border-color: rgba(125, 165, 255, 0.58);
-  box-shadow: 0 0 34px rgba(37, 99, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
+  color: #edf3ff;
+  border-color: rgba(125, 165, 255, 0.68);
+  box-shadow: 0 0 38px rgba(37, 99, 255, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
 }
 
 .trust-layer strong {
