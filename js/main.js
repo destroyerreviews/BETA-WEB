@@ -853,6 +853,35 @@ const initMicroInteractions = () => {
     }, { passive: true });
   });
 
+  document.querySelectorAll(".price-card").forEach((card) => {
+    if (!hasFinePointer || prefersReducedMotion) return;
+    let spotlightFrame = null;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    card.addEventListener("pointermove", (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (spotlightFrame) return;
+
+      spotlightFrame = requestAnimationFrame(() => {
+        spotlightFrame = null;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--spotlight-x", `${pointerX - rect.left}px`);
+        card.style.setProperty("--spotlight-y", `${pointerY - rect.top}px`);
+      });
+    }, { passive: true });
+
+    card.addEventListener("pointerleave", () => {
+      if (spotlightFrame) {
+        cancelAnimationFrame(spotlightFrame);
+        spotlightFrame = null;
+      }
+      card.style.removeProperty("--spotlight-x");
+      card.style.removeProperty("--spotlight-y");
+    });
+  });
+
   document.querySelectorAll(".magnetic").forEach((button) => {
     if (!hasFinePointer || prefersReducedMotion) return;
     let magneticFrame = null;
