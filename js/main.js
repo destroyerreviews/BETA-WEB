@@ -1719,11 +1719,57 @@ const initAuthForms = () => {
 const initForm = () => {
   const form = document.querySelector("[data-lead-form]");
   const formStatus = document.querySelector("[data-form-status]");
+  const submitButton = form?.querySelector('button[type="submit"]');
+  const submitLabel = submitButton?.querySelector("span") || submitButton;
+  const defaultSubmitText = submitLabel?.textContent || "Pedir información";
+  if (form) form.noValidate = true;
+
+  const setLeadStatus = (message, state = "") => {
+    if (!formStatus) return;
+    formStatus.textContent = message;
+    formStatus.className = state ? `form-status is-${state}` : "form-status";
+  };
+
+  const submitLeadForm = async (formData) => {
+    // Future backend, CRM or email integration can replace this simulated request.
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    return { ok: true, data: formData };
+  };
 
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
-    formStatus.textContent = "Solicitud preparada. El formulario ya está listo para conectarse a tu CRM o email.";
-    form.reset();
+
+    const formData = new FormData(form);
+    const name = `${formData.get("name") || ""}`.trim();
+    const email = `${formData.get("email") || ""}`.trim();
+    const message = `${formData.get("message") || ""}`.trim();
+
+    if (!name || !email || !message) {
+      setLeadStatus("Completa nombre, email y mensaje para poder responderte.", "error");
+      return;
+    }
+
+    if (!emailPattern.test(email)) {
+      setLeadStatus("Introduce un email válido para que podamos responderte.", "error");
+      return;
+    }
+
+    setLeadStatus("Enviando tu mensaje...", "loading");
+    if (submitButton) submitButton.disabled = true;
+    if (submitLabel) submitLabel.textContent = "Enviando...";
+
+    submitLeadForm(formData)
+      .then(() => {
+        setLeadStatus("Hemos recibido tu mensaje. Te responderemos lo antes posible por WhatsApp o email.", "success");
+        form.reset();
+      })
+      .catch(() => {
+        setLeadStatus("No hemos podido enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp.", "error");
+      })
+      .finally(() => {
+        if (submitButton) submitButton.disabled = false;
+        if (submitLabel) submitLabel.textContent = defaultSubmitText;
+      });
   });
 };
 
