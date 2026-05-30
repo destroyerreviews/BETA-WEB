@@ -1245,27 +1245,92 @@
 
       <section class="final-cta" id="contacto">
         <div class="section-inner cta-inner reveal">
-          <p class="eyebrow">Diagnóstico gratuito</p>
-          <h2>Haz que tu reputación venda antes de la primera llamada.</h2>
-          <p>
-            Envíanos tu ficha de Google y recibe una lectura inicial de oportunidades,
-            fricciones de confianza y mejoras prioritarias.
-          </p>
+          <div class="cta-copy">
+            <p class="eyebrow contact-eyebrow">Contacto</p>
+            <h2>Cuéntanos tu caso y te decimos qué mejorar primero</h2>
+            <p class="cta-lead">
+              Déjanos el enlace de tu perfil de Google Maps y revisaremos tu punto de partida para orientarte con el pack más adecuado.
+            </p>
+
+            <div class="contact-trust-list" aria-label="Puntos de confianza">
+              <div class="contact-trust-item">
+                <span class="contact-trust-icon" aria-hidden="true"></span>
+                <div>
+                  <h3>Revisión inicial clara</h3>
+                  <p>Analizamos señales de confianza, actividad, fotos, reseñas y presentación local.</p>
+                </div>
+              </div>
+              <div class="contact-trust-item">
+                <span class="contact-trust-icon" aria-hidden="true"></span>
+                <div>
+                  <h3>Orientación sin compromiso</h3>
+                  <p>Te decimos qué pack tiene más sentido según tu situación.</p>
+                </div>
+              </div>
+              <div class="contact-trust-item">
+                <span class="contact-trust-icon" aria-hidden="true"></span>
+                <div>
+                  <h3>Respuesta rápida</h3>
+                  <p>Te contactamos por WhatsApp o email para avanzar sin complicaciones.</p>
+                </div>
+              </div>
+            </div>
+
+            <a class="contact-email" href="mailto:contacto@destroyerreviews.com">contacto@destroyerreviews.com</a>
+          </div>
 
           <form class="lead-form" action="#" method="post" data-lead-form>
-            <label>
-              <span>Nombre</span>
-              <input type="text" name="name" placeholder="Tu nombre" autocomplete="name" required />
+            <div class="lead-form-grid">
+              <label class="lead-field">
+                <span>Nombre</span>
+                <input type="text" name="name" placeholder="Tu nombre" autocomplete="name" required />
+              </label>
+              <label class="lead-field">
+                <span>Email</span>
+                <input type="email" name="email" placeholder="tu@email.com" autocomplete="email" required />
+              </label>
+              <label class="lead-field">
+                <span>WhatsApp</span>
+                <input type="tel" name="whatsapp" placeholder="+34 600 000 000" autocomplete="tel" />
+              </label>
+              <label class="lead-field">
+                <span>Enlace de tu perfil de Google Maps</span>
+                <input type="url" name="mapsUrl" placeholder="https://maps.google.com/..." autocomplete="url" />
+              </label>
+            </div>
+
+            <fieldset class="lead-goal">
+              <legend>Objetivo principal</legend>
+              <div class="lead-goal-options">
+                <label>
+                  <input type="radio" name="goal" value="Mejorar confianza" checked />
+                  <span>Mejorar confianza</span>
+                </label>
+                <label>
+                  <input type="radio" name="goal" value="Conseguir más llamadas" />
+                  <span>Conseguir más llamadas</span>
+                </label>
+                <label>
+                  <input type="radio" name="goal" value="Reforzar ficha nueva" />
+                  <span>Reforzar ficha nueva</span>
+                </label>
+                <label>
+                  <input type="radio" name="goal" value="Competir mejor en Maps" />
+                  <span>Competir mejor en Maps</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <label class="lead-field lead-field--message">
+              <span>Mensaje opcional</span>
+              <textarea name="message" placeholder="Cuéntanos brevemente qué quieres mejorar o qué te preocupa de tu ficha."></textarea>
             </label>
-            <label>
-              <span>Email</span>
-              <input type="email" name="email" placeholder="tu@email.com" autocomplete="email" required />
-            </label>
-            <label>
-              <span>Ficha de Google</span>
-              <input type="url" name="profile" placeholder="https://..." autocomplete="url" />
-            </label>
-            <button class="button button-primary magnetic" type="submit">Recibir diagnóstico</button>
+
+            <div class="lead-actions">
+              <button class="button button-primary magnetic" type="submit"><span>Solicitar revisión gratuita</span></button>
+              <a class="button button-secondary magnetic" href="https://wa.me/34603826428?text=Hola%2C%20quiero%20solicitar%20una%20revisi%C3%B3n%20gratuita%20de%20mi%20perfil%20de%20Google%20Maps" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+            </div>
+            <p class="lead-response-note">Respondemos normalmente en menos de 24 h.</p>
             <p class="form-status" role="status" aria-live="polite" data-form-status></p>
           </form>
         </div>
