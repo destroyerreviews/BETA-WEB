@@ -1720,7 +1720,7 @@ const initForm = () => {
   const form = document.querySelector("[data-lead-form]");
   const formStatus = document.querySelector("[data-form-status]");
   const submitButton = form?.querySelector('button[type="submit"]');
-  const submitLabel = submitButton?.querySelector("span") || submitButton;
+  const submitLabel = submitButton?.querySelector(".lead-submit-label") || submitButton;
   const defaultSubmitText = submitLabel?.textContent || "Pedir información";
   if (form) form.noValidate = true;
 
@@ -1730,35 +1730,95 @@ const initForm = () => {
     formStatus.className = state ? `form-status is-${state}` : "form-status";
   };
 
-  const submitLeadForm = async (formData) => {
-    // Future backend, CRM or email integration can replace this simulated request.
+  const getLeadField = (name) => form?.querySelector(`[name="${name}"]`);
+
+  const getFieldShell = (field) => field?.closest(".lead-field") || field?.closest(".lead-goal");
+
+  const getErrorNode = (shell) => {
+    if (!shell) return null;
+    const className = shell.classList.contains("lead-goal") ? "lead-goal-error" : "lead-field-error";
+    let error = shell.querySelector(`.${className}`);
+    if (!error) {
+      error = document.createElement("p");
+      error.className = className;
+      shell.appendChild(error);
+    }
+    return error;
+  };
+
+  const clearLeadErrors = () => {
+    form?.querySelectorAll(".is-invalid").forEach((element) => element.classList.remove("is-invalid"));
+    form?.querySelectorAll(".lead-field-error, .lead-goal-error").forEach((error) => {
+      error.textContent = "";
+    });
+  };
+
+  const setLeadError = (fieldOrShell, message) => {
+    const shell = fieldOrShell?.matches?.(".lead-field, .lead-goal") ? fieldOrShell : getFieldShell(fieldOrShell);
+    shell?.classList.add("is-invalid");
+    const error = getErrorNode(shell);
+    if (error) error.textContent = message;
+  };
+
+  const handleContactSubmit = async (payload) => {
+    // Replace this simulated request with an API route, backend, email, CRM or webhook.
     await new Promise((resolve) => window.setTimeout(resolve, 650));
-    return { ok: true, data: formData };
+    return { ok: true, data: payload };
   };
 
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
+    clearLeadErrors();
+    setLeadStatus("");
 
     const formData = new FormData(form);
     const name = `${formData.get("name") || ""}`.trim();
     const email = `${formData.get("email") || ""}`.trim();
+    const whatsapp = `${formData.get("whatsapp") || ""}`.trim();
+    const goal = `${formData.get("goal") || ""}`.trim();
+    const mapsUrl = `${formData.get("mapsUrl") || ""}`.trim();
     const message = `${formData.get("message") || ""}`.trim();
+    let firstInvalidField = null;
 
-    if (!name || !email || !message) {
-      setLeadStatus("Completa nombre, email y mensaje para poder responderte.", "error");
-      return;
+    if (!name) {
+      const field = getLeadField("name");
+      setLeadError(field, "Indica tu nombre.");
+      firstInvalidField ||= field;
     }
 
-    if (!emailPattern.test(email)) {
-      setLeadStatus("Introduce un email válido para que podamos responderte.", "error");
+    if (email && !emailPattern.test(email)) {
+      const field = getLeadField("email");
+      setLeadError(field, "Introduce un email válido.");
+      firstInvalidField ||= field;
+    }
+
+    if (!email && !whatsapp) {
+      const emailField = getLeadField("email");
+      const whatsappField = getLeadField("whatsapp");
+      setLeadError(emailField, "Indica un email o WhatsApp.");
+      setLeadError(whatsappField, "Indica un WhatsApp o email.");
+      firstInvalidField ||= emailField;
+    }
+
+    if (!goal) {
+      const goalShell = form.querySelector(".lead-goal");
+      setLeadError(goalShell, "Elige sobre qué quieres información.");
+      firstInvalidField ||= form.querySelector('[name="goal"]');
+    }
+
+    if (firstInvalidField) {
+      setLeadStatus("Revisa los campos marcados para poder enviarlo.", "error");
+      firstInvalidField.focus?.({ preventScroll: true });
+      firstInvalidField.scrollIntoView?.({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "center" });
       return;
     }
 
     setLeadStatus("Enviando tu mensaje...", "loading");
     if (submitButton) submitButton.disabled = true;
+    submitButton?.classList.add("is-loading");
     if (submitLabel) submitLabel.textContent = "Enviando...";
 
-    submitLeadForm(formData)
+    handleContactSubmit({ name, email, whatsapp, goal, mapsUrl, message })
       .then(() => {
         setLeadStatus("Hemos recibido tu mensaje. Te responderemos lo antes posible por WhatsApp o email.", "success");
         form.reset();
@@ -1768,8 +1828,23 @@ const initForm = () => {
       })
       .finally(() => {
         if (submitButton) submitButton.disabled = false;
+        submitButton?.classList.remove("is-loading");
         if (submitLabel) submitLabel.textContent = defaultSubmitText;
       });
+  });
+
+  form?.addEventListener("input", (event) => {
+    const shell = getFieldShell(event.target);
+    shell?.classList.remove("is-invalid");
+    const error = shell?.querySelector(".lead-field-error, .lead-goal-error");
+    if (error) error.textContent = "";
+  });
+
+  form?.addEventListener("change", (event) => {
+    const shell = getFieldShell(event.target);
+    shell?.classList.remove("is-invalid");
+    const error = shell?.querySelector(".lead-field-error, .lead-goal-error");
+    if (error) error.textContent = "";
   });
 };
 
