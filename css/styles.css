@@ -75,12 +75,49 @@ body {
   text-rendering: geometricPrecision;
 }
 
+body.home-page {
+  background:
+    radial-gradient(ellipse at 50% 22%, rgba(5, 12, 34, 0.66), transparent 48%),
+    var(--black);
+}
+
 body.is-transitioning main {
   pointer-events: none;
 }
 
 main {
+  position: relative;
+  isolation: isolate;
   overflow-x: hidden;
+}
+
+main::before,
+main::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+main::before {
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at 72% 8%, rgba(23, 59, 255, 0.16), transparent 34%),
+    radial-gradient(ellipse at 34% 28%, rgba(23, 59, 255, 0.08), transparent 38%),
+    radial-gradient(ellipse at 62% 50%, rgba(37, 99, 255, 0.12), transparent 42%),
+    radial-gradient(ellipse at 46% 74%, rgba(23, 59, 255, 0.1), transparent 44%),
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: auto, auto, auto, auto, 82px 82px, 82px 82px;
+  opacity: 0.82;
+}
+
+main::after {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(3, 3, 3, 0.5) 0%, transparent 8%, transparent 92%, rgba(3, 3, 3, 0.42) 100%),
+    linear-gradient(90deg, rgba(3, 3, 3, 0.28), transparent 24%, transparent 76%, rgba(3, 3, 3, 0.28)),
+    radial-gradient(ellipse at 50% 52%, rgba(23, 59, 255, 0.07), transparent 62%);
 }
 
 body::before {
@@ -93,7 +130,9 @@ body::before {
     linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 96px 96px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), transparent 74%);
+  opacity: 0.62;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.68) 68%, rgba(0, 0, 0, 0.42));
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.68) 68%, rgba(0, 0, 0, 0.42));
 }
 
 body::after {
@@ -420,6 +459,8 @@ textarea:focus-visible {
 }
 
 .section-inner {
+  position: relative;
+  z-index: 1;
   width: min(calc(100% - 40px), var(--max));
   margin-inline: auto;
 }
@@ -6086,10 +6127,18 @@ body.cart-is-open .whatsapp-float {
 
 .signal-strip {
   overflow: hidden;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: #fff;
-  color: #050505;
+  border-top: 1px solid rgba(117, 164, 255, 0.14);
+  border-bottom: 1px solid rgba(117, 164, 255, 0.12);
+  background:
+    linear-gradient(90deg, transparent, rgba(37, 99, 255, 0.1), transparent),
+    rgba(5, 8, 18, 0.38);
+  color: rgba(243, 247, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 -34px 70px rgba(3, 3, 3, 0.2),
+    0 34px 70px rgba(3, 3, 3, 0.2);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
 }
 
 .signal-track {
@@ -6119,9 +6168,7 @@ body.cart-is-open .whatsapp-float {
 
 .field-proof {
   padding-top: 112px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 34%),
-    var(--black);
+  background: transparent;
 }
 
 .proof-layout {
@@ -6429,12 +6476,7 @@ body.cart-is-open .whatsapp-float {
 .section-system {
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 72% 22%, rgba(37, 99, 255, 0.14), transparent 34%),
-    linear-gradient(rgba(255, 255, 255, 0.032) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px),
-    var(--black);
-  background-size: auto, 58px 58px, 58px 58px, auto;
+  background: transparent;
 }
 
 .section-system::before {
@@ -6442,9 +6484,9 @@ body.cart-is-open .whatsapp-float {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 18% 46%, rgba(125, 165, 255, 0.07), transparent 30%),
-    linear-gradient(90deg, rgba(3, 3, 3, 0.06), transparent 42%, rgba(37, 99, 255, 0.035)),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.18), rgba(3, 3, 3, 0.82));
+    radial-gradient(circle at 18% 46%, rgba(125, 165, 255, 0.055), transparent 34%),
+    linear-gradient(90deg, rgba(3, 3, 3, 0.04), transparent 42%, rgba(37, 99, 255, 0.025));
+  opacity: 0.78;
   pointer-events: none;
 }
 
@@ -6808,11 +6850,7 @@ body.cart-is-open .whatsapp-float {
 .process-section {
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(37, 99, 255, 0.14), transparent 34%),
-    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-  background-size: auto, 82px 82px, 82px 82px;
+  background: transparent;
 }
 
 .process-section::before {
@@ -6824,7 +6862,7 @@ body.cart-is-open .whatsapp-float {
   border-radius: 999px;
   background: radial-gradient(circle, rgba(37, 99, 255, 0.18), transparent 66%);
   filter: blur(48px);
-  opacity: 0.78;
+  opacity: 0.42;
   pointer-events: none;
   transform: translateX(-50%);
 }
@@ -7252,7 +7290,7 @@ body.cart-is-open .whatsapp-float {
 
 @media (max-width: 560px) {
   .process-section {
-    background-size: auto, 58px 58px, 58px 58px;
+    background: transparent;
   }
 
   .process-timeline {
@@ -7301,42 +7339,28 @@ body.cart-is-open .whatsapp-float {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 76% 26%, rgba(37, 99, 255, 0.18), transparent 42%),
-    radial-gradient(ellipse at 18% 84%, rgba(117, 164, 255, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(3, 5, 12, 0.96), rgba(7, 10, 20, 0.92) 48%, rgba(3, 5, 12, 0.98));
+  background: transparent;
   color: #fff;
 }
 
 .section-method::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 86px 86px;
-  opacity: 0.48;
-  mask-image: radial-gradient(ellipse at 62% 42%, #000 0%, rgba(0, 0, 0, 0.72) 46%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse at 62% 42%, #000 0%, rgba(0, 0, 0, 0.72) 46%, transparent 78%);
+  display: none;
 }
 
 .section-method::after {
   content: "";
   position: absolute;
-  top: 18%;
-  right: 10%;
+  left: 50%;
+  top: 12%;
   z-index: -1;
-  width: min(620px, 58vw);
-  height: 420px;
+  width: min(980px, 88vw);
+  height: 620px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(23, 59, 255, 0.26), rgba(23, 59, 255, 0.08) 48%, transparent 74%);
-  filter: blur(52px);
-  opacity: 0.62;
-  animation: methodAuraBreath 8s ease-in-out infinite;
+  background: radial-gradient(ellipse at center, rgba(23, 59, 255, 0.13), rgba(23, 59, 255, 0.04) 46%, transparent 74%);
+  filter: blur(58px);
+  opacity: 0.38;
+  transform: translateX(-50%);
 }
 
 .section-method .eyebrow,
@@ -7718,8 +7742,7 @@ body.cart-is-open .whatsapp-float {
   isolation: isolate;
   overflow: hidden;
   padding-block: clamp(96px, 8.5vw, 134px) clamp(88px, 8vw, 124px);
-  background:
-    linear-gradient(90deg, rgba(3, 3, 3, 0.98), rgba(7, 10, 24, 0.94) 62%, rgba(3, 3, 3, 0.98));
+  background: transparent;
 }
 
 .pricing-section::before {
@@ -7738,23 +7761,12 @@ body.cart-is-open .whatsapp-float {
       rgba(32, 108, 232, 0.09) 52%,
       transparent 72%);
   filter: blur(56px);
-  opacity: 0.82;
+  opacity: 0.48;
   pointer-events: none;
 }
 
 .pricing-section::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -4;
-  background:
-    linear-gradient(to right, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 72px 72px;
-  opacity: 0.24;
-  pointer-events: none;
-  mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
-  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
+  display: none;
 }
 
 .plans-aura,
@@ -7769,17 +7781,11 @@ body.cart-is-open .whatsapp-float {
   background:
     radial-gradient(ellipse at 50% 52%, rgba(23, 59, 255, 0.28), transparent 36%),
     radial-gradient(ellipse at 78% 8%, rgba(255, 255, 255, 0.055), transparent 28%);
-  opacity: 0.9;
+  opacity: 0.48;
 }
 
 .plans-grid-surface {
-  z-index: -2;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.046) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 86px 86px;
-  mask-image: radial-gradient(ellipse at 48% 34%, #000 0%, rgba(0, 0, 0, 0.78) 42%, transparent 78%);
-  opacity: 0.74;
+  display: none;
 }
 
 .pricing-sparkles {
@@ -8563,24 +8569,11 @@ body.cart-is-open .whatsapp-float {
   isolation: isolate;
   overflow: hidden;
   padding-block: clamp(104px, 9vw, 148px);
-  background:
-    radial-gradient(circle at 50% 48%, rgba(37, 99, 255, 0.14), transparent 38%),
-    linear-gradient(90deg, rgba(3, 3, 3, 0.98), rgba(7, 10, 24, 0.92) 56%, rgba(3, 3, 3, 0.98));
+  background: transparent;
 }
 
 .testimonials-section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background:
-    linear-gradient(to right, rgba(255, 255, 255, 0.038) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 78px 78px;
-  opacity: 0.32;
-  mask-image: radial-gradient(ellipse at 50% 44%, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 44%, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 78%);
-  pointer-events: none;
+  display: none;
 }
 
 .testimonials-section::after {
@@ -8595,7 +8588,7 @@ body.cart-is-open .whatsapp-float {
   background:
     radial-gradient(circle at center, rgba(37, 99, 255, 0.26), rgba(37, 99, 255, 0.09) 42%, transparent 72%);
   filter: blur(62px);
-  opacity: 0.78;
+  opacity: 0.42;
   pointer-events: none;
 }
 
@@ -8867,14 +8860,12 @@ body.is-page-hidden *::after {
 .final-cta::before {
   content: "";
   position: absolute;
-  inset: 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  inset: 0;
   background:
-    radial-gradient(ellipse at 84% 22%, rgba(23, 59, 255, 0.28), transparent 34%),
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
-  background-size: auto, 84px 84px, 84px 84px;
+    radial-gradient(ellipse at 82% 28%, rgba(23, 59, 255, 0.18), transparent 38%),
+    radial-gradient(ellipse at 32% 72%, rgba(117, 164, 255, 0.055), transparent 34%);
+  opacity: 0.58;
+  pointer-events: none;
 }
 
 .cta-inner {
@@ -8954,37 +8945,16 @@ body.is-page-hidden *::after {
   position: relative;
   padding: clamp(36px, 4.8vw, 58px) 0 26px;
   overflow: hidden;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    radial-gradient(circle at 18% 0%, rgba(37, 99, 255, 0.16), transparent 34%),
-    radial-gradient(circle at 84% 14%, rgba(36, 91, 255, 0.14), transparent 32%),
-    linear-gradient(180deg, rgba(7, 10, 20, 0.28), rgba(3, 5, 12, 0.94));
+  border-top: 0;
+  background: transparent;
 }
 
 .site-footer::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 86px 86px;
-  mask-image: linear-gradient(180deg, black, transparent 86%);
-  -webkit-mask-image: linear-gradient(180deg, black, transparent 86%);
-  opacity: 0.42;
+  display: none;
 }
 
 .site-footer::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 0;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(117, 164, 255, 0.62), rgba(255, 255, 255, 0.24), transparent);
-  box-shadow: 0 0 34px rgba(37, 99, 255, 0.26);
+  display: none;
 }
 
 .footer-shell {
