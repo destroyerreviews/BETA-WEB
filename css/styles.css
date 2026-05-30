@@ -11445,7 +11445,8 @@ body.is-page-hidden *::after {
   .trial-actions button,
   .cart-button,
   .blog-modal__close,
-  .cart-close {
+  .cart-close,
+  .site-footer a {
     cursor: pointer;
   }
 }
