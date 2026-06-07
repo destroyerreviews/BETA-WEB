@@ -959,6 +959,62 @@ const initAnimationVisibility = () => {
   pauseGroups.forEach(({ roots }) => roots.forEach((root) => observer.observe(root)));
 };
 
+const initTestimonialMarqueeSpeed = () => {
+  if (prefersReducedMotion) return;
+
+  document.querySelectorAll(".testimonial-marquee").forEach((marquee) => {
+    const track = marquee.querySelector(".testimonial-track");
+    if (!track || typeof track.getAnimations !== "function") return;
+
+    let frame = null;
+    let currentRate = 1;
+    let targetRate = 1;
+    let lastTime = 0;
+    let animations = [];
+
+    const readAnimations = () => {
+      animations = track.getAnimations().filter((animation) => animation.effect);
+      return animations.length;
+    };
+
+    const setRate = (rate) => {
+      if (!animations.length && !readAnimations()) return;
+      animations.forEach((animation) => {
+        animation.playbackRate = rate;
+      });
+    };
+
+    const tick = (time) => {
+      const elapsed = Math.min(time - lastTime, 64) / 1000;
+      lastTime = time;
+      const smoothing = 1 - Math.exp(-elapsed * 4.8);
+      currentRate += (targetRate - currentRate) * smoothing;
+      setRate(currentRate);
+
+      if (Math.abs(targetRate - currentRate) < 0.006) {
+        currentRate = targetRate;
+        setRate(currentRate);
+        frame = null;
+        return;
+      }
+
+      frame = requestAnimationFrame(tick);
+    };
+
+    const glideTo = (rate) => {
+      targetRate = rate;
+      if (frame) return;
+      lastTime = performance.now();
+      frame = requestAnimationFrame(tick);
+    };
+
+    marquee.addEventListener("pointerenter", () => glideTo(0.3), { passive: true });
+    marquee.addEventListener("pointerleave", () => glideTo(1), { passive: true });
+    marquee.addEventListener("focusin", () => glideTo(0.3));
+    marquee.addEventListener("focusout", () => glideTo(1));
+  });
+};
+
 const initMotionVisibility = () => {
   if (typeof IntersectionObserver === "undefined") return;
 
@@ -1922,6 +1978,7 @@ const init = () => {
     initSocialMetrics();
     initMicroInteractions();
     initAnimationVisibility();
+    initTestimonialMarqueeSpeed();
     initMotionVisibility();
     initPlanSwitch();
     initPricingReveal();
