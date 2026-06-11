@@ -1211,6 +1211,22 @@ const initProcessTimeline = () => {
   updateProcessTimeline();
 };
 
+const cartStorageKey = "destroyerReviewsCart";
+const formatCartPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
+const mainScriptSrc = [...document.scripts].find((script) => script.getAttribute("src")?.includes("js/main.js"))?.getAttribute("src") || "";
+const relativeRoot = mainScriptSrc.startsWith("../") ? "../" : "";
+const sitePath = (path) => `${relativeRoot}${path}`;
+const checkoutPath = () => `${relativeRoot}checkout/`;
+
+const readStoredCart = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(cartStorageKey) || "[]");
+    return Array.isArray(stored) ? stored.filter((item) => item && item.name) : [];
+  } catch {
+    return [];
+  }
+};
+
 const initCart = () => {
   const drawer = document.querySelector("[data-cart-drawer]");
   const overlay = document.querySelector("[data-cart-overlay]");
@@ -1227,7 +1243,6 @@ const initCart = () => {
   const toast = document.querySelector("[data-cart-toast]");
   const drawerNotice = document.querySelector("[data-cart-notice]");
   const addButtons = [...document.querySelectorAll("[data-add-cart]")];
-  const storageKey = "destroyerReviewsCart";
   const whatsappNumber = "34603826428";
   const removeAnimationMs = 320;
   let cart = [];
@@ -1237,16 +1252,12 @@ const initCart = () => {
   if (!drawer || !overlay) return;
 
   const readCart = () => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      cart = Array.isArray(stored) ? stored.filter((item) => item && item.name) : [];
-    } catch {
-      cart = [];
-    }
+    cart = readStoredCart();
   };
 
   const saveCart = () => {
-    localStorage.setItem(storageKey, JSON.stringify(cart));
+    localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+    window.dispatchEvent(new CustomEvent("destroyer:cart-updated", { detail: { cart } }));
   };
 
   const formatPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
@@ -1267,17 +1278,25 @@ const initCart = () => {
     "'": "&#039;",
   })[char]);
 
-  const getPackVisual = (item) => packVisuals[item.id] || {
-    image: "assets/icons/packs/diamante.webp",
-    color: "#58a6ff",
-    label: item.name || "Pack",
+  const getPackVisual = (item) => {
+    const visual = packVisuals[item.id] || {
+      image: "assets/icons/packs/diamante.webp",
+      color: "#58a6ff",
+      label: item.name || "Pack",
+    };
+    return {
+      ...visual,
+      image: visual.image.startsWith("../") ? visual.image : sitePath(visual.image),
+    };
   };
 
   const updateCheckout = () => {
     if (!checkoutNode) return;
     const detail = cart.map((item) => `${item.quantity || 1}x ${item.name} (${item.reviews}) - ${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}`).join("; ");
     const message = `Hola, quiero contratar estos packs: ${detail}. ¿Me podéis ayudar?`;
-    checkoutNode.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    checkoutNode.href = checkoutPath();
+    checkoutNode.removeAttribute("target");
+    checkoutNode.removeAttribute("rel");
   };
 
   const renderCart = () => {
@@ -1511,6 +1530,251 @@ const initCart = () => {
 
   readCart();
   renderCart();
+};
+
+const initCheckout = () => {
+  const root = document.querySelector("[data-checkout-page]");
+  if (!root) return;
+
+  const form = root.querySelector("[data-checkout-form]");
+  const shell = root.querySelector("[data-checkout-shell]");
+  const empty = root.querySelector("[data-checkout-empty]");
+  const summaryItems = root.querySelector("[data-checkout-summary-items]");
+  const totalNode = root.querySelector("[data-checkout-total]");
+  const reviewCountNode = root.querySelector("[data-review-count]");
+  const modeButtons = [...root.querySelectorAll("[data-review-mode]")];
+  const preparedPanel = root.querySelector("[data-prepared-panel]");
+  const manualPanel = root.querySelector("[data-manual-panel]");
+  const reviewList = root.querySelector("[data-review-list]");
+  const quickStars = [...root.querySelectorAll("[data-quick-stars]")];
+  const submitButton = root.querySelector("[data-payment-submit]");
+  const statusNode = root.querySelector("[data-checkout-status]");
+  let reviewMode = "prepared";
+  let reviews = [];
+
+  const escapeCheckoutHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[char]);
+
+  const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
+  const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
+  const cartItems = () => readStoredCart();
+  const cartTotal = (items) => items.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
+  const totalReviews = (items) => items.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
+  const packIcon = (item) => {
+    const id = item.id || "";
+    const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
+    return sitePath(`assets/icons/packs/${safeId}.webp`);
+  };
+
+  const ensureReviews = (count) => {
+    while (reviews.length < count) reviews.push({ stars: 5, text: "" });
+    reviews = reviews.slice(0, count);
+  };
+
+  const setStatus = (type, message) => {
+    if (!statusNode) return;
+    statusNode.textContent = message;
+    statusNode.dataset.state = type || "";
+  };
+
+  const starLabel = (stars) => `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
+
+  const renderReviewList = () => {
+    if (!reviewList) return;
+    reviewList.innerHTML = reviews.map((review, index) => `
+      <details class="review-accordion" data-review-index="${index}">
+        <summary>
+          <span>Reseña ${index + 1}</span>
+          <strong>${starLabel(review.stars)}</strong>
+        </summary>
+        <div class="review-accordion__body">
+          <label>
+            Texto de la reseña
+            <textarea data-review-text="${index}" rows="4" placeholder="Escribe el texto o deja una nota para esta reseña.">${escapeCheckoutHtml(review.text)}</textarea>
+          </label>
+          <div class="review-stars" role="group" aria-label="Estrellas para la reseña ${index + 1}">
+            ${[3, 4, 5].map((stars) => `
+              <button class="review-star-chip ${review.stars === stars ? "is-active" : ""}" type="button" data-review-stars="${stars}" data-review-index="${index}" aria-pressed="${review.stars === stars}">
+                <span>${starLabel(stars)}</span>
+                <b>${stars} ★</b>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      </details>
+    `).join("");
+  };
+
+  const renderSummary = () => {
+    const items = cartItems();
+    const hasItems = items.length > 0;
+    const reviewTotal = totalReviews(items);
+    ensureReviews(reviewTotal);
+
+    if (shell) shell.hidden = !hasItems;
+    if (empty) empty.hidden = hasItems;
+    if (submitButton) submitButton.disabled = !hasItems;
+    if (reviewCountNode) reviewCountNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"}`;
+
+    if (summaryItems) {
+      summaryItems.innerHTML = items.map((item) => {
+        const quantity = itemQuantity(item);
+        const price = Number(item.price) || 0;
+        const subtotal = price * quantity;
+        return `
+          <article class="checkout-summary-item">
+            <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>${escapeCheckoutHtml(item.name)}</strong>
+              <span>${escapeCheckoutHtml(item.reviews)} · Cantidad ${quantity}</span>
+            </div>
+            <dl>
+              <div><dt>Unitario</dt><dd>${formatCartPrice(price)}</dd></div>
+              <div><dt>Subtotal</dt><dd>${formatCartPrice(subtotal)}</dd></div>
+            </dl>
+          </article>
+        `;
+      }).join("");
+    }
+
+    if (totalNode) totalNode.textContent = formatCartPrice(cartTotal(items));
+    renderReviewList();
+  };
+
+  const renderMode = () => {
+    modeButtons.forEach((button) => {
+      const isActive = button.dataset.reviewMode === reviewMode;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+    if (preparedPanel) preparedPanel.hidden = reviewMode !== "prepared";
+    if (manualPanel) manualPanel.hidden = reviewMode !== "manual";
+  };
+
+  const setFieldError = (field, message) => {
+    const wrapper = field.closest("[data-checkout-field]");
+    const error = wrapper?.querySelector("[data-checkout-error]");
+    wrapper?.classList.toggle("has-error", Boolean(message));
+    if (error) error.textContent = message || "";
+  };
+
+  const validateCheckout = () => {
+    if (!form) return false;
+    let isValid = true;
+    [...form.querySelectorAll("[required]")].forEach((field) => {
+      let message = "";
+      if (!field.value.trim()) message = "Completa este campo.";
+      if (!message && field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
+        message = "Introduce un email valido.";
+      }
+      if (!message && field.name === "googleMaps" && !/^https?:\/\/.+(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(field.value.trim())) {
+        message = "Pega un enlace valido de Google Maps.";
+      }
+      setFieldError(field, message);
+      if (message) isValid = false;
+    });
+    return isValid;
+  };
+
+  const collectCheckoutData = () => {
+    const formData = new FormData(form);
+    return {
+      customer: Object.fromEntries(formData.entries()),
+      reviewMode,
+      reviews: reviewMode === "manual" ? reviews : [],
+      cart: cartItems(),
+      total: cartTotal(cartItems()),
+    };
+  };
+
+  const handlePaymentSubmit = async (checkoutData) => {
+    // TODO: connect this handoff to Stripe, PayPal, Redsys, or the chosen payment provider.
+    void checkoutData;
+    throw new Error("payment_provider_pending");
+  };
+
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      reviewMode = button.dataset.reviewMode || "prepared";
+      renderMode();
+    });
+  });
+
+  quickStars.forEach((button) => {
+    button.addEventListener("click", () => {
+      const stars = Number(button.dataset.quickStars);
+      if (![3, 4, 5].includes(stars)) return;
+      reviews = reviews.map((review) => ({ ...review, stars }));
+      renderReviewList();
+    });
+  });
+
+  reviewList?.addEventListener("input", (event) => {
+    const textarea = event.target.closest("[data-review-text]");
+    if (!textarea) return;
+    const index = Number(textarea.dataset.reviewText);
+    if (reviews[index]) reviews[index].text = textarea.value;
+  });
+
+  reviewList?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-review-stars]");
+    if (!button) return;
+    const index = Number(button.dataset.reviewIndex);
+    const stars = Number(button.dataset.reviewStars);
+    if (!reviews[index] || ![3, 4, 5].includes(stars)) return;
+    reviews[index].stars = stars;
+    renderReviewList();
+    const row = reviewList.querySelector(`[data-review-index="${index}"]`);
+    if (row) row.open = true;
+  });
+
+  form?.addEventListener("input", (event) => {
+    const field = event.target.closest("input, textarea");
+    if (field) setFieldError(field, "");
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setStatus("", "");
+
+    if (!cartItems().length) {
+      setStatus("error", "Tu carrito esta vacio. Elige un pack antes de pagar.");
+      renderSummary();
+      return;
+    }
+
+    if (!validateCheckout()) {
+      setStatus("error", "Revisa los campos marcados antes de continuar.");
+      return;
+    }
+
+    submitButton?.classList.add("is-loading");
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      await handlePaymentSubmit(collectCheckoutData());
+      setStatus("success", "Pedido preparado. Te llevaremos a la confirmacion del pago.");
+      window.location.href = "success/";
+    } catch {
+      setStatus("error", "El pago online se esta activando. Contactanos por WhatsApp y finalizamos el pedido contigo.");
+    } finally {
+      submitButton?.classList.remove("is-loading");
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  window.addEventListener("destroyer:cart-updated", renderSummary);
+  window.addEventListener("storage", (event) => {
+    if (event.key === cartStorageKey) renderSummary();
+  });
+
+  renderMode();
+  renderSummary();
 };
 
 const initWhatsappFloat = () => {
@@ -1998,6 +2262,7 @@ const init = () => {
   initNavigation();
   initTrialModal();
   initCart();
+  initCheckout();
   if (hasHomeContent) {
     initHeroRotatingWord();
     initPhoneTime();

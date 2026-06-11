@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Finaliza tu pedido de Destroyer Reviews con datos del negocio, enlace de Google Maps y personalizacion de resenas."
+    />
+    <title>Checkout | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" type="image/png" href="../assets/brand/favicon.png" />
+    <link rel="stylesheet" href="../css/styles.css?v=checkout-20260611" />
+  </head>
+  <body class="checkout-page">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <nav class="liquid-nav" aria-label="Navegacion principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="brand-logo nav-brand" href="../index.html" aria-label="Destroyer Reviews">
+            <img src="../assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--nav" width="1495" height="350" loading="eager" decoding="async" />
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="../index.html" data-nav-link>Inicio</a>
+            <a href="../blogs/" data-nav-link>Blogs</a>
+            <a href="../index.html#planes" data-nav-link>Precios</a>
+            <a href="../index.html#contacto" data-nav-link>Contactanos</a>
+          </div>
+          <div class="nav-auth">
+            <button class="cart-button cart-button--desktop" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+              <span class="cart-count" data-cart-count hidden>0</span>
+            </button>
+            <a class="nav-login" href="../login.html">Iniciar sesion</a>
+            <a class="nav-register" href="../register.html">Registrarse</a>
+          </div>
+          <button class="cart-button cart-button--mobile" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+              <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+            </svg>
+            <span class="cart-count" data-cart-count hidden>0</span>
+          </button>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="../index.html">Inicio</a>
+          <a href="../blogs/">Blogs</a>
+          <a href="../index.html#planes">Precios</a>
+          <a href="../index.html#contacto">Contactanos</a>
+          <button class="mobile-cart-link" type="button" data-cart-toggle>
+            <span class="mobile-cart-link__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+            </span>
+            <span>Carrito</span>
+            <span class="mobile-cart-count" data-cart-count hidden>0</span>
+          </button>
+          <a href="../login.html">Iniciar sesion</a>
+          <a class="mobile-register" href="../register.html">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="cart-overlay" data-cart-overlay hidden></div>
+    <aside class="cart-drawer" aria-label="Carrito de compra" aria-hidden="true" data-cart-drawer>
+      <div class="cart-drawer__glow" aria-hidden="true"></div>
+      <header class="cart-drawer__header">
+        <div>
+          <span>Carrito</span>
+          <h2>Tu pedido</h2>
+        </div>
+        <button class="cart-close" type="button" aria-label="Cerrar carrito" data-cart-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="cart-drawer__body" data-cart-body>
+        <div class="cart-empty" data-cart-empty>
+          <div class="cart-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" /><path d="M9.2 19.2h.01M16.2 19.2h.01" /></svg>
+          </div>
+          <h3>Tu carrito esta vacio</h3>
+          <p>Elige un pack para empezar.</p>
+          <a class="button button-primary cart-empty__button" href="../index.html#planes" data-cart-prices>Ver precios</a>
+        </div>
+        <div class="cart-list" data-cart-items></div>
+      </div>
+      <footer class="cart-summary" data-cart-summary hidden>
+        <div class="cart-total-row"><span>Total</span><strong data-cart-total>0 €</strong></div>
+        <a class="button button-primary cart-checkout" href="../checkout/" data-cart-checkout>Finalizar pedido</a>
+        <button class="button button-secondary cart-continue" type="button" data-cart-continue>Seguir viendo packs</button>
+      </footer>
+    </aside>
+    <div class="cart-toast" role="status" aria-live="polite" data-cart-toast hidden></div>
+
+    <main class="checkout-shell" data-checkout-page>
+      <section class="checkout-hero" aria-labelledby="checkout-title">
+        <p class="eyebrow">CHECKOUT SEGURO</p>
+        <h1 id="checkout-title">Finaliza tu pedido</h1>
+        <p>Revisa los packs, dinos como quieres personalizar las resenas y deja el pago listo para publicar de forma progresiva.</p>
+      </section>
+
+      <section class="checkout-empty-state" data-checkout-empty hidden>
+        <div class="cart-empty__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false"><path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" /><path d="M9.2 19.2h.01M16.2 19.2h.01" /></svg>
+        </div>
+        <h2>Tu carrito esta vacio</h2>
+        <p>Elige un pack antes de configurar el pedido.</p>
+        <a class="button button-primary" href="../index.html#planes">Ver packs</a>
+      </section>
+
+      <div class="checkout-grid" data-checkout-shell hidden>
+        <form class="checkout-form" id="checkout-form" data-checkout-form novalidate>
+          <section class="checkout-panel">
+            <div class="checkout-panel__head">
+              <span>01</span>
+              <div>
+                <h2>Datos del pedido</h2>
+                <p>Usaremos estos datos para coordinar la publicacion y soporte.</p>
+              </div>
+            </div>
+
+            <div class="checkout-fields">
+              <label class="checkout-field" data-checkout-field>
+                <span>Nombre</span>
+                <input name="name" type="text" autocomplete="name" placeholder="Tu nombre" required />
+                <small data-checkout-error></small>
+              </label>
+              <label class="checkout-field" data-checkout-field>
+                <span>Email</span>
+                <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
+                <small data-checkout-error></small>
+              </label>
+              <label class="checkout-field" data-checkout-field>
+                <span>WhatsApp</span>
+                <input name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" required />
+                <small data-checkout-error></small>
+              </label>
+              <label class="checkout-field checkout-field--wide" data-checkout-field>
+                <span>Enlace de tu perfil de Google Maps</span>
+                <input name="googleMaps" type="url" inputmode="url" placeholder="https://www.google.com/maps/place/..." required />
+                <small data-checkout-error></small>
+              </label>
+              <label class="checkout-field checkout-field--wide" data-checkout-field>
+                <span>Notas generales del pedido <em>opcional</em></span>
+                <textarea name="notes" rows="4" placeholder="Horarios, servicios clave, zonas, ritmo preferido de publicacion..."></textarea>
+                <small data-checkout-error></small>
+              </label>
+            </div>
+          </section>
+
+          <section class="checkout-panel">
+            <div class="checkout-panel__head">
+              <span>02</span>
+              <div>
+                <h2>Personalizacion de resenas</h2>
+                <p>Configura <strong data-review-count>0 resenas</strong> sin abrir un formulario infinito.</p>
+              </div>
+            </div>
+
+            <div class="review-mode-grid" role="group" aria-label="Modo de personalizacion">
+              <button class="review-mode-card is-active" type="button" data-review-mode="prepared" aria-pressed="true">
+                <span>Recomendado</span>
+                <strong>Preparad los textos por mi</strong>
+                <p>Nuestro equipo preparara textos naturales y variados segun tu negocio.</p>
+              </button>
+              <button class="review-mode-card" type="button" data-review-mode="manual" aria-pressed="false">
+                <span>Avanzado</span>
+                <strong>Quiero escribir o revisar los textos</strong>
+                <p>Podras indicar el texto y las estrellas de cada resena.</p>
+              </button>
+            </div>
+
+            <div class="review-mode-panel" data-prepared-panel>
+              <label class="checkout-field checkout-field--wide">
+                <span>Instrucciones generales <em>opcional</em></span>
+                <textarea name="teamInstructions" rows="5" placeholder="Indica servicios, tono, detalles del negocio o palabras que prefieres evitar."></textarea>
+              </label>
+            </div>
+
+            <div class="review-mode-panel review-mode-panel--manual" data-manual-panel hidden>
+              <div class="review-quick-actions">
+                <button type="button" data-quick-stars="5">Aplicar 5 estrellas a todas</button>
+                <button type="button" data-quick-stars="4">Aplicar 4 estrellas a todas</button>
+                <span>Personaliza individualmente abriendo solo la reseña que necesites.</span>
+              </div>
+              <div class="review-list" data-review-list></div>
+            </div>
+          </section>
+        </form>
+
+        <aside class="checkout-summary-card" aria-label="Resumen del pedido">
+          <div class="checkout-summary-card__top">
+            <span>Resumen</span>
+            <strong data-checkout-total>0 €</strong>
+          </div>
+
+          <div class="checkout-summary-list" data-checkout-summary-items></div>
+
+          <div class="checkout-costs">
+            <div><span>Textos preparados por el equipo</span><strong>Incluido</strong></div>
+            <div><span>Personalizacion adicional</span><strong>Incluido</strong></div>
+          </div>
+
+          <button class="checkout-pay-button" type="submit" form="checkout-form" data-payment-submit>
+            <span>Pagar pedido</span>
+            <i aria-hidden="true"></i>
+          </button>
+          <p class="checkout-status" aria-live="polite" data-checkout-status></p>
+
+          <ul class="checkout-trust-list">
+            <li>Pago seguro</li>
+            <li>Publicacion progresiva</li>
+            <li>Soporte por WhatsApp</li>
+          </ul>
+        </aside>
+      </div>
+    </main>
+
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="../js/main.js"></script>
+  </body>
+</html>
