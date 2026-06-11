@@ -1295,19 +1295,27 @@ const initCart = () => {
     if (totalNode) totalNode.textContent = formatPrice(cartTotal());
 
     if (itemsNode) {
-      itemsNode.innerHTML = cart.map((item) => `
-        <article class="cart-item" style="--pack-accent: ${getPackVisual(item).color};" data-cart-item="${escapeHtml(item.id)}">
+      itemsNode.innerHTML = cart.map((item) => {
+        const quantity = Math.max(1, Number(item.quantity) || 1);
+        const escapedId = escapeHtml(item.id);
+        const escapedName = escapeHtml(item.name);
+        return `
+        <article class="cart-item" style="--pack-accent: ${getPackVisual(item).color};" data-cart-item="${escapedId}">
           <div class="cart-item__icon" aria-hidden="true">
             <img src="${getPackVisual(item).image}" alt="" loading="lazy" decoding="async" />
           </div>
           <div class="cart-item__meta">
             <span class="cart-item__badge">${escapeHtml(item.reviews)}</span>
-            <h3>${escapeHtml(item.name)}</h3>
-            <p>Cantidad ${item.quantity || 1}</p>
+            <h3>${escapedName}</h3>
+            <div class="cart-quantity" aria-label="Cantidad de ${escapedName}">
+              <button class="cart-quantity__button" type="button" aria-label="Reducir cantidad de ${escapedName}" data-cart-quantity="decrease" data-cart-id="${escapedId}" ${quantity === 1 ? "disabled" : ""}>&minus;</button>
+              <span class="cart-quantity__value" aria-live="polite">${quantity}</span>
+              <button class="cart-quantity__button" type="button" aria-label="Aumentar cantidad de ${escapedName}" data-cart-quantity="increase" data-cart-id="${escapedId}">+</button>
+            </div>
           </div>
           <div class="cart-item__side">
-            <strong>${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}</strong>
-            <button class="cart-item__remove" type="button" aria-label="Eliminar ${escapeHtml(item.name)}" data-remove-cart="${escapeHtml(item.id)}">
+            <strong>${formatPrice((Number(item.price) || 0) * quantity)}</strong>
+            <button class="cart-item__remove" type="button" aria-label="Eliminar ${escapedName}" data-remove-cart="${escapedId}">
               <svg class="cart-trash" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <g class="cart-trash__lid">
                   <path d="M8.5 6.4h7" />
@@ -1321,7 +1329,8 @@ const initCart = () => {
             </button>
           </div>
         </article>
-      `).join("");
+      `;
+      }).join("");
     }
 
     updateCheckout();
@@ -1447,6 +1456,25 @@ const initCart = () => {
   });
 
   itemsNode?.addEventListener("click", (event) => {
+    const quantityButton = event.target.closest("[data-cart-quantity]");
+    if (quantityButton) {
+      const targetItem = cart.find((item) => item.id === quantityButton.dataset.cartId);
+      if (!targetItem) return;
+
+      const currentQuantity = Math.max(1, Number(targetItem.quantity) || 1);
+      if (quantityButton.dataset.cartQuantity === "increase") {
+        targetItem.quantity = currentQuantity + 1;
+      } else if (currentQuantity > 1) {
+        targetItem.quantity = currentQuantity - 1;
+      } else {
+        targetItem.quantity = 1;
+      }
+
+      saveCart();
+      renderCart();
+      return;
+    }
+
     const removeButton = event.target.closest("[data-remove-cart]");
     if (!removeButton) return;
     const itemNode = removeButton.closest(".cart-item");
