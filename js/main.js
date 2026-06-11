@@ -18,8 +18,12 @@ const authCard = document.querySelector(".auth-card");
 const authConsole = document.querySelector(".auth-console");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const hasFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+const scrollMotionQuery = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)");
+const pointerEffectsQuery = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)");
 const perfDebug = new URLSearchParams(window.location.search).has("perf");
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const canRunScrollMotion = () => !prefersReducedMotion && scrollMotionQuery.matches;
+const canRunPointerEffects = () => !prefersReducedMotion && pointerEffectsQuery.matches;
 
 /* ── Sliding pill indicator for active nav link ── */
 const updateNavPill = () => {};
@@ -39,6 +43,7 @@ let visibleDepthLayers = new Set(depthLayers);
 let lastHeaderScrolled = null;
 let lastScrollProgress = -1;
 let lastActiveSectionId = "";
+let processTimelineVisible = true;
 const lastMotionValues = new WeakMap();
 
 const refreshNavSectionPositions = () => {
@@ -56,8 +61,15 @@ const setStyleVarIfChanged = (element, name, value, tolerance = 0.05) => {
   element.style.setProperty(name, `${value}px`);
 };
 
+const resetScrollMotion = () => {
+  depthLayers.forEach((layer) => layer.style.removeProperty("--depth-y"));
+  motionPanels.forEach((panel) => panel.style.removeProperty("--motion-y"));
+  visibleDepthLayers.clear();
+  visibleMotionPanels.clear();
+};
+
 const initLenis = () => {
-  if (prefersReducedMotion || typeof Lenis === "undefined") {
+  if (prefersReducedMotion || !hasFinePointer || typeof Lenis === "undefined") {
     lenis = null;
     return;
   }
@@ -141,10 +153,13 @@ const setHeaderState = () => {
     lastScrollProgress = progress;
   }
 
-  const activeSection = navSectionPositions
-    .slice()
-    .reverse()
-    .find((section) => currentScrollY + 220 >= section.top);
+  let activeSection = null;
+  for (let index = navSectionPositions.length - 1; index >= 0; index -= 1) {
+    if (currentScrollY + 220 >= navSectionPositions[index].top) {
+      activeSection = navSectionPositions[index];
+      break;
+    }
+  }
   const activeSectionId = activeSection?.id || "";
 
   if (activeSectionId !== lastActiveSectionId) {
@@ -171,7 +186,7 @@ const requestScrollState = () => {
 };
 
 const requestProcessTimeline = () => {
-  if (processTimelineFrame) return;
+  if (processTimelineFrame || !processTimelineVisible) return;
   processTimelineFrame = requestAnimationFrame(() => {
     processTimelineFrame = null;
     updateProcessTimeline();
@@ -245,6 +260,8 @@ const initTrialModal = () => {
   const teamWritesCheckbox = modal.querySelector("[data-trial-team-writes]");
   const reviewTextarea = localForm?.elements?.reviewText;
   const teamWritesHelp = modal.querySelector("[data-trial-team-help]");
+  const starButtons = [...modal.querySelectorAll("[data-trial-star]")];
+  const starInput = modal.querySelector("[data-trial-stars-input]");
   const backButton = modal.querySelector("[data-trial-back]");
   const doneButton = modal.querySelector("[data-trial-done]");
   const forgotLink = modal.querySelector("[data-trial-forgot]");
@@ -253,6 +270,7 @@ const initTrialModal = () => {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const transitionMs = 390;
   const accountTransitionMs = 320;
+  const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   let stepTimer = null;
   let accountTimer = null;
 
@@ -282,20 +300,22 @@ const initTrialModal = () => {
   const setFieldError = (form, name, message) => {
     const field = getField(form, name);
     const error = getErrorNode(form, name);
-    if (field?.closest(".trial-field")) field.closest(".trial-field").classList.add("is-invalid");
+    const fieldShell = field?.closest(".trial-field") || field?.closest(".trial-check") || field?.closest(".trial-stars");
+    fieldShell?.classList.add("is-invalid");
     if (error) error.textContent = message;
   };
 
   const clearFieldError = (form, name) => {
     const field = getField(form, name);
     const error = getErrorNode(form, name);
-    if (field?.closest(".trial-field")) field.closest(".trial-field").classList.remove("is-invalid");
+    const fieldShell = field?.closest(".trial-field") || field?.closest(".trial-check") || field?.closest(".trial-stars");
+    fieldShell?.classList.remove("is-invalid");
     if (error) error.textContent = "";
   };
 
   const clearFormErrors = (form) => {
     if (!form) return;
-    form.querySelectorAll(".trial-field.is-invalid").forEach((field) => field.classList.remove("is-invalid"));
+    form.querySelectorAll(".trial-field.is-invalid, .trial-check.is-invalid, .trial-stars.is-invalid").forEach((field) => field.classList.remove("is-invalid"));
     form.querySelectorAll("[data-trial-error-for]").forEach((error) => {
       error.textContent = "";
     });
@@ -418,6 +438,69 @@ const initTrialModal = () => {
     if (accountStage) accountStage.style.minHeight = "";
   };
 
+  const isRegisterReady = () => {
+    const name = getField(registerForm, "name")?.value.trim() || "";
+    const email = getField(registerForm, "email")?.value.trim() || "";
+    const password = getField(registerForm, "password")?.value || "";
+    const confirmPassword = getField(registerForm, "confirmPassword")?.value || "";
+    const terms = getField(registerForm, "terms")?.checked;
+    return Boolean(name && email && password && confirmPassword && terms);
+  };
+
+  const isLoginReady = () => {
+    const email = getField(loginForm, "email")?.value.trim() || "";
+    const password = getField(loginForm, "password")?.value || "";
+    return Boolean(email && password);
+  };
+
+  const isLocalReady = () => {
+    const mapsUrl = getField(localForm, "mapsUrl")?.value.trim() || "";
+    const reviewText = reviewTextarea?.value.trim() || "";
+    const stars = Number(starInput?.value || 0);
+    return Boolean(mapsUrl && (teamWritesCheckbox?.checked || reviewText) && [3, 4, 5].includes(stars));
+  };
+
+  const updateTrialSubmitStates = () => {
+    const buttonStates = [
+      [registerForm?.querySelector("[data-trial-submit]"), isRegisterReady()],
+      [loginForm?.querySelector("[data-trial-submit]"), isLoginReady()],
+      [localForm?.querySelector("[data-trial-submit]"), isLocalReady()],
+    ];
+
+    buttonStates.forEach(([button, isReady]) => {
+      if (!button || button.classList.contains("is-loading")) return;
+      button.disabled = !isReady;
+    });
+  };
+
+  const runWithLoading = (button, callback) => {
+    if (!button) {
+      callback();
+      updateTrialSubmitStates();
+      return;
+    }
+
+    button.classList.add("is-loading");
+    button.disabled = true;
+    window.setTimeout(() => {
+      callback();
+      button.classList.remove("is-loading");
+      updateTrialSubmitStates();
+    }, reducedMotionQuery.matches ? 0 : 180);
+  };
+
+  const setStarValue = (value) => {
+    const nextValue = [3, 4, 5].includes(Number(value)) ? String(value) : "5";
+    if (starInput) starInput.value = nextValue;
+    starButtons.forEach((button) => {
+      const isActive = button.dataset.trialStar === nextValue;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-checked", String(isActive));
+    });
+    clearFieldError(localForm, "stars");
+    updateTrialSubmitStates();
+  };
+
   const updateReviewPreference = () => {
     if (!teamWritesCheckbox || !reviewTextarea) return;
     const field = reviewTextarea.closest(".trial-field");
@@ -425,7 +508,7 @@ const initTrialModal = () => {
     reviewTextarea.disabled = teamWrites;
     reviewTextarea.required = !teamWrites;
     reviewTextarea.placeholder = teamWrites
-      ? "Nuestro equipo preparará un texto natural y cuidado."
+      ? "Prepararemos un texto natural según tu negocio."
       : "Ejemplo: Buen trato, servicio rápido y atención profesional.";
     field?.classList.toggle("is-disabled", teamWrites);
     teamWritesHelp?.classList.toggle("is-visible", teamWrites);
@@ -433,6 +516,7 @@ const initTrialModal = () => {
       reviewTextarea.value = "";
       clearFieldError(localForm, "reviewText");
     }
+    updateTrialSubmitStates();
   };
 
   const resetTrial = () => {
@@ -441,8 +525,10 @@ const initTrialModal = () => {
       clearFormErrors(form);
     });
     resetAccountMode("register");
+    setStarValue("5");
     updateReviewPreference();
     setStep(1);
+    updateTrialSubmitStates();
   };
 
   const validateRegister = () => {
@@ -501,6 +587,7 @@ const initTrialModal = () => {
     let isValid = true;
     const mapsUrl = getField(localForm, "mapsUrl")?.value.trim() || "";
     const reviewText = reviewTextarea?.value.trim() || "";
+    const stars = Number(starInput?.value || 0);
 
     if (!mapsUrl) {
       setFieldError(localForm, "mapsUrl", "Pega el enlace de tu perfil de Google Maps.");
@@ -508,6 +595,10 @@ const initTrialModal = () => {
     }
     if (!teamWritesCheckbox?.checked && !reviewText) {
       setFieldError(localForm, "reviewText", "Escribe una orientación o marca que lo redacte el equipo.");
+      isValid = false;
+    }
+    if (![3, 4, 5].includes(stars)) {
+      setFieldError(localForm, "stars", "Elige 3, 4 o 5 estrellas.");
       isValid = false;
     }
 
@@ -551,24 +642,34 @@ const initTrialModal = () => {
 
   registerForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (validateRegister()) setStep(2);
+    if (validateRegister()) runWithLoading(event.submitter, () => setStep(2));
+    updateTrialSubmitStates();
   });
 
   loginForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (validateLogin()) setStep(2);
+    if (validateLogin()) runWithLoading(event.submitter, () => setStep(2));
+    updateTrialSubmitStates();
   });
 
   localForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (validateLocal()) setStep(3);
+    if (validateLocal()) runWithLoading(event.submitter, () => setStep(3));
+    updateTrialSubmitStates();
   });
 
   modal.querySelectorAll("input, textarea").forEach((field) => {
     field.addEventListener("input", () => {
       const form = field.closest("form");
       if (form && field.name) clearFieldError(form, field.name);
-      if (field === reviewTextarea) updateReviewPreference();
+      updateTrialSubmitStates();
+    });
+    field.addEventListener("change", updateTrialSubmitStates);
+  });
+
+  starButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setStarValue(button.dataset.trialStar);
     });
   });
 
@@ -834,7 +935,7 @@ const initSocialMetrics = () => {
 
 const initMicroInteractions = () => {
   document.querySelectorAll(".hover-glow").forEach((card) => {
-    if (!hasFinePointer) return;
+    if (!canRunPointerEffects()) return;
     let glowFrame = null;
     let pointerX = 0;
     let pointerY = 0;
@@ -854,7 +955,7 @@ const initMicroInteractions = () => {
   });
 
   document.querySelectorAll(".price-card").forEach((card) => {
-    if (!hasFinePointer || prefersReducedMotion) return;
+    if (!canRunPointerEffects()) return;
     let spotlightFrame = null;
     let pointerX = 0;
     let pointerY = 0;
@@ -883,7 +984,7 @@ const initMicroInteractions = () => {
   });
 
   document.querySelectorAll(".magnetic").forEach((button) => {
-    if (!hasFinePointer || prefersReducedMotion) return;
+    if (!canRunPointerEffects()) return;
     let magneticFrame = null;
     let pointerX = 0;
     let pointerY = 0;
@@ -902,21 +1003,34 @@ const initMicroInteractions = () => {
       });
     }, { passive: true });
 
+    button.addEventListener("pointerenter", () => button.classList.add("is-magnetic-active"), { passive: true });
     button.addEventListener("pointerleave", () => {
       if (magneticFrame) {
         cancelAnimationFrame(magneticFrame);
         magneticFrame = null;
       }
       button.style.transform = "";
+      button.classList.remove("is-magnetic-active");
     });
   });
 
   document.querySelectorAll("[data-scan-map]").forEach((map) => {
     [...map.querySelectorAll("span")].forEach((cell, index) => cell.style.setProperty("--cell-index", index));
     if (prefersReducedMotion) return;
+    let isMapVisible = true;
+    if (typeof IntersectionObserver !== "undefined") {
+      isMapVisible = false;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          isMapVisible = entry.isIntersecting;
+        },
+        { rootMargin: "160px 0px" }
+      );
+      observer.observe(map);
+    }
 
     window.setInterval(() => {
-      if (document.hidden) return;
+      if (document.hidden || !isMapVisible) return;
       map.classList.add("is-scanning");
       window.setTimeout(() => map.classList.remove("is-scanning"), 740);
     }, 2600);
@@ -960,7 +1074,7 @@ const initAnimationVisibility = () => {
 };
 
 const initTestimonialMarqueeSpeed = () => {
-  if (prefersReducedMotion) return;
+  if (prefersReducedMotion || !hasFinePointer) return;
 
   document.querySelectorAll(".testimonial-marquee").forEach((marquee) => {
     const track = marquee.querySelector(".testimonial-track");
@@ -1016,6 +1130,11 @@ const initTestimonialMarqueeSpeed = () => {
 };
 
 const initMotionVisibility = () => {
+  if (!canRunScrollMotion()) {
+    resetScrollMotion();
+    return;
+  }
+
   if (typeof IntersectionObserver === "undefined") return;
 
   const observeGroup = (items, visibleSet, rootMargin = "160px 0px") => {
@@ -1043,7 +1162,7 @@ const initMotionVisibility = () => {
 
 const updateScrollMotion = () => {
   motionFrame = null;
-  if (prefersReducedMotion) return;
+  if (!canRunScrollMotion()) return;
 
   const velocity = lenis?.velocity || 0;
 
@@ -1062,7 +1181,7 @@ const updateScrollMotion = () => {
 };
 
 const requestScrollMotion = () => {
-  if (motionFrame || prefersReducedMotion) return;
+  if (motionFrame || !canRunScrollMotion()) return;
   motionFrame = requestAnimationFrame(updateScrollMotion);
 };
 
@@ -1169,6 +1288,7 @@ const initProcessTimeline = () => {
   };
 
   updateProcessTimeline = () => {
+    if (!processTimelineVisible) return;
     const rect = timeline.getBoundingClientRect();
     const firstCenter = getNodeCenter(firstNode, rect);
     const lastCenter = getNodeCenter(lastNode, rect);
@@ -1199,6 +1319,20 @@ const initProcessTimeline = () => {
   resizeObserver.observe(timeline);
   steps.forEach((step) => resizeObserver.observe(step));
 
+  if (typeof IntersectionObserver !== "undefined") {
+    processTimelineVisible = false;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        processTimelineVisible = entry.isIntersecting;
+        if (processTimelineVisible) requestProcessTimeline();
+      },
+      { rootMargin: "220px 0px" }
+    );
+    observer.observe(timeline);
+  } else {
+    processTimelineVisible = true;
+  }
+
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     steps.forEach((step) => {
       const card = step.querySelector(".process-card");
@@ -1208,7 +1342,8 @@ const initProcessTimeline = () => {
     });
   }
 
-  updateProcessTimeline();
+  updateLineMetrics();
+  requestProcessTimeline();
 };
 
 const cartStorageKey = "destroyerReviewsCart";
@@ -1318,10 +1453,11 @@ const initCart = () => {
         const quantity = Math.max(1, Number(item.quantity) || 1);
         const escapedId = escapeHtml(item.id);
         const escapedName = escapeHtml(item.name);
+        const visual = getPackVisual(item);
         return `
-        <article class="cart-item" style="--pack-accent: ${getPackVisual(item).color};" data-cart-item="${escapedId}">
+        <article class="cart-item" style="--pack-accent: ${visual.color};" data-cart-item="${escapedId}">
           <div class="cart-item__icon" aria-hidden="true">
-            <img src="${getPackVisual(item).image}" alt="" loading="lazy" decoding="async" />
+            <img src="${visual.image}" alt="" loading="lazy" decoding="async" />
           </div>
           <div class="cart-item__meta">
             <span class="cart-item__badge">${escapeHtml(item.reviews)}</span>
@@ -1356,13 +1492,13 @@ const initCart = () => {
   };
 
   const openCart = () => {
+    renderCart();
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
     overlay.hidden = false;
     requestAnimationFrame(() => overlay.classList.add("is-visible"));
     document.body.classList.add("cart-is-open");
     closeMobileNav();
-    renderCart();
   };
 
   const closeCart = () => {
@@ -1461,7 +1597,6 @@ const initCart = () => {
       if (existing) existing.quantity = (existing.quantity || 1) + 1;
       else cart.push(item);
       saveCart();
-      renderCart();
       button.classList.add("is-added");
       window.setTimeout(() => button.classList.remove("is-added"), 620);
       openCart();
@@ -2292,7 +2427,8 @@ const init = () => {
   }, { passive: true });
   window.addEventListener("resize", () => {
     refreshNavSectionPositions();
-    requestScrollMotion();
+    if (canRunScrollMotion()) requestScrollMotion();
+    else resetScrollMotion();
     requestAuthMotion();
     requestProcessTimeline();
   }, { passive: true });

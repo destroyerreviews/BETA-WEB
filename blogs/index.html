@@ -1006,7 +1006,7 @@
         <section class="trial-step is-active" data-trial-step="1">
           <span class="trial-modal__pill">1 reseña de prueba · Sin compromiso</span>
           <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
-          <p class="trial-step__lead">Crea una cuenta o accede para activar tu prueba de 1 reseña.</p>
+          <p class="trial-step__lead">Crea una cuenta o inicia sesión para activar tu prueba de 1 reseña.</p>
 
           <div class="trial-account-tabs" role="tablist" aria-label="Acceso a la prueba">
             <button class="is-active" type="button" role="tab" aria-selected="true" data-trial-account="register">Crear cuenta</button>
@@ -1064,7 +1064,7 @@
                 <span>Acepto los términos y la política de privacidad</span>
               </label>
               <small class="trial-form-error" data-trial-error-for="terms"></small>
-              <button class="button button-primary trial-submit" type="submit">Continuar</button>
+              <button class="button button-primary trial-submit" type="submit" data-trial-submit>Continuar</button>
               <p class="trial-switch">¿Ya tienes cuenta? <button type="button" data-trial-account-switch="login">Iniciar sesión</button></p>
             </form>
 
@@ -1087,7 +1087,7 @@
                 </label>
                 <a href="#" data-trial-forgot>¿Has olvidado tu contraseña?</a>
               </div>
-              <button class="button button-primary trial-submit" type="submit">Entrar y continuar</button>
+              <button class="button button-primary trial-submit" type="submit" data-trial-submit>Continuar</button>
               <p class="trial-switch">¿No tienes cuenta? <button type="button" data-trial-account-switch="register">Crear cuenta</button></p>
             </form>
           </div>
@@ -1098,7 +1098,7 @@
           <p class="trial-step__lead">Comparte el enlace de tu negocio y dinos qué quieres destacar en la reseña de prueba.</p>
           <form class="trial-local-form" novalidate data-trial-local-form>
             <label class="trial-field trial-field--wide">
-              <span>Enlace de tu local en Google Maps</span>
+              <span>Enlace de tu perfil de Google Maps</span>
               <input type="url" name="mapsUrl" placeholder="Pega aquí el enlace de tu perfil de Google Maps" />
               <small data-trial-error-for="mapsUrl"></small>
             </label>
@@ -1110,17 +1110,22 @@
             <label class="trial-check">
               <input type="checkbox" name="teamWrites" data-trial-team-writes />
               <span class="trial-check__box" aria-hidden="true"></span>
-              <span>Prefiero que el equipo redacte el texto por mí</span>
+              <span>Prefiero que preparéis vosotros el texto</span>
             </label>
-            <small class="trial-check-help" data-trial-team-help>Prepararemos un texto natural y adecuado para tu negocio.</small>
-            <label class="trial-field trial-field--wide">
-              <span>Observaciones opcionales</span>
-              <textarea name="notes" rows="2" placeholder="Indica cualquier detalle importante sobre tu negocio, servicio o tono."></textarea>
-              <small data-trial-error-for="notes"></small>
-            </label>
+            <small class="trial-check-help" data-trial-team-help>Prepararemos un texto natural según tu negocio.</small>
+            <div class="trial-stars" role="radiogroup" aria-label="Estrellas de la reseña" data-trial-stars>
+              <span class="trial-stars__label">Estrellas de la reseña</span>
+              <div class="trial-star-options">
+                <button class="trial-star-option" type="button" role="radio" aria-checked="false" data-trial-star="3">3 <span aria-hidden="true">★</span></button>
+                <button class="trial-star-option" type="button" role="radio" aria-checked="false" data-trial-star="4">4 <span aria-hidden="true">★</span></button>
+                <button class="trial-star-option is-active" type="button" role="radio" aria-checked="true" data-trial-star="5">5 <span aria-hidden="true">★</span></button>
+              </div>
+              <input type="hidden" name="stars" value="5" data-trial-stars-input />
+              <small data-trial-error-for="stars"></small>
+            </div>
             <div class="trial-actions">
               <button class="button button-secondary" type="button" data-trial-back>Volver</button>
-              <button class="button button-primary" type="submit">Enviar solicitud</button>
+              <button class="button button-primary" type="submit" data-trial-submit>Enviar solicitud</button>
             </div>
           </form>
         </section>
@@ -1130,8 +1135,7 @@
             <svg viewBox="0 0 24 24" focusable="false"><path d="m6.8 12.4 3.4 3.4 7-7.6" /></svg>
           </span>
           <h2>Perfecto, solicitud recibida</h2>
-          <p class="trial-step__lead">Entre 24–48 h recibirás la reseña de prueba en tu local.</p>
-          <p class="trial-step__sublead">Revisaremos tu perfil y prepararemos la prueba para que encaje con tu negocio.</p>
+          <p class="trial-step__lead">Revisaremos tu solicitud y en 24–48 h recibirás la reseña de prueba en tu local.</p>
           <div class="trial-actions trial-actions--center">
             <button class="button button-primary" type="button" data-trial-done>Entendido</button>
             <a class="button button-secondary" href="https://wa.me/34603826428?text=Hola%2C%20quiero%20consultar%20el%20estado%20de%20mi%20prueba%20gratuita" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
