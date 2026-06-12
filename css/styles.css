@@ -2623,7 +2623,7 @@ body.checkout-page main::before {
   align-items: center;
   gap: 7px;
   justify-self: start;
-  margin: -6px 0 0;
+  margin: 0;
   padding: 7px 11px 7px 10px;
   border: 1px solid rgba(139, 172, 229, 0.24);
   border-radius: 999px;
