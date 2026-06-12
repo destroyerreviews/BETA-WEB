@@ -1349,7 +1349,7 @@ const initProcessTimeline = () => {
 const cartStorageKey = "destroyerReviewsCart";
 const formatCartPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
 const mainScriptSrc = [...document.scripts].find((script) => script.getAttribute("src")?.includes("js/main.js"))?.getAttribute("src") || "";
-const relativeRoot = mainScriptSrc.startsWith("../") ? "../" : "";
+const relativeRoot = mainScriptSrc.match(/^(?:\.\.\/)+/)?.[0] || "";
 const sitePath = (path) => `${relativeRoot}${path}`;
 const checkoutPath = () => `${relativeRoot}checkout/`;
 
@@ -1676,16 +1676,9 @@ const initCheckout = () => {
   const empty = root.querySelector("[data-checkout-empty]");
   const summaryItems = root.querySelector("[data-checkout-summary-items]");
   const totalNode = root.querySelector("[data-checkout-total]");
-  const reviewCountNode = root.querySelector("[data-review-count]");
-  const modeButtons = [...root.querySelectorAll("[data-review-mode]")];
-  const preparedPanel = root.querySelector("[data-prepared-panel]");
-  const manualPanel = root.querySelector("[data-manual-panel]");
-  const reviewList = root.querySelector("[data-review-list]");
-  const quickStars = [...root.querySelectorAll("[data-quick-stars]")];
+  const totalInlineNode = root.querySelector("[data-checkout-total-inline]");
   const submitButton = root.querySelector("[data-payment-submit]");
   const statusNode = root.querySelector("[data-checkout-status]");
-  let reviewMode = "prepared";
-  let reviews = [];
 
   const escapeCheckoutHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -1696,19 +1689,12 @@ const initCheckout = () => {
   })[char]);
 
   const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
-  const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
   const cartItems = () => readStoredCart();
   const cartTotal = (items) => items.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
-  const totalReviews = (items) => items.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
   const packIcon = (item) => {
     const id = item.id || "";
     const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
     return sitePath(`assets/icons/packs/${safeId}.webp`);
-  };
-
-  const ensureReviews = (count) => {
-    while (reviews.length < count) reviews.push({ stars: 5, text: "" });
-    reviews = reviews.slice(0, count);
   };
 
   const setStatus = (type, message) => {
@@ -1717,44 +1703,14 @@ const initCheckout = () => {
     statusNode.dataset.state = type || "";
   };
 
-  const starLabel = (stars) => `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
-
-  const renderReviewList = () => {
-    if (!reviewList) return;
-    reviewList.innerHTML = reviews.map((review, index) => `
-      <details class="review-accordion" data-review-index="${index}">
-        <summary>
-          <span>Reseña ${index + 1}</span>
-          <strong>${starLabel(review.stars)}</strong>
-        </summary>
-        <div class="review-accordion__body">
-          <label>
-            Texto de la reseña
-            <textarea data-review-text="${index}" rows="4" placeholder="Escribe el texto o deja una nota para esta reseña.">${escapeCheckoutHtml(review.text)}</textarea>
-          </label>
-          <div class="review-stars" role="group" aria-label="Estrellas para la reseña ${index + 1}">
-            ${[3, 4, 5].map((stars) => `
-              <button class="review-star-chip ${review.stars === stars ? "is-active" : ""}" type="button" data-review-stars="${stars}" data-review-index="${index}" aria-pressed="${review.stars === stars}">
-                <span>${starLabel(stars)}</span>
-                <b>${stars} ★</b>
-              </button>
-            `).join("")}
-          </div>
-        </div>
-      </details>
-    `).join("");
-  };
-
   const renderSummary = () => {
     const items = cartItems();
     const hasItems = items.length > 0;
-    const reviewTotal = totalReviews(items);
-    ensureReviews(reviewTotal);
+    const total = cartTotal(items);
 
     if (shell) shell.hidden = !hasItems;
     if (empty) empty.hidden = hasItems;
     if (submitButton) submitButton.disabled = !hasItems;
-    if (reviewCountNode) reviewCountNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"}`;
 
     if (summaryItems) {
       summaryItems.innerHTML = items.map((item) => {
@@ -1766,7 +1722,7 @@ const initCheckout = () => {
             <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
             <div>
               <strong>${escapeCheckoutHtml(item.name)}</strong>
-              <span>${escapeCheckoutHtml(item.reviews)} · Cantidad ${quantity}</span>
+              <span>${escapeCheckoutHtml(item.reviews)} &middot; Cantidad ${quantity}</span>
             </div>
             <dl>
               <div><dt>Unitario</dt><dd>${formatCartPrice(price)}</dd></div>
@@ -1777,18 +1733,8 @@ const initCheckout = () => {
       }).join("");
     }
 
-    if (totalNode) totalNode.textContent = formatCartPrice(cartTotal(items));
-    renderReviewList();
-  };
-
-  const renderMode = () => {
-    modeButtons.forEach((button) => {
-      const isActive = button.dataset.reviewMode === reviewMode;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
-    });
-    if (preparedPanel) preparedPanel.hidden = reviewMode !== "prepared";
-    if (manualPanel) manualPanel.hidden = reviewMode !== "manual";
+    if (totalNode) totalNode.textContent = formatCartPrice(total);
+    if (totalInlineNode) totalInlineNode.textContent = formatCartPrice(total);
   };
 
   const setFieldError = (field, message) => {
@@ -1805,10 +1751,10 @@ const initCheckout = () => {
       let message = "";
       if (!field.value.trim()) message = "Completa este campo.";
       if (!message && field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
-        message = "Introduce un email valido.";
+        message = "Introduce un email válido.";
       }
       if (!message && field.name === "googleMaps" && !/^https?:\/\/.+(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(field.value.trim())) {
-        message = "Pega un enlace valido de Google Maps.";
+        message = "Pega un enlace válido de Google Maps.";
       }
       setFieldError(field, message);
       if (message) isValid = false;
@@ -1818,34 +1764,235 @@ const initCheckout = () => {
 
   const collectCheckoutData = () => {
     const formData = new FormData(form);
+    const cart = cartItems();
     return {
       customer: Object.fromEntries(formData.entries()),
-      reviewMode,
-      reviews: reviewMode === "manual" ? reviews : [],
-      cart: cartItems(),
-      total: cartTotal(cartItems()),
+      cart,
+      total: cartTotal(cart),
+      nextStep: sitePath("checkout/personalizacion/"),
     };
   };
 
   const handlePaymentSubmit = async (checkoutData) => {
-    // TODO: connect this handoff to Stripe, PayPal, Redsys, or the chosen payment provider.
-    void checkoutData;
-    throw new Error("payment_provider_pending");
+    // Ready to replace with the real provider handoff when the gateway is connected.
+    sessionStorage.setItem("destroyerCheckoutDraft", JSON.stringify(checkoutData));
+    await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
+    return { ok: true, redirectUrl: checkoutData.nextStep };
+  };
+
+  form?.addEventListener("input", (event) => {
+    const field = event.target.closest("input, textarea");
+    if (field) setFieldError(field, "");
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    setStatus("", "");
+
+    if (!cartItems().length) {
+      setStatus("error", "Tu carrito está vacío. Elige un pack antes de pagar.");
+      renderSummary();
+      return;
+    }
+
+    if (!validateCheckout()) {
+      setStatus("error", "Revisa los campos marcados antes de continuar.");
+      return;
+    }
+
+    submitButton?.classList.add("is-loading");
+    if (submitButton) submitButton.disabled = true;
+    setStatus("", "Preparando el pago...");
+
+    try {
+      const payment = await handlePaymentSubmit(collectCheckoutData());
+      window.location.href = payment.redirectUrl || sitePath("checkout/personalizacion/");
+    } catch {
+      setStatus("error", "No hemos podido continuar ahora. Inténtalo de nuevo en unos segundos.");
+      submitButton?.classList.remove("is-loading");
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  window.addEventListener("destroyer:cart-updated", renderSummary);
+  window.addEventListener("storage", (event) => {
+    if (event.key === cartStorageKey) renderSummary();
+  });
+
+  renderSummary();
+};
+
+const initPersonalizacion = () => {
+  const root = document.querySelector("[data-personalizacion-page]");
+  if (!root) return;
+
+  const modeButtons = [...root.querySelectorAll("[data-personalization-mode]")];
+  const manualPanel = root.querySelector("[data-manual-panel]");
+  const teamPanel = root.querySelector("[data-team-panel]");
+  const reviewList = root.querySelector("[data-personalization-review-list]");
+  const form = root.querySelector("[data-personalization-form]");
+  const statusNodes = [...root.querySelectorAll("[data-personalization-status]")];
+  const reviewTotalNodes = [...root.querySelectorAll("[data-personalization-review-total], [data-personalization-summary-reviews]")];
+  const paidTotalNodes = [...root.querySelectorAll("[data-personalization-paid-total], [data-personalization-summary-total]")];
+  const summaryItems = root.querySelector("[data-personalization-summary-items]");
+  const mapsLink = root.querySelector("[data-personalization-maps]");
+  const noMapsNode = root.querySelector("[data-personalization-no-maps]");
+  const extraBreakdown = root.querySelector("[data-extra-breakdown]");
+  const extraTotal = root.querySelector("[data-extra-total]");
+  const summaryExtra = root.querySelector("[data-personalization-summary-extra]");
+  const teamStarButtons = [...root.querySelectorAll("[data-team-stars]")];
+  let mode = "manual";
+  let teamStars = 5;
+  let reviews = [];
+
+  const escapePersonalizationHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[char]);
+
+  const readCheckoutDraft = () => {
+    try {
+      return JSON.parse(sessionStorage.getItem("destroyerCheckoutDraft") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
+  const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
+  const draft = readCheckoutDraft();
+  const cart = Array.isArray(draft.cart) && draft.cart.length ? draft.cart : readStoredCart();
+  const paidTotal = Number(draft.total ?? cart.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0));
+  const reviewTotal = cart.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
+  const customer = draft.customer || {};
+  const googleMaps = `${customer.googleMaps || customer.mapsUrl || ""}`.trim();
+  const extraCost = reviewTotal;
+
+  const packIcon = (item) => {
+    const id = item.id || "";
+    const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
+    return sitePath(`assets/icons/packs/${safeId}.webp`);
+  };
+
+  const starLabel = (stars) => `${"&#9733;".repeat(stars)}${"&#9734;".repeat(5 - stars)}`;
+
+  const setStatus = (type, message) => {
+    statusNodes.forEach((node) => {
+      node.textContent = message;
+      node.dataset.state = type || "";
+    });
+  };
+
+  const setSubmitLoading = (submit, isLoading) => {
+    submit?.classList.toggle("is-loading", isLoading);
+    if (submit) submit.disabled = isLoading;
+  };
+
+  const ensureReviews = () => {
+    reviews = Array.from({ length: reviewTotal }, (_, index) => reviews[index] || { stars: 5, text: "" });
+  };
+
+  const renderSummary = () => {
+    reviewTotalNodes.forEach((node) => {
+      node.textContent = String(reviewTotal);
+    });
+    paidTotalNodes.forEach((node) => {
+      node.textContent = formatCartPrice(paidTotal);
+    });
+
+    if (mapsLink && noMapsNode) {
+      mapsLink.hidden = !googleMaps;
+      noMapsNode.hidden = Boolean(googleMaps);
+      if (googleMaps) mapsLink.href = googleMaps;
+    }
+
+    if (summaryItems) {
+      summaryItems.innerHTML = cart.length ? cart.map((item) => {
+        const quantity = itemQuantity(item);
+        const price = Number(item.price) || 0;
+        const subtotal = price * quantity;
+        return `
+          <article class="checkout-summary-item">
+            <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>${escapePersonalizationHtml(item.name)}</strong>
+              <span>${escapePersonalizationHtml(item.reviews)} &middot; Cantidad ${quantity}</span>
+            </div>
+            <dl>
+              <div><dt>Unitario</dt><dd>${formatCartPrice(price)}</dd></div>
+              <div><dt>Subtotal</dt><dd>${formatCartPrice(subtotal)}</dd></div>
+            </dl>
+          </article>
+        `;
+      }).join("") : `<p class="personalization-muted">No hay packs guardados en esta sesión.</p>`;
+    }
+
+    if (extraBreakdown) extraBreakdown.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €`;
+    if (extraTotal) extraTotal.textContent = `Total adicional: ${formatCartPrice(extraCost)}`;
+  };
+
+  const renderReviews = () => {
+    if (!reviewList) return;
+    ensureReviews();
+    if (!reviews.length) {
+      reviewList.innerHTML = `<p class="personalization-muted">No hay reseñas compradas para personalizar.</p>`;
+      return;
+    }
+
+    reviewList.innerHTML = reviews.map((review, index) => `
+      <details class="review-accordion" data-personalization-review="${index}">
+        <summary>
+          <span>Reseña ${index + 1}</span>
+          <strong>${starLabel(review.stars)}</strong>
+        </summary>
+        <div class="review-accordion__body">
+          <label>
+            Texto de la reseña
+            <textarea data-review-text="${index}" rows="4" placeholder="Escribe el texto de esta reseña o una orientación clara.">${escapePersonalizationHtml(review.text)}</textarea>
+          </label>
+          <div class="review-stars" role="group" aria-label="Estrellas para la reseña ${index + 1}">
+            ${[3, 4, 5].map((stars) => `
+              <button class="review-star-chip ${review.stars === stars ? "is-active" : ""}" type="button" data-review-stars="${stars}" data-review-index="${index}" aria-pressed="${review.stars === stars}">
+                <span>${starLabel(stars)}</span>
+                <b>${stars}</b>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      </details>
+    `).join("");
+  };
+
+  const renderMode = () => {
+    modeButtons.forEach((button) => {
+      const isActive = button.dataset.personalizationMode === mode;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+    if (manualPanel) manualPanel.hidden = mode !== "manual";
+    if (teamPanel) teamPanel.hidden = mode !== "team";
+    if (summaryExtra) summaryExtra.textContent = mode === "team" ? formatCartPrice(extraCost) : "Opcional";
+    setStatus("", "");
   };
 
   modeButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      reviewMode = button.dataset.reviewMode || "prepared";
+      mode = button.dataset.personalizationMode || "manual";
       renderMode();
     });
   });
 
-  quickStars.forEach((button) => {
+  teamStarButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const stars = Number(button.dataset.quickStars);
-      if (![3, 4, 5].includes(stars)) return;
-      reviews = reviews.map((review) => ({ ...review, stars }));
-      renderReviewList();
+      teamStars = Number(button.dataset.teamStars) || 5;
+      teamStarButtons.forEach((starButton) => {
+        const isActive = Number(starButton.dataset.teamStars) === teamStars;
+        starButton.classList.toggle("is-active", isActive);
+        starButton.setAttribute("aria-pressed", String(isActive));
+      });
     });
   });
 
@@ -1863,53 +2010,49 @@ const initCheckout = () => {
     const stars = Number(button.dataset.reviewStars);
     if (!reviews[index] || ![3, 4, 5].includes(stars)) return;
     reviews[index].stars = stars;
-    renderReviewList();
-    const row = reviewList.querySelector(`[data-review-index="${index}"]`);
+    renderReviews();
+    const row = reviewList.querySelector(`[data-personalization-review="${index}"]`);
     if (row) row.open = true;
-  });
-
-  form?.addEventListener("input", (event) => {
-    const field = event.target.closest("input, textarea");
-    if (field) setFieldError(field, "");
   });
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setStatus("", "");
+    const submit = event.submitter?.closest("[data-personalization-submit]");
+    const selectedMode = submit?.dataset.personalizationSubmit || mode;
+    setSubmitLoading(submit, true);
+    setStatus("", selectedMode === "team" ? "Preparando el pago adicional..." : "Guardando personalización...");
 
-    if (!cartItems().length) {
-      setStatus("error", "Tu carrito esta vacio. Elige un pack antes de pagar.");
-      renderSummary();
-      return;
-    }
-
-    if (!validateCheckout()) {
-      setStatus("error", "Revisa los campos marcados antes de continuar.");
-      return;
-    }
-
-    submitButton?.classList.add("is-loading");
-    if (submitButton) submitButton.disabled = true;
+    const formData = new FormData(form);
+    const payload = {
+      mode: selectedMode,
+      cart,
+      reviewTotal,
+      googleMaps,
+      manualReviews: selectedMode === "manual" ? reviews : [],
+      teamPreparation: selectedMode === "team" ? {
+        instructions: `${formData.get("teamInstructions") || ""}`.trim(),
+        services: `${formData.get("services") || ""}`.trim(),
+        tone: `${formData.get("tone") || ""}`.trim(),
+        avoid: `${formData.get("avoid") || ""}`.trim(),
+        stars: teamStars,
+        extraCost,
+      } : null,
+    };
 
     try {
-      await handlePaymentSubmit(collectCheckoutData());
-      setStatus("success", "Pedido preparado. Te llevaremos a la confirmacion del pago.");
-      window.location.href = "success/";
+      sessionStorage.setItem("destroyerPersonalizacion", JSON.stringify(payload));
+      await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
+      setStatus("success", selectedMode === "team" ? "Pago adicional preparado. Te contactaremos para finalizarlo." : "Personalización confirmada. Hemos guardado tus indicaciones.");
     } catch {
-      setStatus("error", "El pago online se esta activando. Contactanos por WhatsApp y finalizamos el pedido contigo.");
+      setStatus("error", "No hemos podido guardar los datos ahora. Inténtalo de nuevo en unos segundos.");
     } finally {
-      submitButton?.classList.remove("is-loading");
-      if (submitButton) submitButton.disabled = false;
+      setSubmitLoading(submit, false);
     }
   });
 
-  window.addEventListener("destroyer:cart-updated", renderSummary);
-  window.addEventListener("storage", (event) => {
-    if (event.key === cartStorageKey) renderSummary();
-  });
-
-  renderMode();
   renderSummary();
+  renderReviews();
+  renderMode();
 };
 
 const initWhatsappFloat = () => {
@@ -2398,6 +2541,7 @@ const init = () => {
   initTrialModal();
   initCart();
   initCheckout();
+  initPersonalizacion();
   if (hasHomeContent) {
     initHeroRotatingWord();
     initPhoneTime();

@@ -2154,9 +2154,48 @@ textarea:focus-visible {
 
 body.checkout-page {
   background:
-    radial-gradient(ellipse at 78% 12%, rgba(23, 59, 255, 0.2), transparent 34%),
-    radial-gradient(ellipse at 18% 26%, rgba(88, 166, 255, 0.1), transparent 42%),
+    radial-gradient(ellipse at 76% 14%, rgba(23, 59, 255, 0.16), transparent 36%),
+    radial-gradient(ellipse at 22% 30%, rgba(88, 166, 255, 0.08), transparent 44%),
+    radial-gradient(ellipse at 50% 72%, rgba(23, 59, 255, 0.06), transparent 52%),
     #030303;
+}
+
+.checkout-page a[href],
+.checkout-page button:not(:disabled),
+.checkout-page summary,
+.checkout-page [role="button"],
+.checkout-page .review-mode-card,
+.checkout-page .review-star-chip,
+.checkout-page .checkout-pay-button:not(:disabled),
+.checkout-page .mobile-cart-link,
+.checkout-page .cart-button,
+.checkout-page .nav-mobile-toggle,
+.checkout-page [data-personalization-mode],
+.checkout-page [data-review-stars],
+.checkout-page [data-team-stars],
+.checkout-page [data-payment-submit]:not(:disabled),
+.checkout-page [data-personalization-submit]:not(:disabled) {
+  cursor: pointer !important;
+}
+
+.checkout-page button:disabled,
+.checkout-page [aria-disabled="true"] {
+  cursor: not-allowed !important;
+}
+
+body.checkout-page main::after {
+  display: none;
+}
+
+body.checkout-page main::before {
+  background:
+    radial-gradient(ellipse at 72% 8%, rgba(23, 59, 255, 0.13), transparent 36%),
+    radial-gradient(ellipse at 28% 34%, rgba(88, 166, 255, 0.075), transparent 42%),
+    radial-gradient(ellipse at 54% 68%, rgba(37, 99, 255, 0.07), transparent 48%),
+    linear-gradient(rgba(255, 255, 255, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: auto, auto, auto, 82px 82px, 82px 82px;
+  opacity: 0.74;
 }
 
 .checkout-shell {
@@ -2189,7 +2228,7 @@ body.checkout-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
   align-items: start;
-  gap: 22px;
+  gap: 24px;
 }
 
 .checkout-form,
@@ -2209,16 +2248,18 @@ body.checkout-page {
 .checkout-empty-state {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  border: 1px solid rgba(170, 195, 255, 0.13);
+  border-radius: 22px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(37, 99, 255, 0.12), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.078), rgba(255, 255, 255, 0.026)),
-    rgba(7, 10, 22, 0.54);
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 255, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.074), rgba(255, 255, 255, 0.026)),
+    rgba(10, 14, 28, 0.42);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 24px 70px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(22px);
+    inset 0 1px 0 rgba(255, 255, 255, 0.095),
+    0 18px 46px rgba(6, 12, 28, 0.16),
+    0 0 48px rgba(37, 99, 255, 0.075);
+  backdrop-filter: blur(20px) saturate(138%);
+  -webkit-backdrop-filter: blur(20px) saturate(138%);
 }
 
 .checkout-panel {
@@ -2351,18 +2392,20 @@ body.checkout-page {
 }
 
 .review-mode-card {
-  min-height: 168px;
+  min-height: 154px;
   display: grid;
   align-content: start;
   gap: 10px;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 20px;
+  border: 1px solid rgba(170, 195, 255, 0.13);
+  border-radius: 18px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.064), rgba(255, 255, 255, 0.018)),
-    rgba(255, 255, 255, 0.036);
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 255, 0.055), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.032);
   color: inherit;
   text-align: left;
+  cursor: pointer;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
@@ -2378,8 +2421,8 @@ body.checkout-page {
     radial-gradient(circle at 0 0, rgba(37, 99, 255, 0.18), transparent 44%),
     rgba(255, 255, 255, 0.045);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 34px rgba(37, 99, 255, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 28px rgba(37, 99, 255, 0.1);
 }
 
 .review-mode-card:hover {
@@ -2431,6 +2474,7 @@ body.checkout-page {
   padding: 9px 12px;
   font-size: 12px;
   font-weight: 850;
+  cursor: pointer;
   transition:
     border-color 180ms ease,
     background 180ms ease,
@@ -2458,9 +2502,11 @@ body.checkout-page {
 }
 
 .review-accordion {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(170, 195, 255, 0.12);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.048), rgba(255, 255, 255, 0.018)),
+    rgba(255, 255, 255, 0.028);
 }
 
 .review-accordion summary {
@@ -2514,6 +2560,7 @@ body.checkout-page {
   background: rgba(255, 255, 255, 0.04);
   color: rgba(216, 223, 240, 0.78);
   padding: 10px 8px;
+  cursor: pointer;
   transition:
     color 180ms ease,
     border-color 180ms ease,
@@ -2645,6 +2692,13 @@ body.checkout-page {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.checkout-discreet-note {
+  margin: -2px 0 0;
+  color: rgba(216, 223, 240, 0.58);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .checkout-pay-button {
   position: relative;
   min-height: 54px;
@@ -2656,8 +2710,9 @@ body.checkout-page {
     #173bff;
   color: #fff;
   font-weight: 950;
+  cursor: pointer;
   box-shadow:
-    0 18px 44px rgba(37, 99, 255, 0.26),
+    0 16px 34px rgba(37, 99, 255, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transition:
     transform 180ms var(--ease-out),
@@ -2670,13 +2725,14 @@ body.checkout-page {
   transform: translateY(-1px);
   filter: saturate(1.08);
   box-shadow:
-    0 24px 58px rgba(37, 99, 255, 0.34),
+    0 20px 46px rgba(37, 99, 255, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .checkout-pay-button:disabled {
   opacity: 0.6;
   transform: none;
+  cursor: not-allowed;
 }
 
 .checkout-pay-button i {
@@ -2763,13 +2819,198 @@ body.checkout-page {
   color: rgba(216, 223, 240, 0.64);
 }
 
+.personalization-shell {
+  width: min(100% - 32px, 1180px);
+}
+
+.personalization-overview,
+.personalization-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.personalization-overview {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.4fr);
+  margin-bottom: 22px;
+}
+
+.personalization-stat,
+.personalization-map-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(170, 195, 255, 0.13);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 255, 0.09), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+    rgba(10, 14, 28, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 16px 40px rgba(6, 12, 28, 0.14),
+    0 0 42px rgba(37, 99, 255, 0.065);
+  backdrop-filter: blur(20px) saturate(138%);
+  -webkit-backdrop-filter: blur(20px) saturate(138%);
+}
+
+.personalization-stat span,
+.personalization-map-card span {
+  display: block;
+  color: rgba(216, 223, 240, 0.58);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.personalization-stat strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  text-shadow: 0 0 28px rgba(37, 99, 255, 0.24);
+}
+
+.personalization-map-card a,
+.personalization-map-card strong {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: 10px;
+  color: #dce7ff;
+  font-size: 15px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.personalization-map-card a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.personalization-grid {
+  grid-template-columns: minmax(0, 1fr) 390px;
+  align-items: start;
+  gap: 24px;
+}
+
+.personalization-choice-grid .review-mode-card {
+  min-height: 154px;
+}
+
+.personalization-mode-panel {
+  animation: checkoutPanelIn 280ms var(--ease-out) both;
+}
+
+@keyframes checkoutPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.personalization-review-list {
+  max-height: none;
+  margin-bottom: 18px;
+}
+
+.personalization-stars {
+  display: grid;
+  grid-template-columns: 1fr repeat(3, minmax(84px, 120px));
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.personalization-stars > span {
+  color: rgba(247, 247, 242, 0.84);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.personalization-extra-summary {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid rgba(125, 165, 255, 0.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(88, 166, 255, 0.09), transparent 44%),
+    rgba(255, 255, 255, 0.036);
+}
+
+.personalization-extra-summary span {
+  color: rgba(216, 223, 240, 0.68);
+  font-size: 13px;
+}
+
+.personalization-extra-summary strong {
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.personalization-muted {
+  margin: 0;
+  color: rgba(216, 223, 240, 0.62);
+  font-size: 14px;
+}
+
+.personalization-submit {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.personalization-summary-card {
+  top: 112px;
+}
+
+.checkout-page a[href],
+.checkout-page button,
+.checkout-page summary,
+.checkout-page [role="button"],
+.checkout-page .review-mode-card,
+.checkout-page .review-star-chip,
+.checkout-page .checkout-pay-button,
+.checkout-page .mobile-cart-link,
+.checkout-page .cart-button,
+.checkout-page .nav-mobile-toggle,
+.checkout-page [data-personalization-mode],
+.checkout-page [data-review-stars],
+.checkout-page [data-team-stars],
+.checkout-page [data-payment-submit],
+.checkout-page [data-personalization-submit] {
+  cursor: pointer;
+}
+
+.checkout-page button:disabled,
+.checkout-page [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.checkout-page input,
+.checkout-page textarea {
+  cursor: text;
+}
+
 @media (max-width: 980px) {
   .checkout-shell {
     width: min(100% - 24px, 720px);
     padding-top: 126px;
   }
 
-  .checkout-grid {
+  .checkout-grid,
+  .personalization-grid,
+  .personalization-overview {
     grid-template-columns: 1fr;
   }
 
@@ -2790,7 +3031,8 @@ body.checkout-page {
   }
 
   .checkout-fields,
-  .review-mode-grid {
+  .review-mode-grid,
+  .personalization-stars {
     grid-template-columns: 1fr;
   }
 
@@ -14692,4 +14934,27 @@ body.is-page-hidden *::after {
     mask-image: none;
     -webkit-mask-image: none;
   }
+}
+
+.checkout-page a[href],
+.checkout-page button:not(:disabled),
+.checkout-page summary,
+.checkout-page [role="button"],
+.checkout-page .review-mode-card,
+.checkout-page .review-star-chip,
+.checkout-page .checkout-pay-button:not(:disabled),
+.checkout-page .mobile-cart-link,
+.checkout-page .cart-button,
+.checkout-page .nav-mobile-toggle,
+.checkout-page [data-personalization-mode],
+.checkout-page [data-review-stars],
+.checkout-page [data-team-stars],
+.checkout-page [data-payment-submit]:not(:disabled),
+.checkout-page [data-personalization-submit]:not(:disabled) {
+  cursor: pointer !important;
+}
+
+.checkout-page button:disabled,
+.checkout-page [aria-disabled="true"] {
+  cursor: not-allowed !important;
 }

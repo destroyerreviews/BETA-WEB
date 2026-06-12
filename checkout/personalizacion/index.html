@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Completa la personalizacion de tus resenas despues del pago en Destroyer Reviews."
+    />
+    <title>Personalizacion | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" type="image/png" href="../../assets/brand/favicon.png" />
+    <link rel="stylesheet" href="../../css/styles.css?v=checkout-personalizacion-20260612" />
+  </head>
+  <body class="checkout-page">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <div class="promo-bar">
+        <span>Solicita una prueba gratuita de 1 reseña</span>
+        <a href="../../index.html">Solicitar prueba</a>
+      </div>
+
+      <nav class="liquid-nav" aria-label="Navegacion principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="brand-logo nav-brand" href="../../index.html" aria-label="Destroyer Reviews">
+            <img src="../../assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--nav" width="1495" height="350" loading="eager" decoding="async" />
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="../../index.html" data-nav-link>Inicio</a>
+            <a href="../../blogs/" data-nav-link>Blogs</a>
+            <a href="../../index.html#planes" data-nav-link>Precios</a>
+            <a href="../../index.html#contacto" data-nav-link>Contactanos</a>
+          </div>
+          <div class="nav-auth">
+            <a class="nav-login" href="../../login.html">Iniciar sesion</a>
+            <a class="nav-register" href="../../register.html">Registrarse</a>
+          </div>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="../../index.html">Inicio</a>
+          <a href="../../blogs/">Blogs</a>
+          <a href="../../index.html#planes">Precios</a>
+          <a href="../../index.html#contacto">Contactanos</a>
+          <a href="../../login.html">Iniciar sesion</a>
+          <a class="mobile-register" href="../../register.html">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="checkout-shell personalization-shell" data-personalizacion-page>
+      <section class="checkout-hero" aria-labelledby="personalizacion-title">
+        <p class="eyebrow">DESPUES DEL PAGO</p>
+        <h1 id="personalizacion-title">Personaliza tus reseñas</h1>
+        <p>Completa los textos o delega la preparacion. El extra de redaccion solo aparece aqui, despues de pagar los packs.</p>
+      </section>
+
+      <section class="personalization-overview" aria-label="Resumen del pedido comprado">
+        <article class="personalization-stat">
+          <span>Reseñas compradas</span>
+          <strong data-personalization-review-total>0</strong>
+        </article>
+        <article class="personalization-stat">
+          <span>Total pagado</span>
+          <strong data-personalization-paid-total>0 €</strong>
+        </article>
+        <article class="personalization-map-card">
+          <span>Google Maps</span>
+          <a href="#" target="_blank" rel="noopener" data-personalization-maps hidden>Ver enlace introducido</a>
+          <strong data-personalization-no-maps>Sin enlace guardado</strong>
+        </article>
+      </section>
+
+      <div class="personalization-grid">
+        <form class="checkout-form personalization-form" data-personalization-form novalidate>
+          <section class="checkout-panel">
+            <div class="checkout-panel__head">
+              <span>01</span>
+              <div>
+                <h2>Elige como personalizar</h2>
+                <p>Puedes escribir cada reseña o pedirnos una preparacion completa por un extra de 1 € por reseña.</p>
+              </div>
+            </div>
+
+            <div class="review-mode-grid personalization-choice-grid" role="group" aria-label="Opciones de personalizacion">
+              <button class="review-mode-card is-active" type="button" data-personalization-mode="manual" aria-pressed="true">
+                <span>Incluido</span>
+                <strong>Quiero escribir o revisar los textos</strong>
+                <p>Abre solo las reseñas que necesites y define texto y estrellas una a una.</p>
+              </button>
+              <button class="review-mode-card" type="button" data-personalization-mode="team" aria-pressed="false">
+                <span>+1 € por reseña</span>
+                <strong>Quiero que preparéis los textos vosotros</strong>
+                <p>Nos das criterios generales y preparamos textos naturales para todo el pedido.</p>
+              </button>
+            </div>
+          </section>
+
+          <section class="checkout-panel personalization-mode-panel" data-manual-panel>
+            <div class="checkout-panel__head">
+              <span>02</span>
+              <div>
+                <h2>Textos y estrellas</h2>
+                <p>Lista compacta en acordeones. No hace falta completar todo de golpe.</p>
+              </div>
+            </div>
+
+            <div class="review-list personalization-review-list" data-personalization-review-list></div>
+
+            <button class="checkout-pay-button personalization-submit" type="submit" data-personalization-submit="manual">
+              <span>Confirmar personalización</span>
+              <i aria-hidden="true"></i>
+            </button>
+            <p class="checkout-status" aria-live="polite" data-personalization-status></p>
+          </section>
+
+          <section class="checkout-panel personalization-mode-panel" data-team-panel hidden>
+            <div class="checkout-panel__head">
+              <span>02</span>
+              <div>
+                <h2>Preparacion por el equipo</h2>
+                <p>Un formulario simple para que redactemos todas las reseñas con criterio.</p>
+              </div>
+            </div>
+
+            <div class="checkout-fields">
+              <label class="checkout-field checkout-field--wide">
+                <span>Instrucciones generales</span>
+                <textarea name="teamInstructions" rows="4" placeholder="Contexto del negocio, tipo de clientes, prioridades o detalles importantes."></textarea>
+              </label>
+              <label class="checkout-field">
+                <span>Servicios a destacar</span>
+                <input name="services" type="text" placeholder="Ej. brunch, menús, atención rápida" />
+              </label>
+              <label class="checkout-field">
+                <span>Tono deseado</span>
+                <input name="tone" type="text" placeholder="Ej. natural, cercano, elegante" />
+              </label>
+              <label class="checkout-field checkout-field--wide">
+                <span>Palabras o temas a evitar</span>
+                <textarea name="avoid" rows="3" placeholder="Competidores, promesas concretas, palabras demasiado comerciales..."></textarea>
+              </label>
+            </div>
+
+            <div class="personalization-stars" role="group" aria-label="Estrellas generales">
+              <span>Estrellas generales</span>
+              <button class="review-star-chip" type="button" data-team-stars="3" aria-pressed="false"><span>★★★☆☆</span><b>3</b></button>
+              <button class="review-star-chip" type="button" data-team-stars="4" aria-pressed="false"><span>★★★★☆</span><b>4</b></button>
+              <button class="review-star-chip is-active" type="button" data-team-stars="5" aria-pressed="true"><span>★★★★★</span><b>5</b></button>
+            </div>
+
+            <div class="personalization-extra-summary" aria-label="Resumen del extra">
+              <div><span data-extra-breakdown>0 reseñas x 1 €</span></div>
+              <strong data-extra-total>Total adicional: 0 €</strong>
+            </div>
+
+            <button class="checkout-pay-button personalization-submit" type="submit" data-personalization-submit="team">
+              <span>Pagar preparación de textos</span>
+              <i aria-hidden="true"></i>
+            </button>
+            <p class="checkout-status" aria-live="polite" data-personalization-status></p>
+          </section>
+        </form>
+
+        <aside class="checkout-summary-card personalization-summary-card" aria-label="Resumen del pedido">
+          <div class="checkout-summary-card__top">
+            <span>Pedido comprado</span>
+            <strong data-personalization-summary-total>0 €</strong>
+          </div>
+
+          <div class="checkout-summary-list" data-personalization-summary-items></div>
+
+          <div class="checkout-costs">
+            <div><span>Cantidad total de reseñas</span><strong data-personalization-summary-reviews>0</strong></div>
+            <div><span>Preparacion de textos</span><strong data-personalization-summary-extra>Opcional</strong></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="../../js/main.js"></script>
+  </body>
+</html>
