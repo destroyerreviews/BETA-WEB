@@ -1366,6 +1366,7 @@ const initCart = () => {
   const drawer = document.querySelector("[data-cart-drawer]");
   const overlay = document.querySelector("[data-cart-overlay]");
   const toggles = [...document.querySelectorAll("[data-cart-toggle]")];
+  const openButtons = [...document.querySelectorAll("[data-cart-open]")];
   const closeButtons = [...document.querySelectorAll("[data-cart-close]")];
   const countNodes = [...document.querySelectorAll("[data-cart-count]")];
   const itemsNode = document.querySelector("[data-cart-items]");
@@ -1646,6 +1647,7 @@ const initCart = () => {
     if (drawer.classList.contains("is-open")) closeCart();
     else openCart();
   }));
+  openButtons.forEach((button) => button.addEventListener("click", openCart));
   closeButtons.forEach((button) => button.addEventListener("click", closeCart));
   overlay.addEventListener("click", closeCart);
   continueNode?.addEventListener("click", closeCart);

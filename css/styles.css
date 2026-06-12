@@ -2618,6 +2618,26 @@ body.checkout-page main::before {
   text-shadow: 0 0 26px rgba(37, 99, 255, 0.2);
 }
 
+.checkout-edit-cart {
+  justify-self: start;
+  margin: -8px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(216, 223, 240, 0.62);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.checkout-edit-cart:hover,
+.checkout-edit-cart:focus-visible {
+  color: #fff;
+}
+
 .checkout-summary-list {
   display: grid;
   gap: 10px;
