@@ -24,6 +24,23 @@ const perfDebug = new URLSearchParams(window.location.search).has("perf");
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const canRunScrollMotion = () => !prefersReducedMotion && scrollMotionQuery.matches;
 const canRunPointerEffects = () => !prefersReducedMotion && pointerEffectsQuery.matches;
+const isGoogleMapsUrl = (value) => {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return false;
+
+    const hostname = url.hostname.toLowerCase();
+    const pathname = url.pathname.toLowerCase();
+    const isGoogleMapsPath = (hostname === "google.com" || hostname.endsWith(".google.com")) && pathname.startsWith("/maps");
+    const isMapsGoogle = hostname === "maps.google.com";
+    const isMapsShortLink = hostname === "maps.app.goo.gl";
+    const isLegacyMapsShortLink = hostname === "goo.gl" && pathname.startsWith("/maps");
+
+    return isGoogleMapsPath || isMapsGoogle || isMapsShortLink || isLegacyMapsShortLink;
+  } catch {
+    return false;
+  }
+};
 
 /* ── Sliding pill indicator for active nav link ── */
 const updateNavPill = () => {};
@@ -590,7 +607,10 @@ const initTrialModal = () => {
     const stars = Number(starInput?.value || 0);
 
     if (!mapsUrl) {
-      setFieldError(localForm, "mapsUrl", "Pega el enlace de tu perfil de Google Maps.");
+      setFieldError(localForm, "mapsUrl", "Introduce el enlace de tu ficha de Google Maps.");
+      isValid = false;
+    } else if (!isGoogleMapsUrl(mapsUrl)) {
+      setFieldError(localForm, "mapsUrl", "Pega un enlace válido de Google Maps.");
       isValid = false;
     }
     if (!teamWritesCheckbox?.checked && !reviewText) {
@@ -1751,11 +1771,15 @@ const initCheckout = () => {
     let isValid = true;
     [...form.querySelectorAll("[required]")].forEach((field) => {
       let message = "";
-      if (!field.value.trim()) message = "Completa este campo.";
+      if (!field.value.trim()) {
+        message = field.name === "googleMaps"
+          ? "Introduce el enlace de tu ficha de Google Maps."
+          : "Completa este campo.";
+      }
       if (!message && field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
         message = "Introduce un email válido.";
       }
-      if (!message && field.name === "googleMaps" && !/^https?:\/\/.+(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(field.value.trim())) {
+      if (!message && field.name === "googleMaps" && !isGoogleMapsUrl(field.value.trim())) {
         message = "Pega un enlace válido de Google Maps.";
       }
       setFieldError(field, message);
@@ -2432,6 +2456,12 @@ const initForm = () => {
       const goalShell = form.querySelector(".lead-goal");
       setLeadError(goalShell, "Elige sobre qué quieres información.");
       firstInvalidField ||= form.querySelector('[name="goal"]');
+    }
+
+    if (mapsUrl && !isGoogleMapsUrl(mapsUrl)) {
+      const field = getLeadField("mapsUrl");
+      setLeadError(field, "Pega un enlace válido de Google Maps.");
+      firstInvalidField ||= field;
     }
 
     if (firstInvalidField) {
