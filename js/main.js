@@ -1865,9 +1865,12 @@ const initPersonalizacion = () => {
   const noMapsNode = root.querySelector("[data-personalization-no-maps]");
   const extraBreakdown = root.querySelector("[data-extra-breakdown]");
   const extraTotal = root.querySelector("[data-extra-total]");
+  const summaryExtraLabel = root.querySelector("[data-personalization-summary-extra-label]");
   const summaryExtra = root.querySelector("[data-personalization-summary-extra]");
+  const summaryExtraTotalRow = root.querySelector("[data-personalization-summary-extra-total]");
+  const summaryExtraTotalValue = root.querySelector("[data-personalization-summary-extra-total-value]");
   const teamStarButtons = [...root.querySelectorAll("[data-team-stars]")];
-  let mode = "manual";
+  let mode = "team";
   let teamStars = 5;
   let reviews = [];
 
@@ -1895,7 +1898,7 @@ const initPersonalizacion = () => {
   const reviewTotal = cart.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
   const customer = draft.customer || {};
   const googleMaps = `${customer.googleMaps || customer.mapsUrl || ""}`.trim();
-  const extraCost = reviewTotal;
+  const manualExtraCost = reviewTotal;
 
   const packIcon = (item) => {
     const id = item.id || "";
@@ -1957,7 +1960,7 @@ const initPersonalizacion = () => {
     }
 
     if (extraBreakdown) extraBreakdown.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €`;
-    if (extraTotal) extraTotal.textContent = `Total adicional: ${formatCartPrice(extraCost)}`;
+    if (extraTotal) extraTotal.textContent = `Total adicional: ${formatCartPrice(manualExtraCost)}`;
   };
 
   const renderReviews = () => {
@@ -1998,9 +2001,13 @@ const initPersonalizacion = () => {
       button.classList.toggle("is-active", isActive);
       button.setAttribute("aria-pressed", String(isActive));
     });
-    if (manualPanel) manualPanel.hidden = mode !== "manual";
-    if (teamPanel) teamPanel.hidden = mode !== "team";
-    if (summaryExtra) summaryExtra.textContent = mode === "team" ? formatCartPrice(extraCost) : "Opcional";
+    const isManual = mode === "manual";
+    if (manualPanel) manualPanel.hidden = !isManual;
+    if (teamPanel) teamPanel.hidden = isManual;
+    if (summaryExtraLabel) summaryExtraLabel.textContent = isManual ? "Personalización manual" : "Textos preparados por el equipo";
+    if (summaryExtra) summaryExtra.textContent = isManual ? `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €` : "Incluido";
+    if (summaryExtraTotalRow) summaryExtraTotalRow.hidden = !isManual;
+    if (summaryExtraTotalValue) summaryExtraTotalValue.textContent = formatCartPrice(manualExtraCost);
     setStatus("", "");
   };
 
@@ -2046,7 +2053,7 @@ const initPersonalizacion = () => {
     const submit = event.submitter?.closest("[data-personalization-submit]");
     const selectedMode = submit?.dataset.personalizationSubmit || mode;
     setSubmitLoading(submit, true);
-    setStatus("", selectedMode === "team" ? "Preparando el pago adicional..." : "Guardando personalización...");
+    setStatus("", selectedMode === "manual" ? "Preparando el pago adicional..." : "Guardando datos...");
 
     const formData = new FormData(form);
     const payload = {
@@ -2061,14 +2068,14 @@ const initPersonalizacion = () => {
         tone: `${formData.get("tone") || ""}`.trim(),
         avoid: `${formData.get("avoid") || ""}`.trim(),
         stars: teamStars,
-        extraCost,
       } : null,
+      extraCost: selectedMode === "manual" ? manualExtraCost : 0,
     };
 
     try {
       sessionStorage.setItem("destroyerPersonalizacion", JSON.stringify(payload));
       await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
-      setStatus("success", selectedMode === "team" ? "Pago adicional preparado. Te contactaremos para finalizarlo." : "Personalización confirmada. Hemos guardado tus indicaciones.");
+      setStatus("success", selectedMode === "manual" ? "Pago adicional preparado. Te contactaremos para finalizarlo." : "Datos confirmados. Hemos guardado tus indicaciones.");
     } catch {
       setStatus("error", "No hemos podido guardar los datos ahora. Inténtalo de nuevo en unos segundos.");
     } finally {

@@ -3003,9 +3003,11 @@ body.checkout-page main::before {
 
 .personalization-extra-summary {
   display: grid;
-  gap: 8px;
-  margin: 16px 0;
-  padding: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin: 16px 0 18px;
+  padding: 18px;
   border: 1px solid rgba(125, 165, 255, 0.16);
   border-radius: 18px;
   background:
@@ -3013,16 +3015,37 @@ body.checkout-page main::before {
     rgba(255, 255, 255, 0.036);
 }
 
+.personalization-extra-summary__detail {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
 .personalization-extra-summary span {
+  display: block;
   color: rgba(216, 223, 240, 0.68);
   font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .personalization-extra-summary strong {
+  display: block;
   color: #fff;
+  line-height: 1.05;
+}
+
+.personalization-extra-summary__detail strong {
+  color: rgba(247, 247, 242, 0.92);
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.personalization-extra-summary > strong {
   font-size: 24px;
-  line-height: 1;
   letter-spacing: -0.035em;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .personalization-muted {
@@ -3129,6 +3152,17 @@ body.checkout-page main::before {
 
   .review-stars {
     grid-template-columns: 1fr;
+  }
+
+  .personalization-extra-summary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .personalization-extra-summary > strong {
+    text-align: left;
+    white-space: normal;
   }
 
   .checkout-summary-card__top strong {
