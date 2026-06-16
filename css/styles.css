@@ -2899,6 +2899,22 @@ body.checkout-page main::before {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.checkout-costs__detail span {
+  display: grid;
+  gap: 3px;
+}
+
+.checkout-costs__detail span b {
+  color: rgba(216, 223, 240, 0.62);
+  font-size: 12px;
+}
+
+.checkout-costs__detail span small {
+  color: rgba(216, 223, 240, 0.5);
+  font-size: 11px;
+  font-weight: 750;
+}
+
 .checkout-discreet-note {
   margin: -2px 0 0;
   color: rgba(216, 223, 240, 0.58);

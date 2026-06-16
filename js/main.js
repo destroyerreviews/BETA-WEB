@@ -1705,6 +1705,7 @@ const initCheckout = () => {
   const optionLabel = root.querySelector("[data-checkout-option-label]");
   const optionValue = root.querySelector("[data-checkout-option-value]");
   const extraRow = root.querySelector("[data-checkout-extra-row]");
+  const extraBreakdownNode = root.querySelector("[data-checkout-extra-breakdown]");
   const extraTotalNode = root.querySelector("[data-checkout-extra-total]");
   const finalTotalNode = root.querySelector("[data-checkout-final-total]");
   let reviewMode = "team";
@@ -1759,7 +1760,7 @@ const initCheckout = () => {
               <span>${escapeCheckoutHtml(item.reviews)} &middot; Cantidad ${quantity}</span>
             </div>
             <dl>
-              <div><dt>Unitario</dt><dd>${formatCartPrice(price)}</dd></div>
+              <div><dt>Precio del pack</dt><dd>${formatCartPrice(price)}</dd></div>
               <div><dt>Subtotal</dt><dd>${formatCartPrice(subtotal)}</dd></div>
             </dl>
           </article>
@@ -1770,8 +1771,9 @@ const initCheckout = () => {
     if (totalNode) totalNode.textContent = formatCartPrice(finalTotal);
     if (totalInlineNode) totalInlineNode.textContent = formatCartPrice(packTotal);
     if (optionLabel) optionLabel.textContent = reviewMode === "manual" ? "Personalización de reseñas" : "Reseñas preparadas por el equipo";
-    if (optionValue) optionValue.textContent = reviewMode === "manual" ? `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €` : "Incluido";
+    if (optionValue) optionValue.textContent = reviewMode === "manual" ? "Añadida" : "Incluido";
     if (extraRow) extraRow.hidden = reviewMode !== "manual";
+    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €`;
     if (extraTotalNode) extraTotalNode.textContent = `+${formatCartPrice(extraCost)}`;
     if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(finalTotal);
   };
@@ -1986,7 +1988,7 @@ const initPersonalizacion = () => {
               <span>${escapePersonalizationHtml(item.reviews)} &middot; Cantidad ${quantity}</span>
             </div>
             <dl>
-              <div><dt>Unitario</dt><dd>${formatCartPrice(price)}</dd></div>
+              <div><dt>Precio del pack</dt><dd>${formatCartPrice(price)}</dd></div>
               <div><dt>Subtotal</dt><dd>${formatCartPrice(subtotal)}</dd></div>
             </dl>
           </article>
