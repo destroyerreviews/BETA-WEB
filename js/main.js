@@ -1701,6 +1701,13 @@ const initCheckout = () => {
   const totalInlineNode = root.querySelector("[data-checkout-total-inline]");
   const submitButton = root.querySelector("[data-payment-submit]");
   const statusNode = root.querySelector("[data-checkout-status]");
+  const reviewModeButtons = [...root.querySelectorAll("[data-checkout-review-mode]")];
+  const optionLabel = root.querySelector("[data-checkout-option-label]");
+  const optionValue = root.querySelector("[data-checkout-option-value]");
+  const extraRow = root.querySelector("[data-checkout-extra-row]");
+  const extraTotalNode = root.querySelector("[data-checkout-extra-total]");
+  const finalTotalNode = root.querySelector("[data-checkout-final-total]");
+  let reviewMode = "team";
 
   const escapeCheckoutHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -1711,8 +1718,10 @@ const initCheckout = () => {
   })[char]);
 
   const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
+  const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
   const cartItems = () => readStoredCart();
   const cartTotal = (items) => items.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
+  const cartReviewTotal = (items) => items.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
   const packIcon = (item) => {
     const id = item.id || "";
     const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
@@ -1728,7 +1737,10 @@ const initCheckout = () => {
   const renderSummary = () => {
     const items = cartItems();
     const hasItems = items.length > 0;
-    const total = cartTotal(items);
+    const packTotal = cartTotal(items);
+    const reviewTotal = cartReviewTotal(items);
+    const extraCost = reviewMode === "manual" ? reviewTotal : 0;
+    const finalTotal = packTotal + extraCost;
 
     if (shell) shell.hidden = !hasItems;
     if (empty) empty.hidden = hasItems;
@@ -1755,8 +1767,13 @@ const initCheckout = () => {
       }).join("");
     }
 
-    if (totalNode) totalNode.textContent = formatCartPrice(total);
-    if (totalInlineNode) totalInlineNode.textContent = formatCartPrice(total);
+    if (totalNode) totalNode.textContent = formatCartPrice(finalTotal);
+    if (totalInlineNode) totalInlineNode.textContent = formatCartPrice(packTotal);
+    if (optionLabel) optionLabel.textContent = reviewMode === "manual" ? "Personalización de reseñas" : "Reseñas preparadas por el equipo";
+    if (optionValue) optionValue.textContent = reviewMode === "manual" ? `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €` : "Incluido";
+    if (extraRow) extraRow.hidden = reviewMode !== "manual";
+    if (extraTotalNode) extraTotalNode.textContent = `+${formatCartPrice(extraCost)}`;
+    if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(finalTotal);
   };
 
   const setFieldError = (field, message) => {
@@ -1785,26 +1802,51 @@ const initCheckout = () => {
       setFieldError(field, message);
       if (message) isValid = false;
     });
+    if (!["team", "manual"].includes(reviewMode)) {
+      setStatus("error", "Elige cómo quieres gestionar tus reseñas.");
+      isValid = false;
+    }
     return isValid;
   };
 
   const collectCheckoutData = () => {
     const formData = new FormData(form);
     const cart = cartItems();
+    const reviewTotal = cartReviewTotal(cart);
+    const extraCost = reviewMode === "manual" ? reviewTotal : 0;
+    const baseTotal = cartTotal(cart);
     return {
       customer: Object.fromEntries(formData.entries()),
       cart,
-      total: cartTotal(cart),
-      nextStep: sitePath("checkout/personalizacion/"),
+      reviewMode,
+      reviewTotal,
+      extraCost,
+      baseTotal,
+      total: baseTotal + extraCost,
+      personalizationPaid: reviewMode === "manual",
+      paidAt: new Date().toISOString(),
+      nextStep: reviewMode === "manual" ? sitePath("checkout/personalizacion/") : sitePath("checkout/confirmacion/"),
     };
   };
 
   const handlePaymentSubmit = async (checkoutData) => {
-    // Ready to replace with the real provider handoff when the gateway is connected.
     sessionStorage.setItem("destroyerCheckoutDraft", JSON.stringify(checkoutData));
     await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
     return { ok: true, redirectUrl: checkoutData.nextStep };
   };
+
+  reviewModeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      reviewMode = button.dataset.checkoutReviewMode || "team";
+      reviewModeButtons.forEach((modeButton) => {
+        const isActive = modeButton.dataset.checkoutReviewMode === reviewMode;
+        modeButton.classList.toggle("is-active", isActive);
+        modeButton.setAttribute("aria-pressed", String(isActive));
+      });
+      setStatus("", "");
+      renderSummary();
+    });
+  });
 
   form?.addEventListener("input", (event) => {
     const field = event.target.closest("input, textarea");
@@ -1816,7 +1858,7 @@ const initCheckout = () => {
     setStatus("", "");
 
     if (!cartItems().length) {
-      setStatus("error", "Tu carrito está vacío. Elige un pack antes de pagar.");
+      setStatus("error", "Tu carrito está vacío. Elige un pack antes de continuar.");
       renderSummary();
       return;
     }
@@ -1832,7 +1874,7 @@ const initCheckout = () => {
 
     try {
       const payment = await handlePaymentSubmit(collectCheckoutData());
-      window.location.href = payment.redirectUrl || sitePath("checkout/personalizacion/");
+      window.location.href = payment.redirectUrl || sitePath("checkout/confirmacion/");
     } catch {
       setStatus("error", "No hemos podido continuar ahora. Inténtalo de nuevo en unos segundos.");
       submitButton?.classList.remove("is-loading");
@@ -1852,26 +1894,16 @@ const initPersonalizacion = () => {
   const root = document.querySelector("[data-personalizacion-page]");
   if (!root) return;
 
-  const modeButtons = [...root.querySelectorAll("[data-personalization-mode]")];
   const manualPanel = root.querySelector("[data-manual-panel]");
-  const teamPanel = root.querySelector("[data-team-panel]");
   const reviewList = root.querySelector("[data-personalization-review-list]");
   const form = root.querySelector("[data-personalization-form]");
   const statusNodes = [...root.querySelectorAll("[data-personalization-status]")];
   const reviewTotalNodes = [...root.querySelectorAll("[data-personalization-review-total], [data-personalization-summary-reviews]")];
-  const paidTotalNodes = [...root.querySelectorAll("[data-personalization-paid-total], [data-personalization-summary-total]")];
+  const paidTotalNodes = [...root.querySelectorAll("[data-personalization-paid-total]")];
+  const summaryTotalNode = root.querySelector("[data-personalization-summary-total]");
   const summaryItems = root.querySelector("[data-personalization-summary-items]");
   const mapsLink = root.querySelector("[data-personalization-maps]");
   const noMapsNode = root.querySelector("[data-personalization-no-maps]");
-  const extraBreakdown = root.querySelector("[data-extra-breakdown]");
-  const extraTotal = root.querySelector("[data-extra-total]");
-  const summaryExtraLabel = root.querySelector("[data-personalization-summary-extra-label]");
-  const summaryExtra = root.querySelector("[data-personalization-summary-extra]");
-  const summaryExtraTotalRow = root.querySelector("[data-personalization-summary-extra-total]");
-  const summaryExtraTotalValue = root.querySelector("[data-personalization-summary-extra-total-value]");
-  const teamStarButtons = [...root.querySelectorAll("[data-team-stars]")];
-  let mode = "team";
-  let teamStars = 5;
   let reviews = [];
 
   const escapePersonalizationHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
@@ -1893,12 +1925,15 @@ const initPersonalizacion = () => {
   const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
   const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
   const draft = readCheckoutDraft();
+  if (draft.reviewMode !== "manual" || draft.personalizationPaid !== true) {
+    window.location.replace(sitePath("checkout/"));
+    return;
+  }
   const cart = Array.isArray(draft.cart) && draft.cart.length ? draft.cart : readStoredCart();
   const paidTotal = Number(draft.total ?? cart.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0));
-  const reviewTotal = cart.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
+  const reviewTotal = Number(draft.reviewTotal) || cart.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
   const customer = draft.customer || {};
   const googleMaps = `${customer.googleMaps || customer.mapsUrl || ""}`.trim();
-  const manualExtraCost = reviewTotal;
 
   const packIcon = (item) => {
     const id = item.id || "";
@@ -1921,7 +1956,7 @@ const initPersonalizacion = () => {
   };
 
   const ensureReviews = () => {
-    reviews = Array.from({ length: reviewTotal }, (_, index) => reviews[index] || { stars: 5, text: "" });
+    reviews = Array.from({ length: reviewTotal }, (_, index) => reviews[index] || { stars: 5, text: "", photos: [], error: "" });
   };
 
   const renderSummary = () => {
@@ -1959,15 +1994,14 @@ const initPersonalizacion = () => {
       }).join("") : `<p class="personalization-muted">No hay packs guardados en esta sesión.</p>`;
     }
 
-    if (extraBreakdown) extraBreakdown.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €`;
-    if (extraTotal) extraTotal.textContent = `Total adicional: ${formatCartPrice(manualExtraCost)}`;
+    if (summaryTotalNode) summaryTotalNode.textContent = formatCartPrice(paidTotal);
   };
 
   const renderReviews = () => {
     if (!reviewList) return;
     ensureReviews();
     if (!reviews.length) {
-      reviewList.innerHTML = `<p class="personalization-muted">No hay reseñas compradas para personalizar.</p>`;
+      reviewList.innerHTML = `<p class="personalization-muted">No hay reseñas del pedido para personalizar.</p>`;
       return;
     }
 
@@ -1979,8 +2013,8 @@ const initPersonalizacion = () => {
         </summary>
         <div class="review-accordion__body">
           <label>
-            Texto de la reseña
-            <textarea data-review-text="${index}" rows="4" placeholder="Escribe el texto de esta reseña o una orientación clara.">${escapePersonalizationHtml(review.text)}</textarea>
+            Contenido de la reseña
+            <textarea data-review-text="${index}" rows="4" placeholder="Escribe el contenido de esta reseña.">${escapePersonalizationHtml(review.text)}</textarea>
           </label>
           <div class="review-stars" role="group" aria-label="Estrellas para la reseña ${index + 1}">
             ${[3, 4, 5].map((stars) => `
@@ -1990,44 +2024,78 @@ const initPersonalizacion = () => {
               </button>
             `).join("")}
           </div>
+          <div class="review-photo-uploader" data-photo-dropzone="${index}">
+            <div class="review-photo-uploader__head">
+              <span class="review-photo-uploader__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" /><path d="m7 16 3.2-3.2a1.2 1.2 0 0 1 1.7 0L15.2 16" /><path d="m14 14 1.1-1.1a1.2 1.2 0 0 1 1.7 0L19.5 15.6" /><path d="M8.5 8.5h.01" /></svg>
+              </span>
+              <div>
+                <strong>Fotos de la reseña</strong>
+                <span>${review.photos.length}/3 fotos · JPG, PNG o WebP · máx. recomendado 5 MB</span>
+              </div>
+            </div>
+            <label class="review-photo-uploader__button">
+              Subir fotos
+              <input data-review-photos="${index}" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+            </label>
+            ${review.error ? `<p class="review-photo-error">${escapePersonalizationHtml(review.error)}</p>` : ""}
+            ${review.photos.length ? `
+              <div class="review-photo-grid">
+                ${review.photos.map((photo, photoIndex) => `
+                  <figure class="review-photo-thumb">
+                    <img src="${photo.url}" alt="${escapePersonalizationHtml(photo.name)}" />
+                    <figcaption>${escapePersonalizationHtml(photo.name)}</figcaption>
+                    <button type="button" data-remove-photo="${photoIndex}" data-review-index="${index}" aria-label="Eliminar foto ${escapePersonalizationHtml(photo.name)}">×</button>
+                  </figure>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
         </div>
       </details>
     `).join("");
   };
 
-  const renderMode = () => {
-    modeButtons.forEach((button) => {
-      const isActive = button.dataset.personalizationMode === mode;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
-    });
-    const isManual = mode === "manual";
-    if (manualPanel) manualPanel.hidden = !isManual;
-    if (teamPanel) teamPanel.hidden = isManual;
-    if (summaryExtraLabel) summaryExtraLabel.textContent = isManual ? "Personalización manual" : "Textos preparados por el equipo";
-    if (summaryExtra) summaryExtra.textContent = isManual ? `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €` : "Incluido";
-    if (summaryExtraTotalRow) summaryExtraTotalRow.hidden = !isManual;
-    if (summaryExtraTotalValue) summaryExtraTotalValue.textContent = formatCartPrice(manualExtraCost);
-    setStatus("", "");
-  };
+  const validPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-  modeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      mode = button.dataset.personalizationMode || "manual";
-      renderMode();
-    });
-  });
-
-  teamStarButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      teamStars = Number(button.dataset.teamStars) || 5;
-      teamStarButtons.forEach((starButton) => {
-        const isActive = Number(starButton.dataset.teamStars) === teamStars;
-        starButton.classList.toggle("is-active", isActive);
-        starButton.setAttribute("aria-pressed", String(isActive));
+  const addReviewPhotos = (index, files) => {
+    if (!reviews[index]) return;
+    reviews[index].error = "";
+    const incoming = [...files].filter((file) => validPhotoTypes.has(file.type));
+    if (incoming.length !== files.length) {
+      reviews[index].error = "Solo puedes subir fotos JPG, PNG o WebP.";
+    }
+    if (reviews[index].photos.length + incoming.length > 3) {
+      reviews[index].error = "Puedes subir un máximo de 3 fotos por reseña.";
+      renderReviews();
+      const row = reviewList?.querySelector(`[data-personalization-review="${index}"]`);
+      if (row) row.open = true;
+      return;
+    }
+    incoming.forEach((file) => {
+      reviews[index].photos.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: URL.createObjectURL(file),
       });
     });
-  });
+    renderReviews();
+    const row = reviewList?.querySelector(`[data-personalization-review="${index}"]`);
+    if (row) row.open = true;
+  };
+
+  const validatePersonalization = () => {
+    ensureReviews();
+    const firstEmpty = reviews.findIndex((review) => !review.text.trim());
+    if (firstEmpty >= 0) {
+      setStatus("error", `Completa el contenido de la reseña ${firstEmpty + 1} antes de confirmar.`);
+      const row = reviewList?.querySelector(`[data-personalization-review="${firstEmpty}"]`);
+      if (row) row.open = true;
+      return false;
+    }
+    return true;
+  };
 
   reviewList?.addEventListener("input", (event) => {
     const textarea = event.target.closest("[data-review-text]");
@@ -2037,6 +2105,20 @@ const initPersonalizacion = () => {
   });
 
   reviewList?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-photo]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.reviewIndex);
+      const photoIndex = Number(removeButton.dataset.removePhoto);
+      const photo = reviews[index]?.photos?.[photoIndex];
+      if (photo?.url) URL.revokeObjectURL(photo.url);
+      reviews[index]?.photos?.splice(photoIndex, 1);
+      if (reviews[index]) reviews[index].error = "";
+      renderReviews();
+      const row = reviewList.querySelector(`[data-personalization-review="${index}"]`);
+      if (row) row.open = true;
+      return;
+    }
+
     const button = event.target.closest("[data-review-stars]");
     if (!button) return;
     const index = Number(button.dataset.reviewIndex);
@@ -2048,34 +2130,63 @@ const initPersonalizacion = () => {
     if (row) row.open = true;
   });
 
+  reviewList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-review-photos]");
+    if (!input) return;
+    addReviewPhotos(Number(input.dataset.reviewPhotos), input.files || []);
+    input.value = "";
+  });
+
+  reviewList?.addEventListener("dragover", (event) => {
+    const dropzone = event.target.closest("[data-photo-dropzone]");
+    if (!dropzone) return;
+    event.preventDefault();
+    dropzone.classList.add("is-dragging");
+  });
+
+  reviewList?.addEventListener("dragleave", (event) => {
+    const dropzone = event.target.closest("[data-photo-dropzone]");
+    if (!dropzone || dropzone.contains(event.relatedTarget)) return;
+    dropzone.classList.remove("is-dragging");
+  });
+
+  reviewList?.addEventListener("drop", (event) => {
+    const dropzone = event.target.closest("[data-photo-dropzone]");
+    if (!dropzone) return;
+    event.preventDefault();
+    dropzone.classList.remove("is-dragging");
+    addReviewPhotos(Number(dropzone.dataset.photoDropzone), event.dataTransfer?.files || []);
+  });
+
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submit = event.submitter?.closest("[data-personalization-submit]");
-    const selectedMode = submit?.dataset.personalizationSubmit || mode;
+    if (!validatePersonalization()) return;
     setSubmitLoading(submit, true);
-    setStatus("", selectedMode === "manual" ? "Preparando el pago adicional..." : "Guardando datos...");
+    setStatus("", "Guardando personalización...");
 
-    const formData = new FormData(form);
     const payload = {
-      mode: selectedMode,
+      mode: "manual",
       cart,
       reviewTotal,
       googleMaps,
-      manualReviews: selectedMode === "manual" ? reviews : [],
-      teamPreparation: selectedMode === "team" ? {
-        instructions: `${formData.get("teamInstructions") || ""}`.trim(),
-        services: `${formData.get("services") || ""}`.trim(),
-        tone: `${formData.get("tone") || ""}`.trim(),
-        avoid: `${formData.get("avoid") || ""}`.trim(),
-        stars: teamStars,
-      } : null,
-      extraCost: selectedMode === "manual" ? manualExtraCost : 0,
+      paidTotal,
+      manualReviews: reviews.map((review) => ({
+        stars: review.stars,
+        text: review.text.trim(),
+        photos: review.photos.map((photo) => ({
+          name: photo.name,
+          size: photo.size,
+          type: photo.type,
+        })),
+      })),
+      confirmedAt: new Date().toISOString(),
     };
 
     try {
       sessionStorage.setItem("destroyerPersonalizacion", JSON.stringify(payload));
       await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
-      setStatus("success", selectedMode === "manual" ? "Pago adicional preparado. Te contactaremos para finalizarlo." : "Datos confirmados. Hemos guardado tus indicaciones.");
+      setStatus("success", "Personalización confirmada. Hemos guardado tus detalles.");
     } catch {
       setStatus("error", "No hemos podido guardar los datos ahora. Inténtalo de nuevo en unos segundos.");
     } finally {
@@ -2085,7 +2196,6 @@ const initPersonalizacion = () => {
 
   renderSummary();
   renderReviews();
-  renderMode();
 };
 
 const initWhatsappFloat = () => {

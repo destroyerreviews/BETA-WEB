@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Finaliza tu pedido de Destroyer Reviews con tus datos, enlace de Google Maps, resumen del carrito y pago de packs."
+      content="Finaliza tu pedido de Destroyer Reviews con tus datos, enlace de Google Maps, personalizacion y pago completo."
     />
     <title>Checkout | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
@@ -117,7 +117,7 @@
       <section class="checkout-hero" aria-labelledby="checkout-title">
         <p class="eyebrow">CHECKOUT SEGURO</p>
         <h1 id="checkout-title">Finaliza tu pedido</h1>
-        <p>Revisa los packs de tu carrito, completa tus datos y deja el pedido listo para pagar.</p>
+        <p>Completa tus datos, elige cómo gestionar tus reseñas y paga el total final en un único paso.</p>
       </section>
 
       <section class="checkout-empty-state" data-checkout-empty hidden>
@@ -169,6 +169,29 @@
               </label>
             </div>
           </section>
+
+          <section class="checkout-panel">
+            <div class="checkout-panel__head">
+              <span>02</span>
+              <div>
+                <h2>Elige cómo gestionar tus reseñas</h2>
+                <p>La preparación por el equipo está incluida. La personalización de reseñas añade texto, estrellas y fotos por reseña.</p>
+              </div>
+            </div>
+
+            <div class="review-mode-grid personalization-choice-grid" role="group" aria-label="Opciones de gestion de resenas">
+              <button class="review-mode-card is-active" type="button" data-checkout-review-mode="team" aria-pressed="true">
+                <span>INCLUIDO</span>
+                <strong>Quiero que preparéis las reseñas vosotros</strong>
+                <p>Prepararemos las reseñas de forma natural y variada según tu negocio.</p>
+              </button>
+              <button class="review-mode-card" type="button" data-checkout-review-mode="manual" aria-pressed="false">
+                <span>+1 € POR RESEÑA</span>
+                <strong>Quiero personalizar mis reseñas</strong>
+                <p>Podrás ajustar cada reseña una a una después del pago.</p>
+              </button>
+            </div>
+          </section>
         </form>
 
         <aside class="checkout-summary-card" aria-label="Resumen del pedido">
@@ -188,9 +211,12 @@
 
           <div class="checkout-costs">
             <div><span>Total de los packs</span><strong data-checkout-total-inline>0 €</strong></div>
+            <div><span data-checkout-option-label>Reseñas preparadas por el equipo</span><strong data-checkout-option-value>Incluido</strong></div>
+            <div data-checkout-extra-row hidden><span>Extra de personalización</span><strong data-checkout-extra-total>+0 €</strong></div>
+            <div><span>Total final a pagar</span><strong data-checkout-final-total>0 €</strong></div>
           </div>
 
-          <p class="checkout-discreet-note">Después del pago podrás completar los detalles de tus reseñas. Prepararemos los textos por ti sin coste extra. Si quieres personalizar cada reseña manualmente, podrás añadirlo después por +1 € por reseña.</p>
+          <p class="checkout-discreet-note">El pago incluye los packs y, si la eliges, la personalización de reseñas.</p>
 
           <button class="checkout-pay-button" type="submit" form="checkout-form" data-payment-submit>
             <span>Pagar pedido</span>
