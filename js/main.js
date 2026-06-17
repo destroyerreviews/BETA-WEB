@@ -1904,6 +1904,10 @@ const initPersonalizacion = () => {
   const paidTotalNodes = [...root.querySelectorAll("[data-personalization-paid-total]")];
   const summaryTotalNode = root.querySelector("[data-personalization-summary-total]");
   const summaryItems = root.querySelector("[data-personalization-summary-items]");
+  const packSubtotalNode = root.querySelector("[data-personalization-pack-subtotal]");
+  const extraBreakdownNode = root.querySelector("[data-personalization-extra-breakdown]");
+  const extraTotalNode = root.querySelector("[data-personalization-extra-total]");
+  const finalTotalNode = root.querySelector("[data-personalization-final-total]");
   const mapsLink = root.querySelector("[data-personalization-maps]");
   const noMapsNode = root.querySelector("[data-personalization-no-maps]");
   let reviews = [];
@@ -1932,8 +1936,12 @@ const initPersonalizacion = () => {
     return;
   }
   const cart = Array.isArray(draft.cart) && draft.cart.length ? draft.cart : readStoredCart();
-  const paidTotal = Number(draft.total ?? cart.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0));
   const reviewTotal = Number(draft.reviewTotal) || cart.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
+  const packSubtotal = Number.isFinite(Number(draft.baseTotal))
+    ? Number(draft.baseTotal)
+    : cart.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
+  const personalizationCost = Number.isFinite(Number(draft.extraCost)) ? Number(draft.extraCost) : reviewTotal;
+  const paidTotal = Number.isFinite(Number(draft.total)) ? Number(draft.total) : packSubtotal + personalizationCost;
   const customer = draft.customer || {};
   const googleMaps = `${customer.googleMaps || customer.mapsUrl || ""}`.trim();
 
@@ -1997,6 +2005,10 @@ const initPersonalizacion = () => {
     }
 
     if (summaryTotalNode) summaryTotalNode.textContent = formatCartPrice(paidTotal);
+    if (packSubtotalNode) packSubtotalNode.textContent = formatCartPrice(packSubtotal);
+    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 € · Pagada`;
+    if (extraTotalNode) extraTotalNode.textContent = formatCartPrice(personalizationCost);
+    if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(paidTotal);
   };
 
   const renderReviews = () => {
@@ -2188,7 +2200,7 @@ const initPersonalizacion = () => {
     try {
       sessionStorage.setItem("destroyerPersonalizacion", JSON.stringify(payload));
       await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
-      setStatus("success", "Personalización confirmada. Hemos guardado tus detalles.");
+      setStatus("success", "Personalización confirmada correctamente.");
     } catch {
       setStatus("error", "No hemos podido guardar los datos ahora. Inténtalo de nuevo en unos segundos.");
     } finally {
