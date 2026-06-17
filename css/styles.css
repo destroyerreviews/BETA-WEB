@@ -2595,67 +2595,87 @@ body.checkout-page main::before {
 
 .review-photo-uploader {
   display: grid;
-  gap: 12px;
-  padding: 14px;
-  border: 1px dashed rgba(125, 165, 255, 0.26);
+  gap: 14px;
+  padding: 16px;
+  border: 1px dashed rgba(125, 165, 255, 0.34);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(88, 166, 255, 0.08), transparent 44%),
-    rgba(255, 255, 255, 0.032);
+    radial-gradient(circle at 0% 0%, rgba(88, 166, 255, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.022)),
+    rgba(5, 10, 24, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 0 0 1px rgba(88, 166, 255, 0.025);
   transition:
     border-color 180ms ease,
     background 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    transform 180ms var(--ease-out);
 }
 
 .review-photo-uploader:hover,
 .review-photo-uploader.is-dragging {
-  border-color: rgba(88, 166, 255, 0.54);
+  border-color: rgba(88, 166, 255, 0.66);
   background:
-    radial-gradient(circle at 100% 0%, rgba(88, 166, 255, 0.14), transparent 48%),
-    rgba(37, 99, 255, 0.065);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    radial-gradient(circle at 0% 0%, rgba(88, 166, 255, 0.16), transparent 46%),
+    linear-gradient(180deg, rgba(88, 166, 255, 0.07), rgba(255, 255, 255, 0.028)),
+    rgba(37, 99, 255, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    0 0 24px rgba(37, 99, 255, 0.105);
 }
 
 .review-photo-uploader__head {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 13px;
   align-items: center;
 }
 
 .review-photo-uploader__icon {
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border: 1px solid rgba(125, 165, 255, 0.2);
-  border-radius: 14px;
-  background: rgba(37, 99, 255, 0.1);
-  color: #9cb8ff;
+  padding: 11px;
+  border: 1px solid rgba(125, 165, 255, 0.28);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, rgba(88, 166, 255, 0.18), rgba(37, 99, 255, 0.08)),
+    rgba(7, 18, 44, 0.68);
+  color: #c5d8ff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 18px rgba(37, 99, 255, 0.12);
 }
 
 .review-photo-uploader__icon svg {
-  width: 19px;
-  height: 19px;
+  display: block;
+  width: 100%;
+  height: 100%;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.75;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .review-photo-uploader__head strong {
   display: block;
-  color: rgba(247, 247, 242, 0.94);
-  font-size: 14px;
+  color: #f7faff;
+  font-size: 15px;
+  line-height: 1.15;
 }
 
 .review-photo-uploader__head span {
   display: block;
-  margin-top: 3px;
-  color: rgba(216, 223, 240, 0.58);
+  margin-top: 5px;
+  color: rgba(216, 223, 240, 0.66);
   font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .review-photo-uploader__button {
@@ -2664,14 +2684,51 @@ body.checkout-page main::before {
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  padding: 0 13px;
-  border: 1px solid rgba(125, 165, 255, 0.24);
+  padding: 0 15px;
+  border: 1px solid rgba(125, 165, 255, 0.32);
   border-radius: 999px;
-  background: rgba(37, 99, 255, 0.12);
-  color: #dce7ff;
+  background:
+    linear-gradient(180deg, rgba(88, 166, 255, 0.14), rgba(37, 99, 255, 0.08)),
+    rgba(10, 20, 44, 0.72);
+  color: #e8f0ff;
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.review-photo-uploader__button:hover,
+.review-photo-uploader__button:focus-within {
+  color: #fff;
+  border-color: rgba(125, 165, 255, 0.56);
+  background:
+    linear-gradient(180deg, rgba(88, 166, 255, 0.22), rgba(37, 99, 255, 0.12)),
+    rgba(13, 31, 68, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 0 18px rgba(37, 99, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.review-photo-uploader__button.is-disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.review-photo-uploader__button.is-disabled:hover,
+.review-photo-uploader__button.is-disabled:focus-within {
+  border-color: rgba(125, 165, 255, 0.32);
+  background:
+    linear-gradient(180deg, rgba(88, 166, 255, 0.14), rgba(37, 99, 255, 0.08)),
+    rgba(10, 20, 44, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .review-photo-uploader__button input {
@@ -2692,7 +2749,7 @@ body.checkout-page main::before {
 .review-photo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+  gap: 10px;
 }
 
 .review-photo-thumb {
@@ -2700,14 +2757,15 @@ body.checkout-page main::before {
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(125, 165, 255, 0.18);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(6, 12, 28, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
 .review-photo-thumb img {
   width: 100%;
-  aspect-ratio: 1.2;
+  aspect-ratio: 1.18;
   display: block;
   object-fit: cover;
 }
@@ -2723,15 +2781,31 @@ body.checkout-page main::before {
 
 .review-photo-thumb button {
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 8px;
+  right: 8px;
   width: 24px;
   height: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(3, 8, 18, 0.72);
   color: #fff;
+  font-size: 16px;
+  line-height: 1;
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.review-photo-thumb button:hover,
+.review-photo-thumb button:focus-visible {
+  border-color: rgba(255, 154, 167, 0.55);
+  background: rgba(120, 24, 40, 0.78);
+  transform: scale(1.04);
 }
 
 .checkout-summary-card {

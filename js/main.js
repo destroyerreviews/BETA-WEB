@@ -2041,16 +2041,16 @@ const initPersonalizacion = () => {
           <div class="review-photo-uploader" data-photo-dropzone="${index}">
             <div class="review-photo-uploader__head">
               <span class="review-photo-uploader__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" /><path d="m7 16 3.2-3.2a1.2 1.2 0 0 1 1.7 0L15.2 16" /><path d="m14 14 1.1-1.1a1.2 1.2 0 0 1 1.7 0L19.5 15.6" /><path d="M8.5 8.5h.01" /></svg>
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M4.75 7.25a2.5 2.5 0 0 1 2.5-2.5h9.5a2.5 2.5 0 0 1 2.5 2.5v9.5a2.5 2.5 0 0 1-2.5 2.5h-9.5a2.5 2.5 0 0 1-2.5-2.5z" /><path d="m7.25 16.25 3.25-3.15a1.25 1.25 0 0 1 1.7-.02l2.02 1.87" /><path d="m13.35 14.15 1.05-1.05a1.25 1.25 0 0 1 1.76 0l2.65 2.65" /><path d="M8.65 8.7h.01" /></svg>
               </span>
               <div>
                 <strong>Fotos de la reseña</strong>
-                <span>${review.photos.length}/3 fotos · JPG, PNG o WebP · máx. recomendado 5 MB</span>
+                <span>${review.photos.length}/3 fotos · JPG, PNG o WebP · máx. 5 MB</span>
               </div>
             </div>
-            <label class="review-photo-uploader__button">
+            <label class="review-photo-uploader__button ${review.photos.length >= 3 ? "is-disabled" : ""}" aria-disabled="${review.photos.length >= 3}">
               Subir fotos
-              <input data-review-photos="${index}" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+              <input data-review-photos="${index}" type="file" accept="image/jpeg,image/png,image/webp" multiple ${review.photos.length >= 3 ? "disabled" : ""} />
             </label>
             ${review.error ? `<p class="review-photo-error">${escapePersonalizationHtml(review.error)}</p>` : ""}
             ${review.photos.length ? `
