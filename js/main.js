@@ -2059,7 +2059,9 @@ const initPersonalizacion = () => {
                   <figure class="review-photo-thumb">
                     <img src="${photo.url}" alt="${escapePersonalizationHtml(photo.name)}" />
                     <figcaption>${escapePersonalizationHtml(photo.name)}</figcaption>
-                    <button type="button" data-remove-photo="${photoIndex}" data-review-index="${index}" aria-label="Eliminar foto ${escapePersonalizationHtml(photo.name)}">×</button>
+                    <button type="button" data-remove-photo="${photoIndex}" data-review-index="${index}" aria-label="Eliminar foto ${escapePersonalizationHtml(photo.name)}">
+                      <span class="review-photo-remove-icon" aria-hidden="true"></span>
+                    </button>
                   </figure>
                 `).join("")}
               </div>
