@@ -70,6 +70,21 @@ const loadScriptOnce = (src, test) => {
   });
 };
 
+const ensureAuthScripts = async () => {
+  await loadScriptOnce("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", () => Boolean(window.supabase?.createClient));
+  await loadScriptOnce(getAssetScriptUrl("supabase-config.js"), () => Boolean(window.DestroyerSupabase));
+  await loadScriptOnce(getAssetScriptUrl("auth.js"), () => Boolean(window.DestroyerAuth?.getSession));
+  return window.DestroyerAuth || null;
+};
+
+const getCurrentAuthSession = async () => {
+  const auth = await ensureAuthScripts();
+  const session = auth?.getSession ? await auth.getSession() : null;
+  currentAuthSession = session;
+  hasResolvedAuthSession = true;
+  return session;
+};
+
 const updateNavPill = () => {};
 
 let lenis;
@@ -88,6 +103,8 @@ let lastHeaderScrolled = null;
 let lastScrollProgress = -1;
 let lastActiveSectionId = "";
 let processTimelineVisible = true;
+let currentAuthSession = null;
+let hasResolvedAuthSession = false;
 const lastMotionValues = new WeakMap();
 
 const refreshNavSectionPositions = () => {
@@ -1434,6 +1451,103 @@ const initCart = () => {
 
   if (!drawer || !overlay) return;
 
+  let accountModal = null;
+  let accountModalOverlay = null;
+  let accountModalLogin = null;
+  let lastFocusedBeforeAccountModal = null;
+
+  const getAuthHref = (fileName) => sitePath(fileName);
+
+  const createAccountModal = () => {
+    if (accountModal && accountModalOverlay) return;
+
+    accountModalOverlay = document.createElement("div");
+    accountModalOverlay.className = "cart-account-modal-overlay";
+    accountModalOverlay.hidden = true;
+    accountModalOverlay.dataset.accountModalClose = "overlay";
+
+    accountModal = document.createElement("section");
+    accountModal.className = "cart-account-modal";
+    accountModal.setAttribute("role", "dialog");
+    accountModal.setAttribute("aria-modal", "true");
+    accountModal.setAttribute("aria-labelledby", "cart-account-modal-title");
+    accountModal.hidden = true;
+    accountModal.innerHTML = `
+      <div class="cart-account-modal__glow" aria-hidden="true"></div>
+      <button class="cart-account-modal__close" type="button" aria-label="Cerrar" data-account-modal-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+      <div class="cart-account-modal__content">
+        <p class="cart-account-modal__eyebrow">CUENTA NECESARIA</p>
+        <h2 id="cart-account-modal-title">Inicia sesión para completar tu pedido</h2>
+        <p>Para guardar tu pedido, asociarlo a tu cuenta y continuar con el checkout, necesitas iniciar sesión o crear una cuenta.</p>
+        <p class="cart-account-modal__note">Tu carrito se mantendrá guardado mientras accedes.</p>
+        <div class="cart-account-modal__actions">
+          <a class="button button-primary cart-account-modal__login" href="${getAuthHref("login.html")}" data-account-login>Iniciar sesión</a>
+          <a class="cart-account-modal__register" href="${getAuthHref("register.html")}">Crear cuenta</a>
+          <button class="cart-account-modal__continue" type="button" data-account-modal-close>Seguir viendo packs</button>
+        </div>
+      </div>
+    `;
+
+    document.body.append(accountModalOverlay, accountModal);
+    accountModalLogin = accountModal.querySelector("[data-account-login]");
+
+    accountModalOverlay.addEventListener("click", closeAccountModal);
+    accountModal.querySelectorAll("[data-account-modal-close]").forEach((button) => {
+      button.addEventListener("click", closeAccountModal);
+    });
+  };
+
+  const openAccountModal = () => {
+    createAccountModal();
+    lastFocusedBeforeAccountModal = document.activeElement;
+    accountModalOverlay.hidden = false;
+    accountModal.hidden = false;
+    document.body.classList.add("cart-account-modal-is-open");
+    requestAnimationFrame(() => {
+      accountModalOverlay.classList.add("is-visible");
+      accountModal.classList.add("is-open");
+      accountModalLogin?.focus({ preventScroll: true });
+    });
+  };
+
+  const closeAccountModal = () => {
+    if (!accountModal || accountModal.hidden) return;
+    accountModalOverlay?.classList.remove("is-visible");
+    accountModal.classList.remove("is-open");
+    document.body.classList.remove("cart-account-modal-is-open");
+    window.setTimeout(() => {
+      if (!accountModal?.classList.contains("is-open")) {
+        if (accountModalOverlay) accountModalOverlay.hidden = true;
+        accountModal.hidden = true;
+      }
+    }, prefersReducedMotion ? 0 : 220);
+    lastFocusedBeforeAccountModal?.focus?.({ preventScroll: true });
+  };
+
+  const requireSessionForCheckout = async (event) => {
+    if (!checkoutNode) return;
+    if (hasResolvedAuthSession && currentAuthSession) return;
+    event.preventDefault();
+
+    checkoutNode.classList.add("is-loading");
+    checkoutNode.setAttribute("aria-busy", "true");
+    try {
+      const session = await getCurrentAuthSession();
+      if (session) {
+        window.location.href = checkoutNode.href || checkoutPath();
+        return;
+      }
+      openAccountModal();
+    } catch {
+      openAccountModal();
+    } finally {
+      checkoutNode.classList.remove("is-loading");
+      checkoutNode.removeAttribute("aria-busy");
+    }
+  };
+
   const readCart = () => {
     cart = readStoredCart();
   };
@@ -1698,6 +1812,7 @@ const initCart = () => {
   closeButtons.forEach((button) => button.addEventListener("click", closeCart));
   overlay.addEventListener("click", closeCart);
   continueNode?.addEventListener("click", closeCart);
+  checkoutNode?.addEventListener("click", requireSessionForCheckout);
   pricesLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
@@ -1709,16 +1824,44 @@ const initCart = () => {
     window.setTimeout(scrollToPricing, 260);
   }
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && drawer.classList.contains("is-open")) closeCart();
+    if (event.key !== "Escape") return;
+    if (accountModal && !accountModal.hidden) {
+      closeAccountModal();
+      return;
+    }
+    if (drawer.classList.contains("is-open")) closeCart();
   });
 
   readCart();
   renderCart();
+
+  if (new URLSearchParams(window.location.search).get("accountRequired") === "checkout") {
+    const cleanUrl = `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState({}, "", cleanUrl);
+    getCurrentAuthSession()
+      .then((session) => {
+        if (!session) openAccountModal();
+      })
+      .catch(openAccountModal);
+  }
 };
 
 const initCheckout = () => {
   const root = document.querySelector("[data-checkout-page]");
   if (!root) return;
+  root.hidden = true;
+  getCurrentAuthSession()
+    .then((session) => {
+      if (!session) {
+        window.location.replace(sitePath("index.html?accountRequired=checkout"));
+        return;
+      }
+      root.hidden = false;
+      renderSummary();
+    })
+    .catch(() => {
+      window.location.replace(sitePath("index.html?accountRequired=checkout"));
+    });
 
   const form = root.querySelector("[data-checkout-form]");
   const shell = root.querySelector("[data-checkout-shell]");
@@ -2579,13 +2722,6 @@ const initSessionNav = () => {
       return link.matches(".nav-login, .nav-register, .mobile-register") || /(^|\/)(login|register)(\.html|\/)?$/.test(href);
     });
 
-  const ensureAuthScripts = async () => {
-    await loadScriptOnce("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", () => Boolean(window.supabase?.createClient));
-    await loadScriptOnce(getAssetScriptUrl("supabase-config.js"), () => Boolean(window.DestroyerSupabase));
-    await loadScriptOnce(getAssetScriptUrl("auth.js"), () => Boolean(window.DestroyerAuth?.getSession));
-    return window.DestroyerAuth || null;
-  };
-
   const createLogoutButton = (variant) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -2619,6 +2755,8 @@ const initSessionNav = () => {
   document.querySelector(".mobile-menu")?.appendChild(mobileLogout);
 
   const setSessionNavState = (session) => {
+    currentAuthSession = session;
+    hasResolvedAuthSession = true;
     const isLoggedIn = Boolean(session);
     authLinks.forEach((link) => {
       link.hidden = isLoggedIn;
