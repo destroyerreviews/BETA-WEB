@@ -5388,6 +5388,63 @@ body.cart-is-open .whatsapp-float {
     0 0 24px rgba(255, 255, 255, 0.12);
 }
 
+.auth-logout-button {
+  height: 40px;
+  min-width: 50px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #fff;
+  color: #050711;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.24),
+    0 0 18px rgba(255, 255, 255, 0.08);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.auth-logout-button svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 180ms ease, stroke-width 180ms ease;
+}
+
+.auth-logout-button:hover {
+  transform: translateY(-1px);
+  background: #f8f9fc;
+  color: #02030a;
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.3),
+    0 0 22px rgba(255, 255, 255, 0.12);
+}
+
+.auth-logout-button:hover svg {
+  transform: translateX(1px);
+  stroke-width: 2.12;
+}
+
+.auth-logout-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.site-header.is-scrolled .auth-logout-button--desktop {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.28),
+    0 0 20px rgba(255, 255, 255, 0.1);
+}
+
 .site-header.is-scrolled .nav-register {
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.28),
@@ -5474,6 +5531,16 @@ body.cart-is-open .whatsapp-float {
     0 0 30px rgba(37, 99, 255, 0.22);
 }
 
+.mobile-menu .auth-logout-button--mobile {
+  width: 58px;
+  min-height: 48px;
+  margin-top: 6px;
+  justify-self: start;
+  padding: 0 16px;
+  background: #fff;
+  color: #050711;
+}
+
 .mobile-cart-link {
   min-height: 48px;
   display: flex;
@@ -5530,6 +5597,7 @@ body.cart-is-open .whatsapp-float {
 .liquid-nav a:focus-visible,
 .cart-button:focus-visible,
 .mobile-cart-link:focus-visible,
+.auth-logout-button:focus-visible,
 .nav-mobile-toggle:focus-visible {
   outline: 2px solid rgba(125, 165, 255, 0.9);
   outline-offset: 3px;

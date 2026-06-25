@@ -43,6 +43,33 @@ const isGoogleMapsUrl = (value) => {
 };
 
 /* ── Sliding pill indicator for active nav link ── */
+const getAssetScriptUrl = (fileName) => {
+  const currentScriptUrl = document.currentScript?.src || document.querySelector('script[src$="main.js"]')?.src;
+  return new URL(fileName, currentScriptUrl || `${window.location.origin}/js/main.js`).href;
+};
+
+const loadScriptOnce = (src, test) => {
+  if (test?.()) return Promise.resolve();
+
+  const existingScript = [...document.scripts].find((script) => script.src === src);
+  if (existingScript) {
+    if (document.readyState !== "loading") return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      existingScript.addEventListener("load", resolve, { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.addEventListener("load", resolve, { once: true });
+    script.addEventListener("error", reject, { once: true });
+    document.head.appendChild(script);
+  });
+};
+
 const updateNavPill = () => {};
 
 let lenis;
@@ -2470,7 +2497,7 @@ const initAuthForms = () => {
 
     form.addEventListener("change", () => validate());
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!validate({ showErrors: true })) {
         status.textContent = mode === "login"
@@ -2487,18 +2514,132 @@ const initAuthForms = () => {
       status.textContent = "";
       status.className = "auth-status";
 
-      window.setTimeout(() => {
+      const authHandler = window.DestroyerAuth?.submitAuthForm;
+
+      if (!authHandler) {
         submit.classList.remove("is-loading");
-        status.textContent = mode === "login"
-          ? "Acceso correcto. Redirigiendo..."
-          : "Cuenta creada. Preparando tu panel...";
-        status.className = "auth-status is-success";
         submitText.textContent = mode === "login" ? "Iniciar sesión" : "Crear cuenta";
-      }, 900);
+        status.textContent = "No se ha podido cargar la autenticación. Revisa tu conexión e inténtalo de nuevo.";
+        status.className = "auth-status is-error";
+        validate();
+        return;
+      }
+
+      let result;
+      try {
+        result = await authHandler({ form, mode });
+      } catch (error) {
+        result = {
+          ok: false,
+          message: "No se ha podido completar la autenticación. Inténtalo de nuevo.",
+        };
+      }
+
+      submit.classList.remove("is-loading");
+      submitText.textContent = mode === "login" ? "Iniciar sesión" : "Crear cuenta";
+
+      if (!result.ok) {
+        validate();
+        if (result.field) setError(result.field, result.message);
+        status.textContent = result.message;
+        status.className = "auth-status is-error";
+        return;
+      }
+
+      status.textContent = result.message;
+      status.className = "auth-status is-success";
+
+      if (mode === "register") {
+        form.reset();
+        form.querySelectorAll("input").forEach((input) => input.dispatchEvent(new Event("change", { bubbles: true })));
+        validate();
+        return;
+      }
+
+      if (result.redirectTo) {
+        window.setTimeout(() => {
+          window.location.href = result.redirectTo;
+        }, prefersReducedMotion ? 0 : 520);
+      }
     });
 
     validate();
   });
+};
+
+const initSessionNav = () => {
+  const authContainers = [...document.querySelectorAll(".nav-auth, .mobile-menu")];
+  if (!authContainers.length) return;
+
+  const mainScriptUrl = document.querySelector('script[src$="main.js"]')?.src || `${window.location.origin}/js/main.js`;
+  const indexUrl = new URL("../index.html", mainScriptUrl).href;
+  const authLinks = [...document.querySelectorAll(".nav-login, .nav-register, .mobile-register, .mobile-menu a")]
+    .filter((link) => {
+      const href = link.getAttribute("href") || "";
+      return link.matches(".nav-login, .nav-register, .mobile-register") || /(^|\/)(login|register)(\.html|\/)?$/.test(href);
+    });
+
+  const ensureAuthScripts = async () => {
+    await loadScriptOnce("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", () => Boolean(window.supabase?.createClient));
+    await loadScriptOnce(getAssetScriptUrl("supabase-config.js"), () => Boolean(window.DestroyerSupabase));
+    await loadScriptOnce(getAssetScriptUrl("auth.js"), () => Boolean(window.DestroyerAuth?.getSession));
+    return window.DestroyerAuth || null;
+  };
+
+  const createLogoutButton = (variant) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `auth-logout-button auth-logout-button--${variant}`;
+    button.setAttribute("aria-label", "Cerrar sesión");
+    button.title = "Cerrar sesión";
+    button.hidden = true;
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M10.8 5.6H7.2a2 2 0 0 0-2 2v8.8a2 2 0 0 0 2 2h3.6" />
+        <path d="M14.3 8.4 18 12l-3.7 3.6" />
+        <path d="M17.7 12H10" />
+      </svg>
+    `;
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      button.classList.add("is-loading");
+      const result = await window.DestroyerAuth?.signOut?.();
+      button.classList.remove("is-loading");
+      button.disabled = false;
+      if (result?.ok === false) return;
+      setSessionNavState(null);
+      window.location.href = indexUrl;
+    });
+    return button;
+  };
+
+  const desktopLogout = createLogoutButton("desktop");
+  const mobileLogout = createLogoutButton("mobile");
+  document.querySelector(".nav-auth")?.appendChild(desktopLogout);
+  document.querySelector(".mobile-menu")?.appendChild(mobileLogout);
+
+  const setSessionNavState = (session) => {
+    const isLoggedIn = Boolean(session);
+    authLinks.forEach((link) => {
+      link.hidden = isLoggedIn;
+      link.setAttribute("aria-hidden", String(isLoggedIn));
+    });
+    [desktopLogout, mobileLogout].forEach((button) => {
+      button.hidden = !isLoggedIn;
+    });
+  };
+
+  setSessionNavState(null);
+
+  ensureAuthScripts()
+    .then(async (auth) => {
+      if (!auth) return;
+      setSessionNavState(await auth.getSession());
+      auth.onSessionChange?.(setSessionNavState);
+    })
+    .catch(() => {
+      setSessionNavState(null);
+    });
 };
 
 const initForm = () => {
@@ -2723,6 +2864,7 @@ const init = () => {
     initWhatsappFloat();
   }
   initAuthForms();
+  initSessionNav();
   initForm();
   initPerfDebug();
   refreshNavSectionPositions();
