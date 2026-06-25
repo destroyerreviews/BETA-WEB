@@ -26,8 +26,10 @@
 
   const getEmailRedirectTo = () => {
     const baseUrl = getSiteBaseUrl();
-    return baseUrl ? `${baseUrl}login.html` : undefined;
+    return baseUrl ? `${baseUrl}index.html` : undefined;
   };
+
+  const isAuthEntryPage = () => /(?:^|\/)(login|register)(?:\.html|\/(?:index\.html)?)?$/.test(window.location.pathname);
 
   const normalizeError = (error) => {
     const message = `${error?.message || ""}`.toLowerCase();
@@ -222,10 +224,19 @@
     return { ok: !error, error };
   };
 
+  const redirectSignedInAuthPage = async () => {
+    if (!isAuthEntryPage()) return;
+
+    const session = await getSession();
+    if (session) window.location.replace(getRootRelativePath("index.html"));
+  };
+
   window.DestroyerAuth = {
     getSession,
     onSessionChange,
     signOut,
     submitAuthForm,
   };
+
+  redirectSignedInAuthPage();
 })();
