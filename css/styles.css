@@ -1704,6 +1704,7 @@ textarea:focus-visible {
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
     rgba(6, 10, 24, 0.78);
   color: rgba(229, 236, 255, 0.78);
+  cursor: pointer;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -1733,6 +1734,7 @@ textarea:focus-visible {
   display: grid;
   gap: 14px;
   padding: 34px;
+  pointer-events: auto;
 }
 
 .cart-account-modal__eyebrow {
@@ -1785,6 +1787,7 @@ textarea:focus-visible {
 .cart-account-modal__actions .button-primary {
   min-height: 46px;
   padding-inline: 18px;
+  cursor: pointer;
   text-decoration: none;
 }
 
@@ -1801,6 +1804,7 @@ textarea:focus-visible {
   font-weight: 880;
   letter-spacing: -0.02em;
   text-decoration: none;
+  cursor: pointer;
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.24),
     0 0 18px rgba(255, 255, 255, 0.08);
@@ -1827,6 +1831,7 @@ textarea:focus-visible {
   color: rgba(225, 233, 251, 0.76);
   font-size: 13px;
   font-weight: 820;
+  cursor: pointer;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
