@@ -78,11 +78,22 @@ const ensureAuthScripts = async () => {
 };
 
 const getCurrentAuthSession = async () => {
-  const auth = await ensureAuthScripts();
-  const session = auth?.getSession ? await auth.getSession() : null;
-  currentAuthSession = session;
-  hasResolvedAuthSession = true;
-  return session;
+  if (hasResolvedAuthSession) return currentAuthSession;
+  if (authSessionPromise) return authSessionPromise;
+
+  authSessionPromise = (async () => {
+    const auth = await ensureAuthScripts();
+    const session = auth?.getSession ? await auth.getSession() : null;
+    currentAuthSession = session;
+    hasResolvedAuthSession = true;
+    return session;
+  })();
+
+  try {
+    return await authSessionPromise;
+  } finally {
+    authSessionPromise = null;
+  }
 };
 
 const updateNavPill = () => {};
@@ -105,6 +116,7 @@ let lastActiveSectionId = "";
 let processTimelineVisible = true;
 let currentAuthSession = null;
 let hasResolvedAuthSession = false;
+let authSessionPromise = null;
 const lastMotionValues = new WeakMap();
 
 const refreshNavSectionPositions = () => {
@@ -2743,7 +2755,7 @@ const initSessionNav = () => {
       button.classList.remove("is-loading");
       button.disabled = false;
       if (result?.ok === false) return;
-      setSessionNavState(null);
+      setResolvedSessionNavState(null);
       window.location.href = indexUrl;
     });
     return button;
@@ -2754,9 +2766,7 @@ const initSessionNav = () => {
   document.querySelector(".nav-auth")?.appendChild(desktopLogout);
   document.querySelector(".mobile-menu")?.appendChild(mobileLogout);
 
-  const setSessionNavState = (session) => {
-    currentAuthSession = session;
-    hasResolvedAuthSession = true;
+  const renderSessionNavState = (session) => {
     const isLoggedIn = Boolean(session);
     authLinks.forEach((link) => {
       link.hidden = isLoggedIn;
@@ -2767,16 +2777,24 @@ const initSessionNav = () => {
     });
   };
 
-  setSessionNavState(null);
+  const setResolvedSessionNavState = (session) => {
+    currentAuthSession = session;
+    hasResolvedAuthSession = true;
+    renderSessionNavState(session);
+  };
 
-  ensureAuthScripts()
-    .then(async (auth) => {
-      if (!auth) return;
-      setSessionNavState(await auth.getSession());
-      auth.onSessionChange?.(setSessionNavState);
+  renderSessionNavState(currentAuthSession);
+
+  getCurrentAuthSession()
+    .then((session) => {
+      setResolvedSessionNavState(session);
+      return ensureAuthScripts();
+    })
+    .then((auth) => {
+      auth?.onSessionChange?.(setResolvedSessionNavState);
     })
     .catch(() => {
-      setSessionNavState(null);
+      setResolvedSessionNavState(null);
     });
 };
 
