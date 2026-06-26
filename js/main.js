@@ -1862,18 +1862,6 @@ const initCheckout = () => {
   const root = document.querySelector("[data-checkout-page]");
   if (!root) return;
   root.hidden = true;
-  getCurrentAuthSession()
-    .then((session) => {
-      if (!session) {
-        window.location.replace(sitePath("index.html?accountRequired=checkout"));
-        return;
-      }
-      root.hidden = false;
-      renderSummary();
-    })
-    .catch(() => {
-      window.location.replace(sitePath("index.html?accountRequired=checkout"));
-    });
 
   const form = root.querySelector("[data-checkout-form]");
   const shell = root.querySelector("[data-checkout-shell]");
@@ -1891,6 +1879,46 @@ const initCheckout = () => {
   const extraTotalNode = root.querySelector("[data-checkout-extra-total]");
   const finalTotalNode = root.querySelector("[data-checkout-final-total]");
   let reviewMode = "team";
+
+  const setCheckoutFieldValue = (name, value) => {
+    const field = form?.elements?.[name];
+    if (!field || !value) return;
+    field.value = String(value).trim();
+  };
+
+  const applyCheckoutAccountData = (session) => {
+    const user = session?.user;
+    if (!user || !form) return;
+
+    const metadata = user.user_metadata || {};
+    const nameField = form.elements?.name;
+    const emailField = form.elements?.email;
+    const whatsappField = form.elements?.whatsapp;
+
+    setCheckoutFieldValue("email", user.email);
+    setCheckoutFieldValue("name", metadata.name);
+    setCheckoutFieldValue("whatsapp", metadata.whatsapp);
+
+    if (nameField) {
+      nameField.readOnly = true;
+      nameField.setAttribute("aria-readonly", "true");
+      if (!metadata.name) {
+        nameField.required = false;
+        nameField.removeAttribute("required");
+        nameField.placeholder = "Nombre no disponible";
+      }
+    }
+
+    if (emailField) {
+      emailField.readOnly = true;
+      emailField.setAttribute("aria-readonly", "true");
+    }
+
+    if (whatsappField) {
+      whatsappField.required = false;
+      whatsappField.removeAttribute("required");
+    }
+  };
 
   const escapeCheckoutHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -2070,6 +2098,20 @@ const initCheckout = () => {
   window.addEventListener("storage", (event) => {
     if (event.key === cartStorageKey) renderSummary();
   });
+
+  getCurrentAuthSession()
+    .then((session) => {
+      if (!session) {
+        window.location.replace(sitePath("index.html?accountRequired=checkout"));
+        return;
+      }
+      applyCheckoutAccountData(session);
+      root.hidden = false;
+      renderSummary();
+    })
+    .catch(() => {
+      window.location.replace(sitePath("index.html?accountRequired=checkout"));
+    });
 
   renderSummary();
 };

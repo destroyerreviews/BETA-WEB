@@ -2590,6 +2590,22 @@ body.checkout-page main::before {
     0 0 34px rgba(88, 166, 255, 0.08);
 }
 
+.checkout-field--account-data input[readonly] {
+  border-color: rgba(125, 165, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 255, 0.12), rgba(37, 99, 255, 0.035)),
+    rgba(9, 15, 30, 0.64);
+  color: #dce7ff;
+  cursor: default;
+}
+
+.checkout-field--account-data input[readonly]:focus {
+  border-color: rgba(125, 165, 255, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 4px rgba(37, 99, 255, 0.1);
+}
+
 .checkout-field small {
   min-height: 16px;
   color: #ff9aa7;

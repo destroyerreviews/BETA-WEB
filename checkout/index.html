@@ -135,25 +135,25 @@
             <div class="checkout-panel__head">
               <span>01</span>
               <div>
-                <h2>Datos del pedido</h2>
+                <h2>Pedido asociado a tu cuenta</h2>
                 <p>Usaremos estos datos para coordinar la publicacion y soporte.</p>
               </div>
             </div>
 
             <div class="checkout-fields">
-              <label class="checkout-field" data-checkout-field>
+              <label class="checkout-field checkout-field--account-data" data-checkout-field>
                 <span>Nombre</span>
-                <input name="name" type="text" autocomplete="name" placeholder="Tu nombre" required />
+                <input name="name" type="text" autocomplete="name" placeholder="Nombre de tu cuenta" required readonly />
                 <small data-checkout-error></small>
               </label>
-              <label class="checkout-field" data-checkout-field>
+              <label class="checkout-field checkout-field--account-data checkout-field--account-email" data-checkout-field>
                 <span>Email</span>
-                <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required />
+                <input name="email" type="email" autocomplete="email" placeholder="Email de tu cuenta" required readonly />
                 <small data-checkout-error></small>
               </label>
               <label class="checkout-field" data-checkout-field>
-                <span>WhatsApp</span>
-                <input name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" required />
+                <span>WhatsApp <em>opcional</em></span>
+                <input name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" />
                 <small data-checkout-error></small>
               </label>
               <label class="checkout-field checkout-field--wide" data-checkout-field>
