@@ -77,9 +77,9 @@ const ensureAuthScripts = async () => {
   return window.DestroyerAuth || null;
 };
 
-const getCurrentAuthSession = async () => {
-  if (hasResolvedAuthSession) return currentAuthSession;
-  if (authSessionPromise) return authSessionPromise;
+const getCurrentAuthSession = async ({ forceRefresh = false } = {}) => {
+  if (!forceRefresh && hasResolvedAuthSession) return currentAuthSession;
+  if (!forceRefresh && authSessionPromise) return authSessionPromise;
 
   authSessionPromise = (async () => {
     const auth = await ensureAuthScripts();
@@ -785,6 +785,499 @@ const initTrialModal = () => {
       first.focus({ preventScroll: true });
     }
   });
+};
+
+const initFreeTrialModal = () => {
+  const triggers = [...document.querySelectorAll("[data-trial-trigger]")];
+  const isCheckoutFlow = Boolean(document.body.classList.contains("checkout-page") || document.querySelector("[data-checkout-page], [data-personalizacion-page]"));
+  const allPromoBars = [...document.querySelectorAll(".promo-bar")];
+  const checkoutPromoHosts = [...new Set(allPromoBars.map((bar) => bar.closest("[data-header]") || bar.parentElement).filter(Boolean))];
+
+  if (isCheckoutFlow) {
+    document.body.classList.add("trial-promo-hidden");
+    checkoutPromoHosts.forEach((host) => host.classList.add("trial-promo-is-hidden"));
+    allPromoBars.forEach((bar) => {
+      bar.classList.add("is-hidden");
+      bar.hidden = true;
+      bar.setAttribute("aria-hidden", "true");
+      bar.setAttribute("tabindex", "-1");
+    });
+    return;
+  }
+
+  if (!triggers.length) return;
+
+  const promoBars = triggers.filter((trigger) => trigger.classList.contains("promo-bar"));
+  const promoHosts = [...new Set(promoBars.map((bar) => bar.closest("[data-header]") || bar.parentElement).filter(Boolean))];
+  let overlay = document.querySelector("[data-trial-overlay]");
+  let modal = document.querySelector("[data-trial-modal]");
+  let lastFocusedElement = null;
+  let closeTimer = null;
+  let currentRequest = null;
+  let isSubmitting = false;
+  let isTrialPromoHidden = false;
+
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "trial-modal-overlay";
+    overlay.dataset.trialOverlay = "";
+    overlay.hidden = true;
+    document.body.append(overlay);
+  }
+
+  if (!modal) {
+    modal = document.createElement("section");
+    modal.id = "trial-modal";
+    modal.dataset.trialModal = "";
+    document.body.append(modal);
+  }
+
+  modal.className = "trial-modal trial-modal--free";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("aria-labelledby", "trial-modal-title");
+  modal.tabIndex = -1;
+  modal.hidden = true;
+
+  const statusLabels = {
+    pending: "Pendiente",
+    review: "En revisión",
+    active: "Activa",
+    completed: "Completada",
+  };
+
+  const getSupabaseClient = () => window.DestroyerSupabase?.client || null;
+
+  const setTrialPromoVisibility = (isVisible) => {
+    if (!promoBars.length) return;
+    isTrialPromoHidden = !isVisible;
+    document.body.classList.toggle("trial-promo-hidden", !isVisible);
+    promoHosts.forEach((host) => host.classList.toggle("trial-promo-is-hidden", !isVisible));
+    promoBars.forEach((bar) => {
+      bar.classList.toggle("is-hidden", !isVisible);
+      bar.hidden = !isVisible;
+      bar.setAttribute("aria-hidden", String(!isVisible));
+      if (isVisible) {
+        bar.setAttribute("tabindex", "0");
+      } else {
+        bar.setAttribute("tabindex", "-1");
+      }
+    });
+  };
+
+  const hideTrialPromo = () => setTrialPromoVisibility(false);
+  const showTrialPromo = () => setTrialPromoVisibility(true);
+
+  const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const getFocusableElements = () =>
+    [...modal.querySelectorAll(focusableSelector)].filter((element) => {
+      if (element.hidden || element.getAttribute("aria-hidden") === "true") return false;
+      const style = window.getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden";
+    });
+
+  const focusFirstElement = () => {
+    const focusTarget = () => {
+      const state = modal.dataset.trialState;
+      const preferred =
+        state === "request" ? modal.querySelector("[data-trial-maps-url]")
+          : state === "auth" ? modal.querySelector("[data-trial-login]")
+            : modal.querySelector("[data-trial-done], [data-trial-close]");
+      (preferred || getFocusableElements()[0] || modal).focus?.({ preventScroll: true });
+    };
+
+    requestAnimationFrame(focusTarget);
+    window.setTimeout(focusTarget, 90);
+  };
+
+  const setOpenState = (isOpen) => {
+    window.clearTimeout(closeTimer);
+    if (isOpen) {
+      lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      closeMobileNav();
+      overlay.hidden = false;
+      modal.hidden = false;
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("trial-modal-is-open");
+      requestAnimationFrame(() => {
+        overlay.classList.add("is-visible");
+        modal.classList.add("is-open");
+        focusFirstElement();
+      });
+      return;
+    }
+
+    overlay.classList.remove("is-visible");
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("trial-modal-is-open");
+    closeTimer = window.setTimeout(() => {
+      if (!modal.classList.contains("is-open")) {
+        modal.hidden = true;
+        overlay.hidden = true;
+      }
+    }, prefersReducedMotion ? 0 : 260);
+    lastFocusedElement?.focus?.({ preventScroll: true });
+  };
+
+  const closeTrialModal = () => setOpenState(false);
+
+  const getStatusLabel = (status) => statusLabels[status] || "";
+
+  const renderShell = (state, content) => {
+    modal.dataset.trialState = state;
+    modal.innerHTML = `
+      <div class="trial-modal__glow" aria-hidden="true"></div>
+      <button class="trial-modal__close" type="button" aria-label="Cerrar" data-trial-close>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+      <div class="free-trial-content">
+        <p class="free-trial-eyebrow">PRUEBA GRATUITA</p>
+        ${content}
+      </div>
+    `;
+    focusFirstElement();
+  };
+
+  const renderAuthRequired = () => {
+    renderShell("auth", `
+      <h2 id="trial-modal-title">Inicia sesión para solicitar tu prueba</h2>
+      <p class="free-trial-lead">Para activar tu prueba gratuita de 1 reseña necesitamos asociarla a tu cuenta.</p>
+      <p class="free-trial-note">Tu prueba no afecta al carrito ni requiere pago.</p>
+      <div class="free-trial-actions free-trial-actions--auth">
+        <a class="button button-primary free-trial-primary" href="${sitePath("login.html")}" data-trial-login>Iniciar sesión</a>
+        <a class="free-trial-register" href="${sitePath("register.html")}">Crear cuenta</a>
+        <button class="free-trial-tertiary" type="button" data-trial-close>Seguir viendo la página</button>
+      </div>
+    `);
+  };
+
+  const renderLoading = () => {
+    renderShell("loading", `
+      <h2 id="trial-modal-title">Comprobando tu prueba</h2>
+      <p class="free-trial-lead">Un momento, estamos revisando si ya existe una solicitud asociada a tu cuenta.</p>
+      <div class="free-trial-loader" aria-hidden="true"></div>
+    `);
+  };
+
+  const renderRequestForm = () => {
+    renderShell("request", `
+      <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
+      <p class="free-trial-lead">Activaremos 1 reseña de prueba para que veas cómo funciona el servicio.</p>
+      <form class="free-trial-form" novalidate data-free-trial-form>
+        <label class="free-trial-field" data-free-trial-field="google_maps_url">
+          <span>Enlace de tu ficha de Google Maps</span>
+          <input type="url" name="google_maps_url" placeholder="Pega aquí el enlace de tu ficha de Google Maps" autocomplete="url" data-trial-maps-url />
+          <small class="free-trial-help">Aceptamos enlaces de Google Maps, compartidos de Maps o enlaces cortos de la app.</small>
+          <small class="free-trial-error" data-free-trial-error-for="google_maps_url"></small>
+        </label>
+        <label class="free-trial-field">
+          <span>Nota opcional</span>
+          <textarea name="note" rows="3" placeholder="Cuéntanos algo útil sobre tu negocio o la ficha."></textarea>
+        </label>
+        <p class="free-trial-status" role="status" aria-live="polite" data-free-trial-status></p>
+        <div class="free-trial-actions">
+          <button class="button button-primary free-trial-primary" type="submit" data-free-trial-submit>Solicitar prueba gratuita</button>
+          <button class="free-trial-tertiary" type="button" data-trial-close>Cancelar</button>
+        </div>
+      </form>
+    `);
+  };
+
+  const renderSuccess = () => {
+    renderShell("success", `
+      <span class="free-trial-success-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="m6.8 12.4 3.4 3.4 7-7.6" /></svg>
+      </span>
+      <h2 id="trial-modal-title">Prueba solicitada</h2>
+      <p class="free-trial-lead">Hemos recibido tu solicitud. Revisaremos tu ficha y activaremos la prueba gratuita de 1 reseña.</p>
+      <p class="free-trial-note">Te avisaremos por email o desde tu cuenta cuando esté en marcha.</p>
+      <div class="free-trial-actions free-trial-actions--single">
+        <button class="button button-primary free-trial-primary" type="button" data-trial-done>Entendido</button>
+      </div>
+    `);
+  };
+
+  const renderAlreadyRequested = (request = currentRequest) => {
+    const status = getStatusLabel(request?.status);
+    renderShell("already", `
+      <h2 id="trial-modal-title">Ya has solicitado tu prueba gratuita</h2>
+      <p class="free-trial-lead">Estamos revisando tu solicitud. Te avisaremos cuando esté activa.</p>
+      ${status ? `<p class="free-trial-status-pill">Estado: <strong>${status}</strong></p>` : ""}
+      <div class="free-trial-actions free-trial-actions--single">
+        <button class="button button-primary free-trial-primary" type="button" data-trial-done>Entendido</button>
+      </div>
+    `);
+  };
+
+  const renderError = (message, note = "") => {
+    renderShell("error", `
+      <h2 id="trial-modal-title">No hemos podido cargar tu prueba</h2>
+      <p class="free-trial-lead">${message}</p>
+      ${note ? `<p class="free-trial-note">${note}</p>` : ""}
+      <div class="free-trial-actions free-trial-actions--single">
+        <button class="button button-primary free-trial-primary" type="button" data-trial-done>Entendido</button>
+      </div>
+    `);
+  };
+
+  const getFreeTrialLoadErrorCopy = (error) => {
+    const code = `${error?.code || ""}`.toUpperCase();
+    const message = `${error?.message || error?.details || ""}`.toLowerCase();
+
+    if (code === "PGRST205" || message.includes("could not find the table") || message.includes("schema cache")) {
+      return {
+        message: "Supabase no encuentra la tabla de solicitudes de prueba gratuita.",
+        note: "Revisa que la migración de free_trial_requests esté aplicada y refresca el schema cache si acabas de crearla.",
+      };
+    }
+
+    if (code === "42501" || message.includes("permission denied")) {
+      return {
+        message: "Supabase está bloqueando la consulta por permisos de base de datos.",
+        note: "La tabla existe, pero el rol authenticated necesita permisos SELECT e INSERT además de las políticas RLS.",
+      };
+    }
+
+    if (message.includes("jwt") || message.includes("invalid claim") || message.includes("not authenticated")) {
+      return {
+        message: "No hemos podido confirmar tu sesión antes de consultar la prueba.",
+        note: "Cierra sesión, vuelve a iniciar sesión e inténtalo de nuevo.",
+      };
+    }
+
+    return {
+      message: "No hemos podido comprobar tu solicitud en Supabase.",
+      note: "Revisa la consola del navegador para ver el error técnico devuelto por Supabase.",
+    };
+  };
+
+  const fetchFreeTrialRequest = async () => {
+    const client = getSupabaseClient();
+    if (!client) throw new Error("Supabase no está disponible.");
+
+    const { data, error } = await client
+      .from("free_trial_requests")
+      .select("id,status,created_at")
+      .maybeSingle();
+
+    if (error) throw error;
+    return data || null;
+  };
+
+  const syncTrialPromoVisibility = async () => {
+    if (!promoBars.length) return;
+
+    let session = null;
+    try {
+      session = await getCurrentAuthSession({ forceRefresh: true });
+    } catch (error) {
+      console.warn("[free-trial] Session lookup failed while checking promo visibility", error);
+      showTrialPromo();
+      return;
+    }
+
+    if (!session?.user) {
+      showTrialPromo();
+      return;
+    }
+
+    try {
+      currentRequest = await fetchFreeTrialRequest();
+      if (currentRequest) {
+        hideTrialPromo();
+      } else {
+        showTrialPromo();
+      }
+    } catch (error) {
+      console.warn("[free-trial] Supabase request lookup failed while checking promo visibility", error);
+      showTrialPromo();
+    }
+  };
+
+  const isDuplicateTrialError = (error) => {
+    const code = `${error?.code || ""}`.toLowerCase();
+    const message = `${error?.message || error?.details || ""}`.toLowerCase();
+    return code === "23505" || message.includes("duplicate") || message.includes("free_trial_requests_user_id_key");
+  };
+
+  const setFieldError = (form, message) => {
+    const field = form.querySelector('[data-free-trial-field="google_maps_url"]');
+    const error = form.querySelector('[data-free-trial-error-for="google_maps_url"]');
+    field?.classList.add("is-invalid");
+    if (error) error.textContent = message;
+  };
+
+  const clearFieldError = (form) => {
+    const field = form.querySelector('[data-free-trial-field="google_maps_url"]');
+    const error = form.querySelector('[data-free-trial-error-for="google_maps_url"]');
+    field?.classList.remove("is-invalid");
+    if (error) error.textContent = "";
+  };
+
+  const validateFreeTrialForm = (form) => {
+    const mapsUrl = `${form.elements.google_maps_url?.value || ""}`.trim();
+    clearFieldError(form);
+
+    if (!mapsUrl) {
+      setFieldError(form, "Introduce el enlace de tu ficha de Google Maps.");
+      return false;
+    }
+
+    if (!isGoogleMapsUrl(mapsUrl)) {
+      setFieldError(form, "Pega un enlace válido de Google Maps.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const setSubmitLoading = (button, isLoading) => {
+    if (!button) return;
+    button.classList.toggle("is-loading", isLoading);
+    button.disabled = isLoading;
+    button.setAttribute("aria-busy", String(isLoading));
+    if (!isLoading) button.removeAttribute("aria-busy");
+  };
+
+  const submitFreeTrialRequest = async (form, submitButton) => {
+    if (isSubmitting || !validateFreeTrialForm(form)) return;
+
+    const status = form.querySelector("[data-free-trial-status]");
+    const client = getSupabaseClient();
+    const mapsUrl = `${form.elements.google_maps_url?.value || ""}`.trim();
+    const note = `${form.elements.note?.value || ""}`.trim();
+
+    isSubmitting = true;
+    setSubmitLoading(submitButton, true);
+    if (status) {
+      status.className = "free-trial-status";
+      status.textContent = "Enviando solicitud...";
+    }
+
+    try {
+      const { data, error } = await client
+        .from("free_trial_requests")
+        .insert({
+          google_maps_url: mapsUrl,
+          note: note || null,
+        })
+        .select("id,status,created_at")
+        .single();
+
+      if (error) throw error;
+      currentRequest = data || { status: "pending" };
+      renderSuccess();
+      hideTrialPromo();
+    } catch (error) {
+      if (isDuplicateTrialError(error)) {
+        currentRequest = await fetchFreeTrialRequest().catch(() => ({ status: "pending" }));
+        hideTrialPromo();
+        renderAlreadyRequested(currentRequest);
+        return;
+      }
+
+      if (status) {
+        status.className = "free-trial-status is-error";
+        status.textContent = "No hemos podido enviar la solicitud. Inténtalo de nuevo en unos segundos.";
+      }
+    } finally {
+      isSubmitting = false;
+      setSubmitLoading(submitButton, false);
+    }
+  };
+
+  const openTrialModal = async () => {
+    renderLoading();
+    setOpenState(true);
+
+    let session = null;
+    try {
+      session = await getCurrentAuthSession({ forceRefresh: true });
+    } catch {
+      session = null;
+    }
+
+    if (!session?.user) {
+      renderAuthRequired();
+      return;
+    }
+
+    try {
+      currentRequest = await fetchFreeTrialRequest();
+      if (currentRequest) {
+        hideTrialPromo();
+        renderAlreadyRequested(currentRequest);
+        return;
+      }
+      showTrialPromo();
+      renderRequestForm();
+    } catch (error) {
+      console.warn("[free-trial] Supabase request lookup failed", error);
+      const errorCopy = getFreeTrialLoadErrorCopy(error);
+      renderError(errorCopy.message, errorCopy.note);
+    }
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      openTrialModal();
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openTrialModal();
+    });
+  });
+
+  modal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-trial-close], [data-trial-done]")) {
+      event.preventDefault();
+      closeTrialModal();
+    }
+  });
+
+  modal.addEventListener("input", (event) => {
+    const form = event.target.closest("[data-free-trial-form]");
+    if (form && event.target.name === "google_maps_url") clearFieldError(form);
+  });
+
+  modal.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-free-trial-form]");
+    if (!form) return;
+    event.preventDefault();
+    submitFreeTrialRequest(form, event.submitter || form.querySelector("[data-free-trial-submit]"));
+  });
+
+  overlay.addEventListener("click", closeTrialModal);
+
+  document.addEventListener("keydown", (event) => {
+    if (!modal.classList.contains("is-open")) return;
+    if (event.key === "Escape") {
+      closeTrialModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusableElements = getFocusableElements();
+    if (!focusableElements.length) return;
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
+  });
+
+  syncTrialPromoVisibility();
 };
 
 const initHeroRotatingWord = () => {
@@ -3042,7 +3535,7 @@ const init = () => {
 
   animateLoader();
   initNavigation();
-  initTrialModal();
+  initFreeTrialModal();
   initCart();
   initCheckout();
   initPersonalizacion();
