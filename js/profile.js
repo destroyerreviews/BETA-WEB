@@ -5,6 +5,8 @@
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const whatsappPattern = /^[+()0-9\s.-]{6,24}$/;
+  const emailChangeConfirmationMessage =
+    "Te hemos enviado correos de confirmación. Para completar el cambio, confirma el enlace desde tu correo actual y desde el correo nuevo.";
 
   const sitePath = (path) => path;
 
@@ -45,6 +47,11 @@
     button.classList.toggle("is-loading", isLoading);
   };
 
+  const hasPendingEmailChange = (user) => {
+    const pendingEmail = `${user?.new_email || user?.email_change || ""}`.trim();
+    return Boolean(pendingEmail && pendingEmail !== user?.email);
+  };
+
   const showProfile = () => {
     if (loading) loading.hidden = true;
     if (shell) shell.hidden = false;
@@ -67,7 +74,14 @@
     setText("[data-profile-email]", currentUser.email || "");
     setText("[data-profile-whatsapp]", profile.whatsapp || "Sin WhatsApp");
     setText("[data-profile-created]", formatDate(currentUser.created_at || profile.created_at));
-    setText("[data-profile-email-state]", emailVerified ? "Email verificado" : "Email pendiente de verificar");
+    setText(
+      "[data-profile-email-state]",
+      hasPendingEmailChange(currentUser)
+        ? "Cambio de email pendiente de confirmación."
+        : emailVerified
+          ? "Email verificado"
+          : "Email pendiente de verificar",
+    );
 
     if (accountForm) {
       accountForm.elements.full_name.value = profile.full_name || "";
@@ -164,9 +178,11 @@
 
     setLoading(submit, true);
     try {
-      const { error } = await client().auth.updateUser({ email: nextEmail });
+      const { data, error } = await client().auth.updateUser({ email: nextEmail });
       if (error) throw error;
-      setStatus(emailForm, "info", "Te hemos enviado un correo para confirmar el cambio.");
+      if (data?.user) currentUser = data.user;
+      renderProfile();
+      setStatus(emailForm, "info", emailChangeConfirmationMessage);
       emailForm.elements.email.value = currentUser.email || "";
     } catch {
       setStatus(emailForm, "error", "No se pudo iniciar el cambio de email. Inténtalo de nuevo.");
