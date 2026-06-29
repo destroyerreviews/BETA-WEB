@@ -77,6 +77,12 @@ const ensureAuthScripts = async () => {
   return window.DestroyerAuth || null;
 };
 
+const ensureProfileDataScripts = async () => {
+  await ensureAuthScripts();
+  await loadScriptOnce(getAssetScriptUrl("profile-data.js"), () => Boolean(window.DestroyerProfileData?.ensureUserProfile));
+  return window.DestroyerProfileData || null;
+};
+
 const getCurrentAuthSession = async ({ forceRefresh = false } = {}) => {
   if (!forceRefresh && hasResolvedAuthSession) return currentAuthSession;
   if (!forceRefresh && authSessionPromise) return authSessionPromise;
@@ -2379,23 +2385,34 @@ const initCheckout = () => {
     field.value = String(value).trim();
   };
 
-  const applyCheckoutAccountData = (session) => {
+  const applyCheckoutAccountData = async (session) => {
     const user = session?.user;
     if (!user || !form) return;
 
     const metadata = user.user_metadata || {};
+    let profile = null;
+
+    try {
+      const profileData = await ensureProfileDataScripts();
+      profile = await profileData?.ensureUserProfile?.(user);
+    } catch {
+      profile = null;
+    }
+
+    const accountName = profile?.full_name || metadata.name || "";
+    const accountWhatsapp = profile?.whatsapp || metadata.whatsapp || "";
     const nameField = form.elements?.name;
     const emailField = form.elements?.email;
     const whatsappField = form.elements?.whatsapp;
 
     setCheckoutFieldValue("email", user.email);
-    setCheckoutFieldValue("name", metadata.name);
-    setCheckoutFieldValue("whatsapp", metadata.whatsapp);
+    setCheckoutFieldValue("name", accountName);
+    setCheckoutFieldValue("whatsapp", accountWhatsapp);
 
     if (nameField) {
       nameField.readOnly = true;
       nameField.setAttribute("aria-readonly", "true");
-      if (!metadata.name) {
+      if (!accountName) {
         nameField.required = false;
         nameField.removeAttribute("required");
         nameField.placeholder = "Nombre no disponible";
@@ -2598,7 +2615,9 @@ const initCheckout = () => {
         window.location.replace(sitePath("index.html?accountRequired=checkout"));
         return;
       }
-      applyCheckoutAccountData(session);
+      return applyCheckoutAccountData(session);
+    })
+    .then(() => {
       root.hidden = false;
       renderSummary();
     })
@@ -3257,7 +3276,7 @@ const initAuthForms = () => {
   });
 };
 
-const initSessionNav = () => {
+const initLegacySessionNav = () => {
   const authContainers = [...document.querySelectorAll(".nav-auth, .mobile-menu")];
   if (!authContainers.length) return;
 
@@ -3331,6 +3350,148 @@ const initSessionNav = () => {
     .catch(() => {
       setResolvedSessionNavState(null);
     });
+};
+
+const initAccountSessionNav = () => {
+  const authContainers = [...document.querySelectorAll(".nav-auth, .mobile-menu")];
+  if (!authContainers.length) return;
+
+  const mainScriptUrl = document.querySelector('script[src$="main.js"]')?.src || `${window.location.origin}/js/main.js`;
+  const indexUrl = new URL("../index.html", mainScriptUrl).href;
+  const profileUrl = new URL("../perfil.html", mainScriptUrl).href;
+  const authLinks = [...document.querySelectorAll(".nav-login, .nav-register, .mobile-register, .mobile-menu a")]
+    .filter((link) => {
+      const href = link.getAttribute("href") || "";
+      return link.matches(".nav-login, .nav-register, .mobile-register") || /(^|\/)(login|register)(\.html|\/)?$/.test(href);
+    });
+  const accountMenus = [];
+
+  const getUserInitial = (session) => {
+    const user = session?.user;
+    const metadata = user?.user_metadata || {};
+    const label = `${metadata.name || user?.email || "Cuenta"}`.trim();
+    return (label[0] || "C").toUpperCase();
+  };
+
+  const closeAccountMenus = (except = null) => {
+    accountMenus.forEach(({ wrapper, button, menu }) => {
+      if (wrapper === except) return;
+      wrapper.classList.remove("is-open");
+      button.setAttribute("aria-expanded", "false");
+      menu.hidden = true;
+    });
+  };
+
+  const signOutFromMenu = async (button) => {
+    button.disabled = true;
+    button.classList.add("is-loading");
+    const result = await window.DestroyerAuth?.signOut?.();
+    button.classList.remove("is-loading");
+    button.disabled = false;
+    if (result?.ok === false) return;
+    setResolvedSessionNavState(null);
+    window.location.href = indexUrl;
+  };
+
+  const createAccountMenu = (variant) => {
+    const wrapper = document.createElement("div");
+    const menuId = `account-menu-${variant}`;
+    wrapper.className = `account-menu account-menu--${variant}`;
+    wrapper.hidden = true;
+    wrapper.innerHTML = `
+      <button class="account-menu__trigger" type="button" aria-label="Abrir menú de cuenta" aria-haspopup="menu" aria-expanded="false" aria-controls="${menuId}">
+        <span class="account-menu__avatar" data-account-initial>C</span>
+        <span class="account-menu__chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5" /></svg>
+        </span>
+      </button>
+      <div class="account-menu__panel" id="${menuId}" role="menu" hidden>
+        <a class="account-menu__item" href="${profileUrl}" role="menuitem">Perfil</a>
+        <button class="account-menu__item account-menu__item--disabled" type="button" role="menuitem" aria-disabled="true" tabindex="-1">
+          <span>Panel</span>
+          <small>Próximamente</small>
+        </button>
+        <button class="account-menu__item account-menu__signout" type="button" role="menuitem">
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    `;
+
+    const button = wrapper.querySelector(".account-menu__trigger");
+    const menu = wrapper.querySelector(".account-menu__panel");
+    const signOutButton = wrapper.querySelector(".account-menu__signout");
+    const initial = wrapper.querySelector("[data-account-initial]");
+
+    button.addEventListener("click", () => {
+      const willOpen = !wrapper.classList.contains("is-open");
+      closeAccountMenus(wrapper);
+      wrapper.classList.toggle("is-open", willOpen);
+      button.setAttribute("aria-expanded", String(willOpen));
+      menu.hidden = !willOpen;
+    });
+
+    signOutButton.addEventListener("click", () => signOutFromMenu(signOutButton));
+
+    const accountMenu = {
+      wrapper,
+      button,
+      menu,
+      setSession(session) {
+        initial.textContent = getUserInitial(session);
+      },
+    };
+
+    accountMenus.push(accountMenu);
+    return wrapper;
+  };
+
+  const desktopAccount = createAccountMenu("desktop");
+  const mobileAccount = createAccountMenu("mobile");
+  document.querySelector(".nav-auth")?.appendChild(desktopAccount);
+  document.querySelector(".mobile-menu")?.appendChild(mobileAccount);
+
+  const renderSessionNavState = (session) => {
+    const isLoggedIn = Boolean(session);
+    authLinks.forEach((link) => {
+      link.hidden = isLoggedIn;
+      link.setAttribute("aria-hidden", String(isLoggedIn));
+    });
+    accountMenus.forEach(({ wrapper, setSession }) => {
+      wrapper.hidden = !isLoggedIn;
+      if (isLoggedIn) setSession(session);
+    });
+    if (!isLoggedIn) closeAccountMenus();
+  };
+
+  const setResolvedSessionNavState = (session) => {
+    currentAuthSession = session;
+    hasResolvedAuthSession = true;
+    renderSessionNavState(session);
+  };
+
+  renderSessionNavState(currentAuthSession);
+
+  getCurrentAuthSession()
+    .then((session) => {
+      setResolvedSessionNavState(session);
+      return ensureAuthScripts();
+    })
+    .then((auth) => {
+      auth?.onSessionChange?.(setResolvedSessionNavState);
+    })
+    .catch(() => {
+      setResolvedSessionNavState(null);
+    });
+
+  document.addEventListener("click", (event) => {
+    if (accountMenus.some(({ wrapper }) => wrapper.contains(event.target))) return;
+    closeAccountMenus();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    closeAccountMenus();
+  });
 };
 
 const initForm = () => {
@@ -3555,7 +3716,7 @@ const init = () => {
     initWhatsappFloat();
   }
   initAuthForms();
-  initSessionNav();
+  initAccountSessionNav();
   initForm();
   initPerfDebug();
   refreshNavSectionPositions();

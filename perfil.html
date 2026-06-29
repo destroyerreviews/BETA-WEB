@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Gestiona tu perfil privado de Destroyer Reviews." />
+    <title>Perfil | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
+    <link rel="stylesheet" href="css/styles.css?v=account-profile-20260629" />
+  </head>
+  <body class="profile-page trial-promo-hidden">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="brand-logo nav-brand" href="index.html" aria-label="Destroyer Reviews">
+            <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--nav" width="1495" height="350" loading="eager" decoding="async" />
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="index.html" data-nav-link>Inicio</a>
+            <a href="./blogs/" data-nav-link>Blogs</a>
+            <a href="index.html#planes" data-nav-link>Precios</a>
+            <a href="index.html#contacto" data-nav-link>Contáctanos</a>
+          </div>
+          <div class="nav-auth">
+            <button class="cart-button cart-button--desktop" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+              <span class="cart-count" data-cart-count hidden>0</span>
+            </button>
+            <a class="nav-login" href="login.html">Iniciar sesión</a>
+            <a class="nav-register" href="register.html">Registrarse</a>
+          </div>
+          <button class="cart-button cart-button--mobile" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+              <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+            </svg>
+            <span class="cart-count" data-cart-count hidden>0</span>
+          </button>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="index.html">Inicio</a>
+          <a href="./blogs/">Blogs</a>
+          <a href="index.html#planes">Precios</a>
+          <a href="index.html#contacto">Contáctanos</a>
+          <button class="mobile-cart-link" type="button" data-cart-toggle>
+            <span class="mobile-cart-link__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+            </span>
+            <span>Carrito</span>
+            <span class="mobile-cart-count" data-cart-count hidden>0</span>
+          </button>
+          <a href="login.html">Iniciar sesión</a>
+          <a class="mobile-register" href="register.html">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="cart-overlay" data-cart-overlay hidden></div>
+    <aside class="cart-drawer" aria-label="Carrito de compra" aria-hidden="true" data-cart-drawer>
+      <div class="cart-drawer__glow" aria-hidden="true"></div>
+      <header class="cart-drawer__header">
+        <div>
+          <span>Carrito</span>
+          <h2>Tu pedido</h2>
+        </div>
+        <button class="cart-close" type="button" aria-label="Cerrar carrito" data-cart-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="cart-drawer__body" data-cart-body>
+        <div class="cart-empty" data-cart-empty>
+          <div class="cart-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" /><path d="M9.2 19.2h.01M16.2 19.2h.01" /></svg>
+          </div>
+          <h3>Tu carrito está vacío</h3>
+          <p>Elige un pack para empezar.</p>
+          <a class="button button-primary cart-empty__button" href="index.html#planes" data-cart-prices>Ver precios</a>
+        </div>
+        <div class="cart-list" data-cart-items></div>
+      </div>
+      <footer class="cart-summary" data-cart-summary hidden>
+        <div class="cart-total-row"><span>Total</span><strong data-cart-total>0 EUR</strong></div>
+        <a class="button button-primary cart-checkout" href="checkout/" data-cart-checkout>Finalizar pedido</a>
+        <button class="button button-secondary cart-continue" type="button" data-cart-continue>Seguir viendo packs</button>
+      </footer>
+    </aside>
+
+    <main class="profile-main">
+      <div class="profile-loading" data-profile-loading>
+        <span></span>
+        <p>Cargando perfil...</p>
+      </div>
+
+      <section class="profile-shell" data-profile-shell hidden>
+        <aside class="profile-sidebar" aria-label="Secciones de perfil">
+          <button class="profile-tab is-active" type="button" data-profile-tab="account" aria-selected="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0" /><path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" /></svg>
+            <span>Información de la cuenta</span>
+          </button>
+          <button class="profile-tab" type="button" data-profile-tab="security" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.9 8.3 7 9.6 4.1-1.3 7-5.2 7-9.6V6l-7-3Z" /><path d="m9.7 12 1.5 1.5 3.3-3.5" /></svg>
+            <span>Seguridad</span>
+          </button>
+        </aside>
+
+        <div class="profile-content">
+          <section class="profile-panel" data-profile-panel="account">
+            <div class="profile-panel__head">
+              <div>
+                <p>Cuenta</p>
+                <h1>Perfil privado</h1>
+              </div>
+            </div>
+
+            <div class="profile-summary">
+              <div><span>Nombre</span><strong data-profile-name>Pendiente</strong></div>
+              <div><span>Email</span><strong data-profile-email>No disponible</strong></div>
+              <div><span>WhatsApp</span><strong data-profile-whatsapp>Sin WhatsApp</strong></div>
+              <div><span>Cuenta creada</span><strong data-profile-created>No disponible</strong></div>
+              <div><span>Estado</span><strong data-profile-email-state>No disponible</strong></div>
+            </div>
+
+            <form class="profile-card" data-profile-account-form novalidate>
+              <div class="profile-card__head">
+                <h2>Información editable</h2>
+                <p>Estos datos se guardan en tu perfil de usuario.</p>
+              </div>
+              <label class="profile-field">
+                <span>Nombre</span>
+                <input name="full_name" type="text" autocomplete="name" placeholder="Tu nombre" />
+              </label>
+              <label class="profile-field">
+                <span>WhatsApp</span>
+                <input name="whatsapp" type="tel" autocomplete="tel" placeholder="+34 600 000 000" />
+              </label>
+              <div class="profile-actions">
+                <p class="profile-status" data-profile-status aria-live="polite"></p>
+                <button class="profile-button" type="submit">Guardar cambios</button>
+              </div>
+            </form>
+
+            <form class="profile-card" data-profile-email-form novalidate>
+              <div class="profile-card__head">
+                <h2>Email principal</h2>
+                <p>Por seguridad, el cambio de email puede requerir confirmación por correo.</p>
+              </div>
+              <label class="profile-field">
+                <span>Email</span>
+                <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" />
+              </label>
+              <div class="profile-actions">
+                <p class="profile-status" data-profile-status aria-live="polite"></p>
+                <button class="profile-button" type="submit">Cambiar email</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="profile-panel" data-profile-panel="security" hidden>
+            <div class="profile-panel__head">
+              <div>
+                <p>Seguridad</p>
+                <h1>Acceso y recuperación</h1>
+              </div>
+            </div>
+
+            <form class="profile-card" data-profile-password-form novalidate>
+              <div class="profile-card__head">
+                <h2>Contraseña</h2>
+                <p>Por seguridad, no almacenamos ni mostramos tu contraseña.</p>
+              </div>
+              <label class="profile-field">
+                <span>Nueva contraseña</span>
+                <input name="password" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <label class="profile-field">
+                <span>Confirmar contraseña</span>
+                <input name="confirm_password" type="password" autocomplete="new-password" minlength="8" />
+              </label>
+              <div class="profile-actions">
+                <p class="profile-status" data-profile-status aria-live="polite"></p>
+                <button class="profile-button" type="submit">Cambiar contraseña</button>
+              </div>
+            </form>
+
+            <section class="profile-card profile-security-card">
+              <div class="profile-card__head">
+                <h2>Verificación en dos pasos</h2>
+                <p>Añade una capa extra de seguridad usando una app autenticadora como Google Authenticator o Authy.</p>
+              </div>
+              <div class="profile-security-state">
+                <span>Estado</span>
+                <strong data-profile-mfa-state>Comprobando...</strong>
+              </div>
+              <p class="profile-muted" data-profile-mfa-note>Verificación en dos pasos preparada para una siguiente fase.</p>
+            </section>
+
+            <section class="profile-card profile-security-card">
+              <div class="profile-card__head">
+                <h2>Códigos de recuperación</h2>
+                <p data-profile-recovery-codes-note>Los códigos de recuperación se añadirán en una fase posterior.</p>
+              </div>
+            </section>
+
+            <form class="profile-card" data-profile-recovery-form novalidate>
+              <div class="profile-card__head">
+                <h2>Correo de recuperación</h2>
+                <p>Usaremos este correo para ayudarte a recuperar el acceso o verificar cambios importantes.</p>
+              </div>
+              <label class="profile-field">
+                <span>Correo de recuperación</span>
+                <input name="recovery_email" type="email" autocomplete="email" placeholder="correo@ejemplo.com" />
+              </label>
+              <div class="profile-actions">
+                <p class="profile-status" data-profile-status aria-live="polite"></p>
+                <button class="profile-button" type="submit">Guardar correo</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="js/supabase-config.js"></script>
+    <script defer src="js/auth.js"></script>
+    <script defer src="js/profile-data.js"></script>
+    <script defer src="js/main.js?v=account-profile-20260629"></script>
+    <script defer src="js/profile.js"></script>
+  </body>
+</html>
