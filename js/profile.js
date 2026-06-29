@@ -7,6 +7,7 @@
   const whatsappPattern = /^[+()0-9\s.-]{6,24}$/;
   const emailChangeConfirmationMessage =
     "Te hemos enviado correos de confirmación. Para completar el cambio, confirma el enlace desde tu correo actual y desde el correo nuevo.";
+  const userRefreshThrottleMs = 15000;
 
   const sitePath = (path) => path;
 
@@ -21,6 +22,8 @@
 
   let currentUser = null;
   let currentProfile = null;
+  let isRefreshingUser = false;
+  let lastUserRefreshAt = 0;
 
   const setText = (selector, value) => {
     const node = document.querySelector(selector);
@@ -50,6 +53,44 @@
   const hasPendingEmailChange = (user) => {
     const pendingEmail = `${user?.new_email || user?.email_change || ""}`.trim();
     return Boolean(pendingEmail && pendingEmail !== user?.email);
+  };
+
+  const getCurrentAuthUser = async () => {
+    const authClient = client();
+    if (!authClient?.auth?.getUser) return null;
+
+    const { data, error } = await authClient.auth.getUser();
+    if (error) return null;
+    return data?.user || null;
+  };
+
+  const refreshCurrentUser = async ({ force = false, refreshSession = false } = {}) => {
+    const authClient = client();
+    const now = Date.now();
+    if (!authClient?.auth || isRefreshingUser) return;
+    if (!force && now - lastUserRefreshAt < userRefreshThrottleMs) return;
+
+    isRefreshingUser = true;
+    lastUserRefreshAt = now;
+
+    try {
+      if (refreshSession && authClient.auth.refreshSession) {
+        const { data } = await authClient.auth.refreshSession();
+        if (data?.session?.user) currentUser = data.session.user;
+      }
+
+      const freshUser = await getCurrentAuthUser();
+      if (freshUser) {
+        currentUser = freshUser;
+        renderProfile();
+      } else if (currentUser) {
+        renderProfile();
+      }
+    } catch {
+      if (currentUser) renderProfile();
+    } finally {
+      isRefreshingUser = false;
+    }
   };
 
   const showProfile = () => {
@@ -247,6 +288,14 @@
     button.addEventListener("click", () => activateTab(button.dataset.profileTab));
   });
 
+  const handleProfileReturn = () => {
+    if (document.visibilityState && document.visibilityState !== "visible") return;
+    refreshCurrentUser({ refreshSession: true });
+  };
+
+  window.addEventListener("focus", handleProfileReturn);
+  document.addEventListener("visibilitychange", handleProfileReturn);
+
   const initProfile = async () => {
     try {
       const session = await auth()?.getSession?.();
@@ -254,7 +303,7 @@
         window.location.replace(sitePath("login.html"));
         return;
       }
-      currentUser = session.user;
+      currentUser = (await getCurrentAuthUser()) || session.user;
       currentProfile = await profiles()?.ensureUserProfile?.(currentUser);
       renderProfile();
       await loadMfaState();
@@ -265,4 +314,12 @@
   };
 
   initProfile();
+
+  client()?.auth?.onAuthStateChange?.((event, session) => {
+    if (!["INITIAL_SESSION", "SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) return;
+    if (!session?.user) return;
+
+    currentUser = session.user;
+    renderProfile();
+  });
 })();
