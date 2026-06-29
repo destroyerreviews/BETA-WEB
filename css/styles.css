@@ -2515,6 +2515,7 @@ body.checkout-page {
   font-size: 14px;
   font-weight: 780;
   text-align: left;
+  cursor: pointer;
   transition:
     background 180ms ease,
     border-color 180ms ease,
@@ -2712,6 +2713,7 @@ body.checkout-page {
   color: #fff;
   font-size: 14px;
   font-weight: 880;
+  cursor: pointer;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -6677,6 +6679,7 @@ body.cart-is-open .whatsapp-float {
   padding: 0 12px;
   background: #fff;
   color: #050711;
+  cursor: pointer;
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.24),
     0 0 18px rgba(255, 255, 255, 0.08);
@@ -15357,10 +15360,24 @@ body.is-page-hidden *::after {
   .trial-check,
   .trial-actions button,
   .cart-button,
+  .account-menu__trigger,
+  .account-menu__item,
+  .profile-tab,
+  .profile-button,
+  .profile-page a,
+  .profile-page button:not(:disabled):not([aria-disabled="true"]),
   .blog-modal__close,
   .cart-close,
   .site-footer a {
     cursor: pointer;
+  }
+
+  .account-menu__item--disabled,
+  .account-menu__item--disabled:hover,
+  .account-menu__item--disabled:focus-visible,
+  .profile-page button:disabled,
+  .profile-page [aria-disabled="true"] {
+    cursor: not-allowed;
   }
 }
 
