@@ -2346,6 +2346,11 @@ const initCart = () => {
   readCart();
   renderCart();
 
+  window.addEventListener("destroyer:cart-updated", () => {
+    readCart();
+    renderCart();
+  });
+
   if (new URLSearchParams(window.location.search).get("accountRequired") === "checkout") {
     const cleanUrl = `${window.location.pathname}${window.location.hash}`;
     window.history.replaceState({}, "", cleanUrl);
@@ -2378,6 +2383,12 @@ const initCheckout = () => {
   const extraTotalNode = root.querySelector("[data-checkout-extra-total]");
   const finalTotalNode = root.querySelector("[data-checkout-final-total]");
   let reviewMode = "team";
+  let submittedOrder = null;
+
+  const resultNode = document.createElement("div");
+  resultNode.className = "checkout-order-result";
+  resultNode.hidden = true;
+  statusNode?.after(resultNode);
 
   const setCheckoutFieldValue = (name, value) => {
     const field = form?.elements?.[name];
@@ -2385,9 +2396,8 @@ const initCheckout = () => {
     field.value = String(value).trim();
   };
 
-  const applyCheckoutAccountData = async (session) => {
-    const user = session?.user;
-    if (!user || !form) return;
+  const readCheckoutAccountData = async (user) => {
+    if (!user) return { name: "", email: "", whatsapp: "" };
 
     const metadata = user.user_metadata || {};
     let profile = null;
@@ -2395,28 +2405,35 @@ const initCheckout = () => {
     try {
       const profileData = await ensureProfileDataScripts();
       profile = await profileData?.ensureUserProfile?.(user);
-    } catch {
+    } catch (error) {
       profile = null;
     }
 
-    const accountName = profile?.full_name || metadata.name || "";
-    const accountWhatsapp = profile?.whatsapp || metadata.whatsapp || "";
+    return {
+      name: `${profile?.full_name || metadata.name || ""}`.trim(),
+      email: `${user.email || ""}`.trim(),
+      whatsapp: `${profile?.whatsapp || metadata.whatsapp || ""}`.trim(),
+    };
+  };
+
+  const applyCheckoutAccountData = async (session) => {
+    const user = session?.user;
+    if (!user || !form) return;
+
+    const account = await readCheckoutAccountData(user);
     const nameField = form.elements?.name;
     const emailField = form.elements?.email;
     const whatsappField = form.elements?.whatsapp;
 
-    setCheckoutFieldValue("email", user.email);
-    setCheckoutFieldValue("name", accountName);
-    setCheckoutFieldValue("whatsapp", accountWhatsapp);
+    setCheckoutFieldValue("email", account.email);
+    setCheckoutFieldValue("name", account.name);
+    setCheckoutFieldValue("whatsapp", account.whatsapp);
 
     if (nameField) {
-      nameField.readOnly = true;
-      nameField.setAttribute("aria-readonly", "true");
-      if (!accountName) {
-        nameField.required = false;
-        nameField.removeAttribute("required");
-        nameField.placeholder = "Nombre no disponible";
-      }
+      nameField.readOnly = Boolean(account.name);
+      nameField.setAttribute("aria-readonly", String(Boolean(account.name)));
+      nameField.required = true;
+      if (!account.name) nameField.placeholder = "Indica el nombre de contacto";
     }
 
     if (emailField) {
@@ -2453,6 +2470,10 @@ const initCheckout = () => {
     if (!statusNode) return;
     statusNode.textContent = message;
     statusNode.dataset.state = type || "";
+    if (type !== "success" && !submittedOrder) {
+      resultNode.hidden = true;
+      resultNode.innerHTML = "";
+    }
   };
 
   const renderSummary = () => {
@@ -2462,6 +2483,13 @@ const initCheckout = () => {
     const reviewTotal = cartReviewTotal(items);
     const extraCost = reviewMode === "manual" ? reviewTotal : 0;
     const finalTotal = packTotal + extraCost;
+
+    if (submittedOrder) {
+      if (shell) shell.hidden = false;
+      if (empty) empty.hidden = true;
+      if (submitButton) submitButton.disabled = true;
+      return;
+    }
 
     if (shell) shell.hidden = !hasItems;
     if (empty) empty.hidden = hasItems;
@@ -2545,16 +2573,131 @@ const initCheckout = () => {
       extraCost,
       baseTotal,
       total: baseTotal + extraCost,
-      personalizationPaid: reviewMode === "manual",
-      paidAt: new Date().toISOString(),
-      nextStep: reviewMode === "manual" ? sitePath("checkout/personalizacion/") : sitePath("checkout/confirmacion/"),
     };
   };
 
-  const handlePaymentSubmit = async (checkoutData) => {
-    sessionStorage.setItem("destroyerCheckoutDraft", JSON.stringify(checkoutData));
-    await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
-    return { ok: true, redirectUrl: checkoutData.nextStep };
+  const toCents = (value) => Math.max(0, Math.round((Number(value) || 0) * 100));
+
+  const buildOrderItemsPayload = (checkoutData) => {
+    const items = checkoutData.cart.map((item) => {
+      const quantity = itemQuantity(item);
+      const unitPrice = Number(item.price) || 0;
+      return {
+        pack_slug: item.id || null,
+        pack_name: `${item.name || "Pack"}`.trim(),
+        reviews_count: itemUnitReviews(item),
+        quantity,
+        unit_price_cents: toCents(unitPrice),
+        subtotal_cents: toCents(unitPrice * quantity),
+      };
+    });
+
+    if (checkoutData.reviewMode === "manual" && checkoutData.reviewTotal > 0 && checkoutData.extraCost > 0) {
+      items.push({
+        pack_slug: "personalizacion-resenas",
+        pack_name: "Personalizacion de resenas",
+        reviews_count: checkoutData.reviewTotal,
+        quantity: checkoutData.reviewTotal,
+        unit_price_cents: 100,
+        subtotal_cents: toCents(checkoutData.extraCost),
+      });
+    }
+
+    return items;
+  };
+
+  const clearCheckoutCart = () => {
+    localStorage.removeItem(cartStorageKey);
+    window.dispatchEvent(new CustomEvent("destroyer:cart-updated", { detail: { cart: [] } }));
+  };
+
+  const formatOrderError = (error) => {
+    const message = `${error?.message || ""}`.toLowerCase();
+    if (message.includes("authentication") || message.includes("jwt")) {
+      return "Tu sesion no esta activa. Inicia sesion de nuevo para crear el pedido.";
+    }
+    if (message.includes("google maps")) {
+      return "Revisa el enlace de Google Maps e intentalo de nuevo.";
+    }
+    return "No se pudo crear el pedido. Revisa los datos e intentalo de nuevo.";
+  };
+
+  const buildPersonalizationDraft = (order, checkoutData) => ({
+    ...checkoutData,
+    orderId: order?.id || "",
+    orderShortId: order?.short_id || "",
+    orderStatus: order?.status || "pending",
+    paymentStatus: order?.payment_status || "unpaid",
+    personalizationPending: true,
+  });
+
+  const storePersonalizationDraft = (order, checkoutData) => {
+    if (checkoutData?.reviewMode !== "manual") return false;
+    try {
+      sessionStorage.setItem("destroyerCheckoutDraft", JSON.stringify(buildPersonalizationDraft(order, checkoutData)));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const showOrderSuccess = (order, checkoutData, canPersonalize = false) => {
+    submittedOrder = order;
+    root.classList.add("has-order-success");
+    setStatus("success", "Pedido recibido. Estado: pendiente.");
+    const personalizeUrl = sitePath("checkout/personalizacion/");
+
+    resultNode.hidden = false;
+    resultNode.innerHTML = `
+      <span class="checkout-order-result__eyebrow">Estado: pendiente</span>
+      <strong>Pedido recibido</strong>
+      <p>Hemos guardado tu pedido correctamente. Lo revisaremos y te contactaremos para continuar con el proceso.</p>
+      <small>Referencia del pedido ${escapeCheckoutHtml(order?.short_id ? `#${order.short_id}` : order?.id || "")}</small>
+      ${canPersonalize ? `<a class="checkout-order-result__action" href="${personalizeUrl}">Personalizar reseñas</a>` : ""}
+    `;
+
+    form?.querySelectorAll("input, textarea, button").forEach((field) => {
+      field.disabled = true;
+    });
+    reviewModeButtons.forEach((button) => {
+      button.disabled = true;
+    });
+    submitButton?.classList.remove("is-loading");
+    if (submitButton) submitButton.disabled = true;
+    submitButton?.querySelector("span")?.replaceChildren(document.createTextNode("Pedido enviado"));
+  };
+
+  const createPendingOrder = async (checkoutData) => {
+    const session = await getCurrentAuthSession({ forceRefresh: true });
+    const user = session?.user;
+    if (!user) throw new Error("Authentication required");
+
+    const client = window.DestroyerSupabase?.client;
+    if (!client) throw new Error("Supabase is not available");
+
+    const account = await readCheckoutAccountData(user);
+    const formCustomerName = `${checkoutData.customer.name || ""}`.trim();
+    const formWhatsapp = `${checkoutData.customer.whatsapp || ""}`.trim();
+    const googleMapsUrl = `${checkoutData.customer.googleMaps || ""}`.trim();
+    const notes = `${checkoutData.customer.notes || ""}`.trim();
+    const customerName = account.name || formCustomerName;
+
+    const { data, error } = await client.rpc("create_order_with_items", {
+      p_customer_name: customerName,
+      p_whatsapp: account.whatsapp || formWhatsapp || null,
+      p_google_maps_url: googleMapsUrl,
+      p_notes: notes || null,
+      p_management_mode: checkoutData.reviewMode,
+      p_currency: "EUR",
+      p_total_cents: toCents(checkoutData.total),
+      p_items: buildOrderItemsPayload(checkoutData),
+    });
+
+    if (error) throw error;
+
+    const order = Array.isArray(data) ? data[0] : data;
+    if (!order?.id) throw new Error("Order was not returned");
+    return order;
   };
 
   reviewModeButtons.forEach((button) => {
@@ -2592,13 +2735,20 @@ const initCheckout = () => {
 
     submitButton?.classList.add("is-loading");
     if (submitButton) submitButton.disabled = true;
-    setStatus("", "Preparando el pago...");
+    setStatus("", "Creando pedido...");
 
     try {
-      const payment = await handlePaymentSubmit(collectCheckoutData());
-      window.location.href = payment.redirectUrl || sitePath("checkout/confirmacion/");
-    } catch {
-      setStatus("error", "No hemos podido continuar ahora. Inténtalo de nuevo en unos segundos.");
+      const checkoutData = collectCheckoutData();
+      const order = await createPendingOrder(checkoutData);
+      const canPersonalize = storePersonalizationDraft(order, checkoutData);
+      showOrderSuccess(order, checkoutData, canPersonalize);
+      try {
+        clearCheckoutCart();
+      } catch {
+        // The order is already stored; a local cart cleanup issue should not turn success into failure.
+      }
+    } catch (error) {
+      setStatus("error", formatOrderError(error));
       submitButton?.classList.remove("is-loading");
       if (submitButton) submitButton.disabled = false;
     }
@@ -2637,7 +2787,7 @@ const initPersonalizacion = () => {
   const form = root.querySelector("[data-personalization-form]");
   const statusNodes = [...root.querySelectorAll("[data-personalization-status]")];
   const reviewTotalNodes = [...root.querySelectorAll("[data-personalization-review-total], [data-personalization-summary-reviews]")];
-  const paidTotalNodes = [...root.querySelectorAll("[data-personalization-paid-total]")];
+  const estimatedTotalNodes = [...root.querySelectorAll("[data-personalization-estimated-total]")];
   const summaryTotalNode = root.querySelector("[data-personalization-summary-total]");
   const summaryItems = root.querySelector("[data-personalization-summary-items]");
   const packSubtotalNode = root.querySelector("[data-personalization-pack-subtotal]");
@@ -2667,7 +2817,7 @@ const initPersonalizacion = () => {
   const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
   const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
   const draft = readCheckoutDraft();
-  if (draft.reviewMode !== "manual" || draft.personalizationPaid !== true) {
+  if (draft.reviewMode !== "manual" || draft.personalizationPending !== true || !draft.orderId) {
     window.location.replace(sitePath("checkout/"));
     return;
   }
@@ -2677,7 +2827,7 @@ const initPersonalizacion = () => {
     ? Number(draft.baseTotal)
     : cart.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
   const personalizationCost = Number.isFinite(Number(draft.extraCost)) ? Number(draft.extraCost) : reviewTotal;
-  const paidTotal = Number.isFinite(Number(draft.total)) ? Number(draft.total) : packSubtotal + personalizationCost;
+  const estimatedTotal = Number.isFinite(Number(draft.total)) ? Number(draft.total) : packSubtotal + personalizationCost;
   const customer = draft.customer || {};
   const googleMaps = `${customer.googleMaps || customer.mapsUrl || ""}`.trim();
 
@@ -2709,8 +2859,8 @@ const initPersonalizacion = () => {
     reviewTotalNodes.forEach((node) => {
       node.textContent = String(reviewTotal);
     });
-    paidTotalNodes.forEach((node) => {
-      node.textContent = formatCartPrice(paidTotal);
+    estimatedTotalNodes.forEach((node) => {
+      node.textContent = formatCartPrice(estimatedTotal);
     });
 
     if (mapsLink && noMapsNode) {
@@ -2740,11 +2890,11 @@ const initPersonalizacion = () => {
       }).join("") : `<p class="personalization-muted">No hay packs guardados en esta sesión.</p>`;
     }
 
-    if (summaryTotalNode) summaryTotalNode.textContent = formatCartPrice(paidTotal);
+    if (summaryTotalNode) summaryTotalNode.textContent = formatCartPrice(estimatedTotal);
     if (packSubtotalNode) packSubtotalNode.textContent = formatCartPrice(packSubtotal);
-    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 € · Pagada`;
+    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 € · Pendiente de revision`;
     if (extraTotalNode) extraTotalNode.textContent = formatCartPrice(personalizationCost);
-    if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(paidTotal);
+    if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(estimatedTotal);
   };
 
   const renderReviews = () => {
@@ -2922,7 +3072,7 @@ const initPersonalizacion = () => {
       cart,
       reviewTotal,
       googleMaps,
-      paidTotal,
+      estimatedTotal,
       manualReviews: reviews.map((review) => ({
         stars: review.stars,
         text: review.text.trim(),

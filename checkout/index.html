@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Finaliza tu pedido de Destroyer Reviews con tus datos, enlace de Google Maps, personalizacion y pago completo."
+      content="Finaliza tu pedido de Destroyer Reviews con tus datos, enlace de Google Maps y solicitud pendiente de revision."
     />
     <title>Checkout | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
@@ -115,9 +115,9 @@
 
     <main class="checkout-shell" data-checkout-page>
       <section class="checkout-hero" aria-labelledby="checkout-title">
-        <p class="eyebrow">CHECKOUT SEGURO</p>
+        <p class="eyebrow">PEDIDO PENDIENTE</p>
         <h1 id="checkout-title">Finaliza tu pedido</h1>
-        <p>Completa tus datos, elige cómo gestionar tus reseñas y paga el total final en un único paso.</p>
+        <p>Completa tus datos, elige como gestionar tus resenas y envia el pedido para que podamos revisarlo.</p>
       </section>
 
       <section class="checkout-empty-state" data-checkout-empty hidden>
@@ -188,7 +188,7 @@
               <button class="review-mode-card" type="button" data-checkout-review-mode="manual" aria-pressed="false">
                 <span>+1 € POR RESEÑA</span>
                 <strong>Quiero personalizar mis reseñas</strong>
-                <p>Podrás ajustar cada reseña una a una después del pago.</p>
+                <p>Coordinaremos los detalles contigo cuando revisemos el pedido.</p>
               </button>
             </div>
           </section>
@@ -219,19 +219,19 @@
               </span>
               <strong data-checkout-extra-total>+0 €</strong>
             </div>
-            <div><span>Total final a pagar</span><strong data-checkout-final-total>0 €</strong></div>
+            <div><span>Total estimado del pedido</span><strong data-checkout-final-total>0 €</strong></div>
           </div>
 
-          <p class="checkout-discreet-note">El pago incluye los packs y, si la eliges, la personalización de reseñas.</p>
+          <p class="checkout-discreet-note">El pedido queda pendiente de revision. No se realizara ningun cargo desde esta pantalla.</p>
 
           <button class="checkout-pay-button" type="submit" form="checkout-form" data-payment-submit>
-            <span>Pagar pedido</span>
+            <span>Enviar pedido</span>
             <i aria-hidden="true"></i>
           </button>
           <p class="checkout-status" aria-live="polite" data-checkout-status></p>
 
           <ul class="checkout-trust-list">
-            <li>Pago seguro</li>
+            <li>Pedido pendiente</li>
             <li>Publicacion progresiva</li>
             <li>Soporte por WhatsApp</li>
           </ul>
