@@ -2595,7 +2595,7 @@ const initCheckout = () => {
     if (checkoutData.reviewMode === "manual" && checkoutData.reviewTotal > 0 && checkoutData.extraCost > 0) {
       items.push({
         pack_slug: "personalizacion-resenas",
-        pack_name: "Personalizacion de resenas",
+        pack_name: "Personalización de reseñas",
         reviews_count: checkoutData.reviewTotal,
         quantity: checkoutData.reviewTotal,
         unit_price_cents: 100,
@@ -2614,38 +2614,21 @@ const initCheckout = () => {
   const formatOrderError = (error) => {
     const message = `${error?.message || ""}`.toLowerCase();
     if (message.includes("authentication") || message.includes("jwt")) {
-      return "Tu sesion no esta activa. Inicia sesion de nuevo para crear el pedido.";
+      return "Tu sesión no está activa. Inicia sesión de nuevo para crear el pedido.";
     }
     if (message.includes("google maps")) {
-      return "Revisa el enlace de Google Maps e intentalo de nuevo.";
+      return "Revisa el enlace de Google Maps e inténtalo de nuevo.";
     }
-    return "No se pudo crear el pedido. Revisa los datos e intentalo de nuevo.";
-  };
-
-  const buildPersonalizationDraft = (order, checkoutData) => ({
-    ...checkoutData,
-    orderId: order?.id || "",
-    orderShortId: order?.short_id || "",
-    orderStatus: order?.status || "pending",
-    paymentStatus: order?.payment_status || "unpaid",
-    personalizationPending: true,
-  });
-
-  const storePersonalizationDraft = (order, checkoutData) => {
-    if (checkoutData?.reviewMode !== "manual") return false;
-    try {
-      sessionStorage.setItem("destroyerCheckoutDraft", JSON.stringify(buildPersonalizationDraft(order, checkoutData)));
-      return true;
-    } catch {
-      return false;
-    }
+    return "No se pudo crear el pedido. Revisa los datos e inténtalo de nuevo.";
   };
 
   const showOrderSuccess = (order, checkoutData, canPersonalize = false) => {
     submittedOrder = order;
     root.classList.add("has-order-success");
     setStatus("success", "Pedido recibido. Estado: pendiente.");
-    const personalizeUrl = sitePath("checkout/personalizacion/");
+    const personalizeUrl = order?.id
+      ? `${sitePath("checkout/personalizacion/")}?order=${encodeURIComponent(order.id)}`
+      : sitePath("checkout/personalizacion/");
 
     resultNode.hidden = false;
     resultNode.innerHTML = `
@@ -2740,7 +2723,7 @@ const initCheckout = () => {
     try {
       const checkoutData = collectCheckoutData();
       const order = await createPendingOrder(checkoutData);
-      const canPersonalize = storePersonalizationDraft(order, checkoutData);
+      const canPersonalize = checkoutData.reviewMode === "manual";
       showOrderSuccess(order, checkoutData, canPersonalize);
       try {
         clearCheckoutCart();
@@ -2806,13 +2789,7 @@ const initPersonalizacion = () => {
     "'": "&#039;",
   })[char]);
 
-  const readCheckoutDraft = () => {
-    try {
-      return JSON.parse(sessionStorage.getItem("destroyerCheckoutDraft") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const readCheckoutDraft = () => ({});
 
   const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
   const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
@@ -2892,7 +2869,7 @@ const initPersonalizacion = () => {
 
     if (summaryTotalNode) summaryTotalNode.textContent = formatCartPrice(estimatedTotal);
     if (packSubtotalNode) packSubtotalNode.textContent = formatCartPrice(packSubtotal);
-    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 € · Pendiente de revision`;
+    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 € · Pendiente de revisión`;
     if (extraTotalNode) extraTotalNode.textContent = formatCartPrice(personalizationCost);
     if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(estimatedTotal);
   };
@@ -3086,7 +3063,7 @@ const initPersonalizacion = () => {
     };
 
     try {
-      sessionStorage.setItem("destroyerPersonalizacion", JSON.stringify(payload));
+      void payload;
       await new Promise((resolve) => window.setTimeout(resolve, prefersReducedMotion ? 0 : 420));
       setStatus("success", "Personalización confirmada correctamente.");
     } catch {
@@ -3098,6 +3075,716 @@ const initPersonalizacion = () => {
 
   renderSummary();
   renderReviews();
+};
+
+const initPersonalizacionPersisted = () => {
+  const root = document.querySelector("[data-personalizacion-page]");
+  if (!root) return;
+
+  const manualPanel = root.querySelector("[data-manual-panel]");
+  const reviewList = root.querySelector("[data-personalization-review-list]");
+  const form = root.querySelector("[data-personalization-form]");
+  const statusNodes = [...root.querySelectorAll("[data-personalization-status]")];
+  const reviewTotalNodes = [...root.querySelectorAll("[data-personalization-review-total], [data-personalization-summary-reviews]")];
+  const estimatedTotalNodes = [...root.querySelectorAll("[data-personalization-estimated-total]")];
+  const summaryTotalNode = root.querySelector("[data-personalization-summary-total]");
+  const summaryItems = root.querySelector("[data-personalization-summary-items]");
+  const packSubtotalNode = root.querySelector("[data-personalization-pack-subtotal]");
+  const extraBreakdownNode = root.querySelector("[data-personalization-extra-breakdown]");
+  const extraTotalNode = root.querySelector("[data-personalization-extra-total]");
+  const finalTotalNode = root.querySelector("[data-personalization-final-total]");
+  const mapsLink = root.querySelector("[data-personalization-maps]");
+  const noMapsNode = root.querySelector("[data-personalization-no-maps]");
+  const submitButtons = [...root.querySelectorAll("[data-personalization-submit]")];
+  const orderId = `${new URLSearchParams(window.location.search).get("order") || ""}`.trim();
+  const storageBucket = "review-media";
+  const imageLimit = 5;
+  const videoLimit = 1;
+  const allowedMedia = {
+    "image/jpeg": { fileType: "image", maxSize: 5242880 },
+    "image/png": { fileType: "image", maxSize: 5242880 },
+    "image/webp": { fileType: "image", maxSize: 5242880 },
+    "video/mp4": { fileType: "video", maxSize: 52428800 },
+    "video/quicktime": { fileType: "video", maxSize: 52428800 },
+    "video/webm": { fileType: "video", maxSize: 52428800 },
+  };
+  const blockedExtensions = new Set(["exe", "js", "html", "htm", "svg"]);
+  const clientAllowedStatuses = new Set(["awaiting_client", "draft", "submitted"]);
+  const allowedRatings = [3, 4, 5];
+  let currentUser = null;
+  let currentOrder = null;
+  let orderItems = [];
+  let reviews = [];
+  let activeReviewId = "";
+
+  const escapePersonalizationHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[char]);
+
+  if (!orderId) {
+    window.location.replace(sitePath("checkout/"));
+    return;
+  }
+
+  const setStatus = (type, message) => {
+    statusNodes.forEach((node) => {
+      node.textContent = message || "";
+      node.dataset.state = type || "";
+    });
+  };
+
+  const formatCents = (cents) => formatCartPrice((Number(cents) || 0) / 100);
+  const isManualMode = () => currentOrder?.management_mode === "manual";
+  const isTeamMode = () => currentOrder?.management_mode === "team";
+  const reviewTotal = () => reviews.length;
+  const packItems = () => orderItems.filter((item) => item.pack_slug !== "personalizacion-resenas");
+  const personalizationItems = () => orderItems.filter((item) => item.pack_slug === "personalizacion-resenas");
+  const packSubtotalCents = () => packItems().reduce((total, item) => total + (Number(item.subtotal_cents) || 0), 0);
+  const personalizationSubtotalCents = () => personalizationItems().reduce((total, item) => total + (Number(item.subtotal_cents) || 0), 0);
+  const orderTotalCents = () => Number(currentOrder?.total_cents) || packSubtotalCents() + personalizationSubtotalCents();
+  const starLabel = (stars) => allowedRatings.includes(Number(stars)) ? `${"&#9733;".repeat(stars)}${"&#9734;".repeat(5 - stars)}` : "Sin valoración";
+  const getReviewById = (reviewId) => reviews.find((review) => review.id === reviewId);
+  const mediaCount = (review, fileType) => (review?.media || []).filter((item) => item.file_type === fileType).length;
+  const statusLabel = (status) => ({
+    awaiting_client: "Pendiente de completar",
+    draft: "Borrador",
+    submitted: "Enviada",
+    awaiting_team: "Pendiente del equipo",
+    prepared: "Preparada",
+    approved: "Aprobada",
+    completed: "Completada",
+  })[status] || "Borrador";
+
+  const packIcon = (item) => {
+    const id = item.pack_slug || "";
+    const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
+    return sitePath(`assets/icons/packs/${safeId}.webp`);
+  };
+
+  const setSubmitLoading = (submit, isLoading) => {
+    submitButtons.forEach((button) => {
+      button.classList.toggle("is-loading", isLoading && button === submit);
+      button.disabled = isLoading;
+    });
+  };
+
+  const setReviewError = (reviewId, message) => {
+    const review = getReviewById(reviewId);
+    if (review) review.error = message || "";
+  };
+
+  const setReviewLoading = (reviewId, isLoading) => {
+    const review = getReviewById(reviewId);
+    if (review) review.isUploading = isLoading;
+  };
+
+  const safeFileName = (name) => {
+    const cleaned = `${name || "archivo"}`.trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/-+/g, "-");
+    return cleaned.replace(/^-|-$/g, "") || "archivo";
+  };
+
+  const fileExtension = (name) => {
+    const parts = `${name || ""}`.toLowerCase().split(".");
+    return parts.length > 1 ? parts.pop() : "";
+  };
+
+  const uuid = () => {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
+  const signMedia = async (media) => {
+    const client = window.DestroyerSupabase?.client;
+    if (!client?.storage || !media?.file_path) return { ...media, signed_url: "" };
+
+    const { data, error } = await client.storage.from(storageBucket).createSignedUrl(media.file_path, 3600);
+    return {
+      ...media,
+      signed_url: error ? "" : data?.signedUrl || "",
+    };
+  };
+
+  const hydrateMediaUrls = async (mediaRows) => Promise.all((mediaRows || []).map(signMedia));
+
+  const loadPersonalizationData = async () => {
+    const session = await getCurrentAuthSession({ forceRefresh: true });
+    currentUser = session?.user || null;
+    if (!currentUser) {
+      window.location.replace(sitePath("index.html?accountRequired=checkout"));
+      return false;
+    }
+
+    const client = window.DestroyerSupabase?.client;
+    if (!client) throw new Error("Supabase is not available");
+
+    const { data: order, error: orderError } = await client
+      .from("orders")
+      .select("id,google_maps_url,management_mode,total_cents,status,payment_status,created_at")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+    if (!order) {
+      setStatus("error", "No se pudo cargar este pedido o no tienes acceso.");
+      return false;
+    }
+
+    const [
+      { data: itemRows, error: itemsError },
+      { data: reviewRows, error: reviewsError },
+      { data: mediaRows, error: mediaError },
+    ] = await Promise.all([
+      client
+        .from("order_items")
+        .select("id,pack_slug,pack_name,reviews_count,quantity,unit_price_cents,subtotal_cents,created_at")
+        .eq("order_id", order.id)
+        .order("created_at", { ascending: true }),
+      client
+        .from("order_reviews")
+        .select("id,order_id,user_id,review_index,source,rating,review_text,review_notes,status,created_at,updated_at")
+        .eq("order_id", order.id)
+        .order("review_index", { ascending: true }),
+      client
+        .from("review_media")
+        .select("id,order_review_id,order_id,user_id,file_path,file_name,file_type,mime_type,file_size_bytes,sort_order,created_at")
+        .eq("order_id", order.id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+    ]);
+
+    if (itemsError) throw itemsError;
+    if (reviewsError) throw reviewsError;
+    if (mediaError) throw mediaError;
+
+    const signedMediaRows = await hydrateMediaUrls(mediaRows || []);
+    const mediaByReview = signedMediaRows.reduce((map, item) => {
+      const list = map.get(item.order_review_id) || [];
+      list.push(item);
+      map.set(item.order_review_id, list);
+      return map;
+    }, new Map());
+
+    currentOrder = order;
+    orderItems = itemRows || [];
+    reviews = (reviewRows || []).map((review) => ({
+      ...review,
+      rating: allowedRatings.includes(Number(review.rating)) ? Number(review.rating) : null,
+      review_text: review.review_text || "",
+      review_notes: review.review_notes || "",
+      media: mediaByReview.get(review.id) || [],
+      error: "",
+      isUploading: false,
+    }));
+
+    return true;
+  };
+
+  const renderSummary = () => {
+    reviewTotalNodes.forEach((node) => {
+      node.textContent = String(reviewTotal());
+    });
+    estimatedTotalNodes.forEach((node) => {
+      node.textContent = formatCents(orderTotalCents());
+    });
+
+    if (mapsLink && noMapsNode) {
+      const googleMaps = `${currentOrder?.google_maps_url || ""}`.trim();
+      mapsLink.hidden = !googleMaps;
+      noMapsNode.hidden = Boolean(googleMaps);
+      if (googleMaps) mapsLink.href = googleMaps;
+    }
+
+    if (summaryItems) {
+      summaryItems.innerHTML = orderItems.length ? orderItems.map((item) => {
+        const quantity = Math.max(1, Number(item.quantity) || 1);
+        const isExtra = item.pack_slug === "personalizacion-resenas";
+        return `
+          <article class="checkout-summary-item">
+            <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
+            <div>
+              <strong>${escapePersonalizationHtml(item.pack_name)}</strong>
+              <span>${isExtra ? "Extra de personalización" : `${Number(item.reviews_count) || 0} reseñas`} &middot; Cantidad ${quantity}</span>
+            </div>
+            <dl>
+              <div><dt>Precio unitario</dt><dd>${formatCents(item.unit_price_cents)}</dd></div>
+              <div><dt>Subtotal</dt><dd>${formatCents(item.subtotal_cents)}</dd></div>
+            </dl>
+          </article>
+        `;
+      }).join("") : `<p class="personalization-muted">No hay líneas de pedido disponibles.</p>`;
+    }
+
+    if (summaryTotalNode) summaryTotalNode.textContent = formatCents(orderTotalCents());
+    if (packSubtotalNode) packSubtotalNode.textContent = formatCents(packSubtotalCents());
+    if (extraBreakdownNode) {
+      extraBreakdownNode.textContent = isManualMode()
+        ? `${reviewTotal()} ${reviewTotal() === 1 ? "reseña" : "reseñas"} x 1 EUR · pendiente de revisión`
+        : "Preparación por el equipo incluida";
+    }
+    if (extraTotalNode) extraTotalNode.textContent = formatCents(personalizationSubtotalCents());
+    if (finalTotalNode) finalTotalNode.textContent = formatCents(orderTotalCents());
+  };
+
+  const renderTeamState = () => {
+    if (!reviewList) return;
+    submitButtons.forEach((button) => {
+      button.hidden = true;
+      button.disabled = true;
+    });
+    reviewList.innerHTML = `
+      <article class="personalization-team-state">
+        <span>Modo equipo</span>
+        <h3>El equipo preparará los textos de tus reseñas</h3>
+        <p>Tu pedido está guardado como pendiente. En esta fase no hay formulario editable ni subida de archivos para clientes.</p>
+        <strong>${reviewTotal()} ${reviewTotal() === 1 ? "reseña" : "reseñas"} del pedido</strong>
+      </article>
+    `;
+  };
+
+  const mediaLabel = (media) => media.file_type === "video" ? "Vídeo" : "Imagen";
+
+  const renderReviews = () => {
+    if (!reviewList) return;
+
+    if (isTeamMode()) {
+      renderTeamState();
+      return;
+    }
+
+    submitButtons.forEach((button) => {
+      button.hidden = false;
+      button.disabled = false;
+    });
+
+    if (!reviews.length) {
+      reviewList.innerHTML = `<p class="personalization-muted">No hay reseñas del pedido para personalizar.</p>`;
+      return;
+    }
+
+    reviewList.innerHTML = reviews.map((review, index) => {
+      const images = review.media.filter((item) => item.file_type === "image");
+      const videos = review.media.filter((item) => item.file_type === "video");
+      const imageDisabled = images.length >= imageLimit || review.isUploading;
+      const videoDisabled = videos.length >= videoLimit || review.isUploading;
+      return `
+        <details class="review-accordion personalization-review-card" data-personalization-review="${review.id}" ${activeReviewId === review.id || index === 0 ? "open" : ""}>
+          <summary>
+            <span>Reseña ${review.review_index}</span>
+            <strong>${starLabel(review.rating)}</strong>
+            <em>${statusLabel(review.status)}</em>
+          </summary>
+          <div class="review-accordion__body">
+            <label>
+              Texto de la reseña
+              <textarea data-review-text="${review.id}" rows="4" placeholder="Escribe el contenido de esta reseña.">${escapePersonalizationHtml(review.review_text)}</textarea>
+            </label>
+            <label>
+              Nota específica
+              <textarea data-review-notes="${review.id}" rows="3" placeholder="Contexto, tono, servicio mencionado o cualquier detalle útil.">${escapePersonalizationHtml(review.review_notes)}</textarea>
+            </label>
+            <div class="review-stars" role="group" aria-label="Estrellas para la reseña ${review.review_index}">
+              ${allowedRatings.map((stars) => `
+                <button class="review-star-chip ${review.rating === stars ? "is-active" : ""}" type="button" data-review-stars="${stars}" data-review-id="${review.id}" aria-pressed="${review.rating === stars}">
+                  <span>${starLabel(stars)}</span>
+                  <b>${stars}</b>
+                </button>
+              `).join("")}
+            </div>
+            <div class="personalization-media-grid">
+              <div class="review-photo-uploader" data-media-dropzone="${review.id}" data-media-kind="image">
+                <div class="review-photo-uploader__head">
+                  <span class="review-photo-uploader__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M4.75 7.25a2.5 2.5 0 0 1 2.5-2.5h9.5a2.5 2.5 0 0 1 2.5 2.5v9.5a2.5 2.5 0 0 1-2.5 2.5h-9.5a2.5 2.5 0 0 1-2.5-2.5z" /><path d="m7.25 16.25 3.25-3.15a1.25 1.25 0 0 1 1.7-.02l2.02 1.87" /><path d="m13.35 14.15 1.05-1.05a1.25 1.25 0 0 1 1.76 0l2.65 2.65" /><path d="M8.65 8.7h.01" /></svg>
+                  </span>
+                  <div>
+                    <strong>Imágenes</strong>
+                    <span>${images.length}/${imageLimit} · formatos recomendados JPG, PNG o WebP · máx. 5 MB</span>
+                  </div>
+                </div>
+                <label class="review-photo-uploader__button ${imageDisabled ? "is-disabled" : ""}" aria-disabled="${imageDisabled}">
+                  Subir imágenes
+                  <input data-review-media="${review.id}" data-media-kind="image" type="file" accept="image/jpeg,image/png,image/webp" multiple ${imageDisabled ? "disabled" : ""} />
+                </label>
+              </div>
+              <div class="review-photo-uploader" data-media-dropzone="${review.id}" data-media-kind="video">
+                <div class="review-photo-uploader__head">
+                  <span class="review-photo-uploader__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="m8 5 11 7-11 7z" /><path d="M5 5h.01M5 19h.01" /></svg>
+                  </span>
+                  <div>
+                    <strong>Vídeo</strong>
+                    <span>${videos.length}/${videoLimit} · formatos recomendados MP4, MOV o WebM · máx. 50 MB</span>
+                  </div>
+                </div>
+                <label class="review-photo-uploader__button ${videoDisabled ? "is-disabled" : ""}" aria-disabled="${videoDisabled}">
+                  Subir vídeo
+                  <input data-review-media="${review.id}" data-media-kind="video" type="file" accept="video/mp4,video/quicktime,video/webm" ${videoDisabled ? "disabled" : ""} />
+                </label>
+              </div>
+            </div>
+            ${review.error ? `<p class="review-photo-error">${escapePersonalizationHtml(review.error)}</p>` : ""}
+            ${review.isUploading ? `<p class="personalization-muted">Subiendo archivo...</p>` : ""}
+            ${review.media.length ? `
+              <div class="review-photo-grid personalization-media-list">
+                ${review.media.map((media) => `
+                  <figure class="review-photo-thumb ${media.file_type === "video" ? "is-video" : ""}">
+                    ${media.file_type === "image" && media.signed_url
+                      ? `<img src="${media.signed_url}" alt="${escapePersonalizationHtml(media.file_name)}" />`
+                      : `<div class="personalization-video-thumb" aria-hidden="true">${media.file_type === "video" ? "VIDEO" : "ARCHIVO"}</div>`}
+                    <figcaption><span>${mediaLabel(media)}</span>${escapePersonalizationHtml(media.file_name)}</figcaption>
+                    <button type="button" data-remove-media="${media.id}" data-review-id="${review.id}" aria-label="Eliminar ${escapePersonalizationHtml(media.file_name)}">
+                      <span class="review-photo-remove-icon" aria-hidden="true"></span>
+                    </button>
+                  </figure>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        </details>
+      `;
+    }).join("");
+  };
+
+  const validateFile = (review, file, expectedKind) => {
+    const extension = fileExtension(file.name);
+    const rule = allowedMedia[file.type];
+
+    if (!file.type || !rule || blockedExtensions.has(extension)) {
+      return "Formato no permitido. Usa imágenes JPG, PNG, WebP o vídeos MP4, MOV, WebM.";
+    }
+
+    if (rule.fileType !== expectedKind) {
+      return expectedKind === "image" ? "Selecciona solo imágenes en este bloque." : "Selecciona solo vídeos en este bloque.";
+    }
+
+    if (file.size <= 0 || file.size > rule.maxSize) {
+      return rule.fileType === "image" ? "Cada imagen debe pesar como máximo 5 MB." : "El vídeo debe pesar como máximo 50 MB.";
+    }
+
+    if (rule.fileType === "image" && mediaCount(review, "image") >= imageLimit) {
+      return "Puedes subir un máximo de 5 imágenes por reseña.";
+    }
+
+    if (rule.fileType === "video" && mediaCount(review, "video") >= videoLimit) {
+      return "Puedes subir un máximo de 1 vídeo por reseña.";
+    }
+
+    return "";
+  };
+
+  const uploadReviewMedia = async (reviewId, file, expectedKind) => {
+    const review = getReviewById(reviewId);
+    const client = window.DestroyerSupabase?.client;
+    if (!review || !client || !currentUser || !currentOrder) return;
+
+    const validationMessage = validateFile(review, file, expectedKind);
+    if (validationMessage) {
+      setReviewError(review.id, validationMessage);
+      activeReviewId = review.id;
+      renderReviews();
+      return;
+    }
+
+    setReviewError(review.id, "");
+    setReviewLoading(review.id, true);
+    activeReviewId = review.id;
+    renderReviews();
+
+    const fileRule = allowedMedia[file.type];
+    const fileName = safeFileName(file.name);
+    const filePath = `${currentUser.id}/${currentOrder.id}/${review.id}/${uuid()}-${fileName}`;
+    let uploadedPath = "";
+
+    try {
+      const { data: uploadData, error: uploadError } = await client.storage
+        .from(storageBucket)
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+      uploadedPath = uploadData?.path || filePath;
+
+      const mediaPayload = {
+        order_review_id: review.id,
+        order_id: currentOrder.id,
+        user_id: currentUser.id,
+        file_path: uploadedPath,
+        file_name: fileName,
+        file_type: fileRule.fileType,
+        mime_type: file.type,
+        file_size_bytes: file.size,
+        sort_order: mediaCount(review, fileRule.fileType),
+      };
+
+      const { data: mediaRow, error: metadataError } = await client
+        .from("review_media")
+        .insert(mediaPayload)
+        .select("id,order_review_id,order_id,user_id,file_path,file_name,file_type,mime_type,file_size_bytes,sort_order,created_at")
+        .single();
+
+      if (metadataError) {
+        await client.storage.from(storageBucket).remove([uploadedPath]);
+        throw metadataError;
+      }
+
+      review.media.push(await signMedia(mediaRow));
+      setStatus("success", "Archivo guardado correctamente.");
+    } catch {
+      setReviewError(review.id, "No se pudo subir el archivo. Revisa el formato y vuelve a intentarlo.");
+      setStatus("error", "No se pudo guardar el archivo.");
+    } finally {
+      setReviewLoading(review.id, false);
+      renderSummary();
+      renderReviews();
+    }
+  };
+
+  const uploadSelectedFiles = (review, expectedKind, files) => {
+    const selectedFiles = [...files];
+    if (!review || !selectedFiles.length) return;
+
+    const imageUploads = selectedFiles.filter((file) => allowedMedia[file.type]?.fileType === "image").length;
+    const videoUploads = selectedFiles.filter((file) => allowedMedia[file.type]?.fileType === "video").length;
+
+    if (expectedKind === "image" && mediaCount(review, "image") + imageUploads > imageLimit) {
+      setReviewError(review.id, "Puedes subir un máximo de 5 imágenes por reseña.");
+      activeReviewId = review.id;
+      renderReviews();
+      return;
+    }
+
+    if (expectedKind === "video" && mediaCount(review, "video") + videoUploads > videoLimit) {
+      setReviewError(review.id, "Puedes subir un máximo de 1 vídeo por reseña.");
+      activeReviewId = review.id;
+      renderReviews();
+      return;
+    }
+
+    selectedFiles.forEach((file) => uploadReviewMedia(review.id, file, expectedKind));
+  };
+
+  const removeReviewMedia = async (reviewId, mediaId) => {
+    const review = getReviewById(reviewId);
+    const media = review?.media?.find((item) => item.id === mediaId);
+    const client = window.DestroyerSupabase?.client;
+    if (!review || !media || !client) return;
+
+    activeReviewId = review.id;
+    setReviewError(review.id, "");
+    setReviewLoading(review.id, true);
+    renderReviews();
+
+    try {
+      const { error: storageError } = await client.storage.from(storageBucket).remove([media.file_path]);
+      if (storageError) throw storageError;
+
+      const { error: deleteError } = await client
+        .from("review_media")
+        .delete()
+        .eq("id", media.id);
+
+      if (deleteError) throw deleteError;
+      review.media = review.media.filter((item) => item.id !== media.id);
+      setStatus("success", "Archivo eliminado.");
+    } catch {
+      setReviewError(review.id, "No se pudo eliminar el archivo ahora.");
+      setStatus("error", "No se pudo eliminar el archivo.");
+    } finally {
+      setReviewLoading(review.id, false);
+      renderReviews();
+    }
+  };
+
+  const validatePersonalization = (nextStatus) => {
+    if (!clientAllowedStatuses.has(nextStatus)) {
+      setStatus("error", "Estado de personalización no permitido.");
+      return false;
+    }
+
+    if (!isManualMode()) {
+      setStatus("error", "Este pedido está preparado para gestión por el equipo.");
+      return false;
+    }
+
+    if (nextStatus !== "submitted") return true;
+
+    reviews.forEach((review) => {
+      review.error = "";
+    });
+
+    const firstEmpty = reviews.find((review) => !`${review.review_text || ""}`.trim());
+    if (firstEmpty) {
+      firstEmpty.error = `Completa el texto de la reseña ${firstEmpty.review_index} antes de enviar.`;
+      activeReviewId = firstEmpty.id;
+      setStatus("error", firstEmpty.error);
+      renderReviews();
+      return false;
+    }
+
+    const firstWithoutRating = reviews.find((review) => !allowedRatings.includes(Number(review.rating)));
+    if (firstWithoutRating) {
+      firstWithoutRating.error = `Elige una valoración de 3, 4 o 5 estrellas en la reseña ${firstWithoutRating.review_index}.`;
+      activeReviewId = firstWithoutRating.id;
+      setStatus("error", firstWithoutRating.error);
+      renderReviews();
+      return false;
+    }
+
+    return true;
+  };
+
+  const saveReviews = async (nextStatus, submit) => {
+    if (!validatePersonalization(nextStatus)) return;
+
+    const client = window.DestroyerSupabase?.client;
+    if (!client) return;
+
+    setSubmitLoading(submit, true);
+    setStatus("", nextStatus === "submitted" ? "Enviando personalización..." : "Guardando borrador...");
+
+    try {
+      for (const review of reviews) {
+        const { error } = await client
+          .from("order_reviews")
+          .update({
+            review_text: `${review.review_text || ""}`.trim() || null,
+            review_notes: `${review.review_notes || ""}`.trim() || null,
+            rating: allowedRatings.includes(Number(review.rating)) ? Number(review.rating) : null,
+            status: nextStatus,
+          })
+          .eq("id", review.id);
+
+        if (error) throw error;
+      }
+
+      reviews = reviews.map((review) => ({
+        ...review,
+        status: nextStatus,
+        error: "",
+      }));
+      setStatus("success", nextStatus === "submitted" ? "Personalización enviada correctamente." : "Borrador guardado correctamente.");
+      renderReviews();
+    } catch {
+      setStatus("error", "No se pudieron guardar las reseñas. Inténtalo de nuevo.");
+    } finally {
+      setSubmitLoading(submit, false);
+    }
+  };
+
+  reviewList?.addEventListener("input", (event) => {
+    const textArea = event.target.closest("[data-review-text]");
+    const notesArea = event.target.closest("[data-review-notes]");
+
+    if (textArea) {
+      const review = getReviewById(textArea.dataset.reviewText);
+      if (review) review.review_text = textArea.value;
+    }
+
+    if (notesArea) {
+      const review = getReviewById(notesArea.dataset.reviewNotes);
+      if (review) review.review_notes = notesArea.value;
+    }
+  });
+
+  reviewList?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-media]");
+    if (removeButton) {
+      removeReviewMedia(removeButton.dataset.reviewId, removeButton.dataset.removeMedia);
+      return;
+    }
+
+    const starButton = event.target.closest("[data-review-stars]");
+    if (!starButton) return;
+
+    const review = getReviewById(starButton.dataset.reviewId);
+    const stars = Number(starButton.dataset.reviewStars);
+    if (!review || !allowedRatings.includes(stars)) return;
+    review.rating = stars;
+    activeReviewId = review.id;
+    renderReviews();
+  });
+
+  reviewList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-review-media]");
+    if (!input) return;
+
+    const review = getReviewById(input.dataset.reviewMedia);
+    const expectedKind = input.dataset.mediaKind;
+    const files = [...(input.files || [])];
+    input.value = "";
+    if (!review || !files.length) return;
+
+    activeReviewId = review.id;
+    uploadSelectedFiles(review, expectedKind, files);
+  });
+
+  reviewList?.addEventListener("dragover", (event) => {
+    const dropzone = event.target.closest("[data-media-dropzone]");
+    if (!dropzone) return;
+    event.preventDefault();
+    dropzone.classList.add("is-dragging");
+  });
+
+  reviewList?.addEventListener("dragleave", (event) => {
+    const dropzone = event.target.closest("[data-media-dropzone]");
+    if (!dropzone || dropzone.contains(event.relatedTarget)) return;
+    dropzone.classList.remove("is-dragging");
+  });
+
+  reviewList?.addEventListener("drop", (event) => {
+    const dropzone = event.target.closest("[data-media-dropzone]");
+    if (!dropzone) return;
+    event.preventDefault();
+    dropzone.classList.remove("is-dragging");
+
+    const review = getReviewById(dropzone.dataset.mediaDropzone);
+    const expectedKind = dropzone.dataset.mediaKind;
+    const files = [...(event.dataTransfer?.files || [])];
+    if (!review || !files.length) return;
+
+    activeReviewId = review.id;
+    uploadSelectedFiles(review, expectedKind, files);
+  });
+
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const submit = event.submitter?.closest("[data-personalization-submit]");
+    const action = submit?.dataset.personalizationSubmit === "submit" ? "submitted" : "draft";
+    saveReviews(action, submit);
+  });
+
+  const init = async () => {
+    root.hidden = true;
+    setStatus("", "Cargando personalización...");
+
+    try {
+      const didLoad = await loadPersonalizationData();
+      if (!didLoad) {
+        root.hidden = false;
+        return;
+      }
+      manualPanel?.classList.toggle("is-team-mode", isTeamMode());
+      root.hidden = false;
+      renderSummary();
+      renderReviews();
+      setStatus("", "");
+    } catch {
+      root.hidden = false;
+      setStatus("error", "No se pudo cargar la personalización del pedido.");
+      if (reviewList) {
+        reviewList.innerHTML = `<p class="personalization-muted">Revisa tu sesión o vuelve al checkout.</p>`;
+      }
+    }
+  };
+
+  init();
 };
 
 const initWhatsappFloat = () => {
@@ -3849,7 +4536,7 @@ const init = () => {
   initFreeTrialModal();
   initCart();
   initCheckout();
-  initPersonalizacion();
+  initPersonalizacionPersisted();
   if (hasHomeContent) {
     initHeroRotatingWord();
     initPhoneTime();

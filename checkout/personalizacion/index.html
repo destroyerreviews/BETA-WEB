@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Completa la personalizacion de tus resenas pendientes en Destroyer Reviews."
+      content="Completa la personalización de tus reseñas pendientes en Destroyer Reviews."
     />
-    <title>Personalizacion | Destroyer Reviews</title>
+    <title>Personalización | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
     <link rel="icon" type="image/png" href="../../assets/brand/favicon.png" />
-    <link rel="stylesheet" href="../../css/styles.css?v=checkout-personalizacion-20260612" />
+    <link rel="stylesheet" href="../../css/styles.css?v=review-content-flow-20260702" />
   </head>
   <body class="checkout-page">
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
@@ -22,7 +22,7 @@
         <a href="../../index.html">Solicitar prueba</a>
       </div>
 
-      <nav class="liquid-nav" aria-label="Navegacion principal">
+      <nav class="liquid-nav" aria-label="Navegación principal">
         <span class="liquid-nav__glass" aria-hidden="true"></span>
 
         <div class="liquid-nav__content">
@@ -34,14 +34,14 @@
             <a href="../../index.html" data-nav-link>Inicio</a>
             <a href="../../blogs/" data-nav-link>Blogs</a>
             <a href="../../index.html#planes" data-nav-link>Precios</a>
-            <a href="../../index.html#contacto" data-nav-link>Contactanos</a>
+            <a href="../../index.html#contacto" data-nav-link>Contáctanos</a>
           </div>
           <div class="nav-auth">
-            <a class="nav-login" href="../../login.html">Iniciar sesion</a>
+            <a class="nav-login" href="../../login.html">Iniciar sesión</a>
             <a class="nav-register" href="../../register.html">Registrarse</a>
           </div>
 
-          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-nav-toggle>
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
             <span></span>
             <span></span>
           </button>
@@ -51,8 +51,8 @@
           <a href="../../index.html">Inicio</a>
           <a href="../../blogs/">Blogs</a>
           <a href="../../index.html#planes">Precios</a>
-          <a href="../../index.html#contacto">Contactanos</a>
-          <a href="../../login.html">Iniciar sesion</a>
+          <a href="../../index.html#contacto">Contáctanos</a>
+          <a href="../../login.html">Iniciar sesión</a>
           <a class="mobile-register" href="../../register.html">Registrarse</a>
         </div>
       </nav>
@@ -94,10 +94,15 @@
 
             <div class="review-list personalization-review-list" data-personalization-review-list></div>
 
-            <button class="checkout-pay-button personalization-submit" type="submit" data-personalization-submit="manual">
-              <span>Confirmar personalización</span>
-              <i aria-hidden="true"></i>
-            </button>
+            <div class="personalization-actions">
+              <button class="button button-secondary personalization-draft" type="submit" data-personalization-submit="draft">
+                Guardar borrador
+              </button>
+              <button class="checkout-pay-button personalization-submit" type="submit" data-personalization-submit="submit">
+                <span>Enviar personalización</span>
+                <i aria-hidden="true"></i>
+              </button>
+            </div>
             <p class="checkout-status" aria-live="polite" data-personalization-status></p>
           </section>
         </form>
@@ -116,7 +121,7 @@
             <div class="checkout-costs__detail personalization-estimated-extra">
               <span>
                 Personalización de reseñas
-                <small data-personalization-extra-breakdown>0 reseñas x 1 € · Pendiente de revision</small>
+                <small data-personalization-extra-breakdown>0 reseñas x 1 € · Pendiente de revisión</small>
               </span>
               <strong data-personalization-extra-total>0 €</strong>
             </div>
