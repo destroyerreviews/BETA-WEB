@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Acceso interno de administración de Destroyer Reviews." />
+    <meta name="theme-color" content="#040712" />
+    <title>Admin Panel | Destroyer Reviews</title>
+    <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
+    <link rel="stylesheet" href="css/admin.css?v=admin-ui-base-20260712" />
+  </head>
+  <body class="admin-page">
+    <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
+    <div class="admin-atmosphere" aria-hidden="true"></div>
+
+    <main class="admin-root" id="admin-content" data-admin-root aria-busy="true">
+      <section class="admin-state admin-state--loading" data-admin-state="loading" aria-live="polite">
+        <div class="admin-access-frame admin-access-frame--loading">
+          <header class="admin-access-head">
+            <a class="admin-state-brand" href="index.html" aria-label="Volver a Destroyer Reviews">
+              <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" width="1495" height="350" />
+              <span><strong>Admin Panel</strong><small>Acceso interno</small></span>
+            </a>
+            <span class="admin-access-label">ADMIN</span>
+          </header>
+          <div class="admin-access-body">
+            <div class="admin-loading-copy">
+              <div class="admin-loading-mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <h1>Verificando credenciales</h1>
+              <p>Estamos comprobando tu sesión y permisos de administración.</p>
+            </div>
+            <div class="admin-loading-grid" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+          <div class="admin-access-flow" aria-label="Proceso de acceso">
+            <strong>Sesión</strong><i></i><span>Permiso admin</span><i></i><span>Panel</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-state admin-state--access" data-admin-state="signed-out" hidden>
+        <div class="admin-access-frame">
+          <header class="admin-access-head">
+            <a class="admin-state-brand" href="index.html" aria-label="Volver a Destroyer Reviews">
+              <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" width="1495" height="350" />
+              <span><strong>Admin Panel</strong><small>Acceso interno</small></span>
+            </a>
+            <span class="admin-access-label">ADMIN</span>
+          </header>
+          <div class="admin-access-body">
+            <div class="admin-access-copy">
+              <div class="admin-access-badge"><span aria-hidden="true"></span> Acceso interno</div>
+              <h1>Inicia sesión para acceder al panel admin</h1>
+              <p>Esta zona requiere una sesión válida y permisos administrativos activos.</p>
+              <div class="admin-state-actions">
+                <a class="admin-button admin-button--primary" href="login.html">Iniciar sesión</a>
+                <a class="admin-button admin-button--quiet" href="index.html">Volver al inicio</a>
+              </div>
+            </div>
+            <div class="admin-access-visual" aria-hidden="true">
+              <div class="admin-access-orbit">
+                <span></span><span></span>
+                <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" /></svg>
+              </div>
+              <strong>Zona privada</strong>
+              <small>Sesión y permiso requeridos</small>
+            </div>
+          </div>
+          <div class="admin-access-flow" aria-label="Proceso de acceso">
+            <strong>Sesión</strong><i></i><span>Permiso admin</span><i></i><span>Panel</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-state admin-state--access" data-admin-state="forbidden" hidden>
+        <div class="admin-access-frame">
+          <header class="admin-access-head">
+            <a class="admin-state-brand" href="index.html" aria-label="Volver a Destroyer Reviews">
+              <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" width="1495" height="350" />
+              <span><strong>Admin Panel</strong><small>Acceso interno</small></span>
+            </a>
+            <span class="admin-access-label">ADMIN</span>
+          </header>
+          <div class="admin-access-body">
+            <div class="admin-access-copy">
+              <div class="admin-access-badge admin-access-badge--restricted"><span aria-hidden="true"></span> Acceso restringido</div>
+              <h1>Esta cuenta no tiene acceso administrativo</h1>
+              <p>El Admin Panel es una zona interna de Destroyer Reviews. Tu sesión sigue activa, pero no dispone de permisos para entrar.</p>
+              <div class="admin-state-actions">
+                <a class="admin-button admin-button--primary" href="panel.html">Ir al panel cliente</a>
+                <a class="admin-button admin-button--quiet" href="index.html">Volver al inicio</a>
+              </div>
+            </div>
+            <div class="admin-access-visual admin-access-visual--restricted" aria-hidden="true">
+              <div class="admin-access-orbit">
+                <span></span><span></span>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="m9 9 6 6M15 9l-6 6" /></svg>
+              </div>
+              <strong>Permiso no disponible</strong>
+              <small>La sesión permanece activa</small>
+            </div>
+          </div>
+          <div class="admin-access-flow admin-access-flow--permission" aria-label="Proceso de acceso">
+            <span>Sesión</span><i></i><strong>Permiso admin</strong><i></i><span>Panel</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-state admin-state--access" data-admin-state="error" hidden>
+        <div class="admin-access-frame">
+          <header class="admin-access-head">
+            <a class="admin-state-brand" href="index.html" aria-label="Volver a Destroyer Reviews">
+              <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" width="1495" height="350" />
+              <span><strong>Admin Panel</strong><small>Acceso interno</small></span>
+            </a>
+            <span class="admin-access-label">ADMIN</span>
+          </header>
+          <div class="admin-access-body">
+            <div class="admin-access-copy">
+              <div class="admin-access-badge admin-access-badge--error"><span aria-hidden="true"></span> Error de acceso</div>
+              <h1>No se pudieron comprobar los permisos</h1>
+              <p data-admin-error-message>Revisa tu conexión e inténtalo de nuevo.</p>
+              <div class="admin-state-actions">
+                <button class="admin-button admin-button--primary" type="button" data-admin-retry>Reintentar acceso</button>
+                <a class="admin-button admin-button--quiet" href="index.html">Volver al inicio</a>
+              </div>
+            </div>
+            <div class="admin-access-visual admin-access-visual--error" aria-hidden="true">
+              <div class="admin-access-orbit">
+                <span></span><span></span>
+                <svg viewBox="0 0 24 24"><path d="M12 4 3.8 19h16.4L12 4Z" /><path d="M12 9v4M12 16v.1" /></svg>
+              </div>
+              <strong>Validación interrumpida</strong>
+              <small>Puedes volver a intentarlo</small>
+            </div>
+          </div>
+          <div class="admin-access-flow admin-access-flow--permission" aria-label="Proceso de acceso">
+            <span>Sesión</span><i></i><strong>Permiso admin</strong><i></i><span>Panel</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-shell" data-admin-state="shell" hidden>
+        <aside class="admin-sidebar" aria-label="Navegación del panel admin">
+          <a class="admin-brand" href="index.html" aria-label="Destroyer Reviews, inicio">
+            <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" width="1495" height="350" />
+          </a>
+
+          <div class="admin-sidebar-title">
+            <span class="admin-badge">ADMIN</span>
+            <strong>Admin Panel</strong>
+            <small>Acceso interno</small>
+          </div>
+
+          <nav class="admin-nav" aria-label="Secciones internas">
+            <a class="admin-nav-item is-active" href="#admin-ready" aria-current="page">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></svg>
+              </span>
+              Resumen
+            </a>
+            <span class="admin-nav-item" aria-disabled="true">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
+              </span>
+              Pedidos
+            </span>
+            <span class="admin-nav-item" aria-disabled="true">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" /></svg>
+              </span>
+              Reseñas
+            </span>
+            <span class="admin-nav-item" aria-disabled="true">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
+              </span>
+              Pruebas gratuitas
+            </span>
+            <span class="admin-nav-item" aria-disabled="true">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11h4M19 9v4" /></svg>
+              </span>
+              Clientes
+            </span>
+          </nav>
+
+          <div class="admin-sidebar-foot">
+            <span class="admin-status-dot" aria-hidden="true"></span>
+            <div>
+              <strong>Permisos verificados</strong>
+              <small>Sesión protegida por RLS</small>
+            </div>
+          </div>
+        </aside>
+
+        <div class="admin-workspace">
+          <header class="admin-topbar">
+            <div>
+              <p>Destroyer Reviews</p>
+              <h1>Gestión interna</h1>
+              <span>Pedidos, reseñas y solicitudes en un único espacio.</span>
+            </div>
+            <div class="admin-identity">
+              <span>Sesión administrativa</span>
+              <strong data-admin-email>Admin verificado</strong>
+            </div>
+          </header>
+
+          <section class="admin-main" id="admin-ready" aria-labelledby="admin-ready-title">
+            <div class="admin-ready-panel">
+              <div class="admin-ready-copy">
+                <span class="admin-ready-status"><i aria-hidden="true"></i> Acceso concedido</span>
+                <h2 id="admin-ready-title">Panel admin preparado</h2>
+                <p>La base visual y el control de acceso ya están activos. La carga de pedidos se incorporará en la siguiente fase.</p>
+              </div>
+              <div class="admin-ready-signal" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <strong>OK</strong>
+              </div>
+            </div>
+
+            <div class="admin-preview" aria-label="Módulos preparados sin datos reales">
+              <article class="admin-preview-primary">
+                <header>
+                  <div>
+                    <span>Espacio de trabajo</span>
+                    <h3>Resumen operativo</h3>
+                  </div>
+                  <small>Sin datos cargados</small>
+                </header>
+                <div class="admin-placeholder-list" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <p>Los indicadores y acciones que requieren atención aparecerán aquí cuando se conecte la lectura de pedidos.</p>
+              </article>
+
+              <div class="admin-preview-stack">
+                <article class="admin-preview-note">
+                  <span>Seguridad</span>
+                  <strong>Autorización comprobada</strong>
+                  <p>La interfaz valida la sesión y consulta <code>is_admin()</code>. La protección de datos permanece en RLS.</p>
+                </article>
+                <article class="admin-preview-note admin-preview-note--next">
+                  <span>Siguiente fase</span>
+                  <strong>Lectura de pedidos</strong>
+                  <p>Se añadirá después de revisar consultas, filtros y estados vacíos.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="js/supabase-config.js"></script>
+    <script defer src="js/admin.js?v=admin-ui-base-20260712"></script>
+  </body>
+</html>
