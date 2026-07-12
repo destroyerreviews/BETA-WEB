@@ -19131,6 +19131,11 @@ body.panel-page .panel-tab-panel::-webkit-scrollbar-thumb:hover,
   box-shadow: 0 0 10px rgba(88, 166, 255, 0.34);
 }
 
+.panel-stat-card:nth-child(1) span::before {
+  background: #d3dae8;
+  box-shadow: 0 0 10px rgba(211, 218, 232, 0.2);
+}
+
 .panel-stat-card:nth-child(2) span::before {
   background: #f5b84b;
   box-shadow: 0 0 10px rgba(245, 184, 75, 0.3);
