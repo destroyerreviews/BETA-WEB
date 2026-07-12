@@ -1283,6 +1283,10 @@ const initFreeTrialModal = () => {
     }
   });
 
+  if (new URLSearchParams(window.location.search).get("trial") === "open") {
+    window.setTimeout(openTrialModal, prefersReducedMotion ? 0 : 240);
+  }
+
   syncTrialPromoVisibility();
 };
 
@@ -3793,9 +3797,12 @@ const initWhatsappFloat = () => {
 
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const states = ["whatsapp-float--idle", "whatsapp-float--opening", "whatsapp-float--open", "whatsapp-float--closing"];
+  const originalWhatsappHref = button.getAttribute("href") || "";
   let state = "idle";
   let isHovering = false;
   let clickedUntilLeave = false;
+  let isHelpMode = false;
+  let helpCard = null;
   let sequence = 0;
   let openTimer = null;
   let closeTimer = null;
@@ -3873,6 +3880,61 @@ const initWhatsappFloat = () => {
     closeWhatsappButton({ immediate: true });
   };
 
+  const closeHelpCard = () => {
+    helpCard?.classList.remove("is-open");
+    button.setAttribute("aria-expanded", "false");
+  };
+
+  const toggleHelpCard = () => {
+    if (!helpCard) return;
+    const willOpen = !helpCard.classList.contains("is-open");
+    helpCard.classList.toggle("is-open", willOpen);
+    button.setAttribute("aria-expanded", String(willOpen));
+  };
+
+  const createHelpCard = () => {
+    if (helpCard) return helpCard;
+    helpCard = document.createElement("div");
+    helpCard.className = "help-float-card";
+    helpCard.innerHTML = `
+      <div class="help-float-card__head">
+        <strong>¿Necesitas ayuda?</strong>
+        <span>Soporte rápido para tu cuenta y pedidos.</span>
+      </div>
+      <a href="${sitePath("panel.html#panel-support")}">Ir al soporte</a>
+      <a class="help-float-card__whatsapp" href="${originalWhatsappHref}" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 4a12 12 0 0 0-10.2 18.3L4.3 28l5.8-1.5A12 12 0 1 0 16 4Zm0 21.8c-1.8 0-3.5-.5-5-1.3l-.4-.2-3.4.9.9-3.3-.2-.4A9.8 9.8 0 1 1 16 25.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-1.7-.7-3.2-2-4.1-3.6-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.3Z"/></svg>
+        <span>WhatsApp</span>
+      </a>
+    `;
+    document.body.appendChild(helpCard);
+    return helpCard;
+  };
+
+  const enableHelpMode = () => {
+    isHelpMode = true;
+    createHelpCard();
+    button.classList.add("whatsapp-float--help");
+    button.classList.add("whatsapp-float--compact-help");
+    button.setAttribute("aria-label", "Abrir ayuda");
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("href", sitePath("panel.html#panel-support"));
+    button.removeAttribute("target");
+    button.removeAttribute("rel");
+    const text = button.querySelector(".whatsapp-float__text-real");
+    if (text) text.textContent = "";
+    const icon = button.querySelector(".whatsapp-float__icon");
+    if (icon) {
+      icon.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false">
+          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.8 8.8 0 0 1-3.8-.9L3 20.6l1.7-4.8A8 8 0 0 1 3.8 12 8.4 8.4 0 0 1 12.2 3.6 8.5 8.5 0 0 1 21 11.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+          <path d="M8.4 10.4h7.2M8.4 13.6h4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      `;
+    }
+  };
+
   setState("idle");
 
   button.addEventListener("pointerenter", () => {
@@ -3881,19 +3943,42 @@ const initWhatsappFloat = () => {
   button.addEventListener("focus", activate);
   button.addEventListener("pointerleave", () => deactivate({ fromPointer: true }));
   button.addEventListener("blur", deactivate);
-  button.addEventListener("click", () => {
+  button.addEventListener("click", (event) => {
+    if (isHelpMode) {
+      event.preventDefault();
+      toggleHelpCard();
+      closeWhatsappButton({ blockUntilLeave: true });
+      return;
+    }
     closeWhatsappButton({ blockUntilLeave: true });
     requestAnimationFrame(() => {
       if (document.activeElement === button) button.blur();
     });
   });
 
+  document.addEventListener("click", (event) => {
+    if (!isHelpMode || !helpCard?.classList.contains("is-open")) return;
+    if (button.contains(event.target) || helpCard.contains(event.target)) return;
+    closeHelpCard();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHelpCard();
+  });
+
   window.addEventListener("blur", resetWhatsappButton);
   document.addEventListener("visibilitychange", () => {
     resetWhatsappButton();
+    closeHelpCard();
   });
   window.addEventListener("pageshow", resetWhatsappButton);
   window.addEventListener("pagehide", resetWhatsappButton);
+
+  getCurrentAuthSession()
+    .then((session) => {
+      if (session?.user) enableHelpMode();
+    })
+    .catch(() => {});
 };
 
 const initAuthForms = () => {
@@ -4196,6 +4281,7 @@ const initAccountSessionNav = () => {
   const mainScriptUrl = document.querySelector('script[src$="main.js"]')?.src || `${window.location.origin}/js/main.js`;
   const indexUrl = new URL("../index.html", mainScriptUrl).href;
   const profileUrl = new URL("../perfil.html", mainScriptUrl).href;
+  const panelUrl = new URL("../panel.html", mainScriptUrl).href;
   const authLinks = [...document.querySelectorAll(".nav-login, .nav-register, .mobile-register, .mobile-menu a")]
     .filter((link) => {
       const href = link.getAttribute("href") || "";
@@ -4244,10 +4330,7 @@ const initAccountSessionNav = () => {
       </button>
       <div class="account-menu__panel" id="${menuId}" role="menu" hidden>
         <a class="account-menu__item" href="${profileUrl}" role="menuitem">Perfil</a>
-        <button class="account-menu__item account-menu__item--disabled" type="button" role="menuitem" aria-disabled="true" tabindex="-1">
-          <span>Panel</span>
-          <small>Próximamente</small>
-        </button>
+        <a class="account-menu__item" href="${panelUrl}" role="menuitem">Panel</a>
         <button class="account-menu__item account-menu__signout" type="button" role="menuitem">
           <span>Cerrar sesión</span>
         </button>
@@ -4550,10 +4633,10 @@ const init = () => {
     initPlanSwitch();
     initPricingReveal();
     initProcessTimeline();
-    initWhatsappFloat();
   }
   initAuthForms();
   initAccountSessionNav();
+  initWhatsappFloat();
   initForm();
   initPerfDebug();
   refreshNavSectionPositions();

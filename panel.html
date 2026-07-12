@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Panel privado de cliente de Destroyer Reviews." />
+    <title>Panel | Destroyer Reviews</title>
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
+    <link rel="stylesheet" href="css/styles.css?v=client-panel-flow-20260711" />
+  </head>
+  <body class="panel-page trial-promo-hidden">
+    <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
+    <div class="scroll-meter" aria-hidden="true"></div>
+
+    <header class="site-header" data-header>
+      <nav class="liquid-nav" aria-label="Navegación principal">
+        <span class="liquid-nav__glass" aria-hidden="true"></span>
+
+        <div class="liquid-nav__content">
+          <a class="brand-logo nav-brand" href="index.html" aria-label="Destroyer Reviews">
+            <img src="assets/brand/logo-mayusculas-sin-fondo.png" alt="Destroyer Reviews" class="brand-logo-img brand-logo--nav" width="1495" height="350" loading="eager" decoding="async" />
+          </a>
+
+          <div class="nav-links" data-nav>
+            <a href="index.html" data-nav-link>Inicio</a>
+            <a href="./blogs/" data-nav-link>Blogs</a>
+            <a href="index.html#planes" data-nav-link>Precios</a>
+            <a href="index.html#contacto" data-nav-link>Contáctanos</a>
+          </div>
+          <div class="nav-auth">
+            <button class="cart-button cart-button--desktop" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+              <span class="cart-count" data-cart-count hidden>0</span>
+            </button>
+            <a class="nav-login" href="login.html">Iniciar sesión</a>
+            <a class="nav-register" href="register.html">Registrarse</a>
+          </div>
+          <button class="cart-button cart-button--mobile" type="button" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false" data-cart-toggle>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+              <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+            </svg>
+            <span class="cart-count" data-cart-count hidden>0</span>
+          </button>
+
+          <button class="nav-mobile-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" data-nav-toggle>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <div class="mobile-menu" data-mobile-menu>
+          <a href="index.html">Inicio</a>
+          <a href="./blogs/">Blogs</a>
+          <a href="index.html#planes">Precios</a>
+          <a href="index.html#contacto">Contáctanos</a>
+          <button class="mobile-cart-link" type="button" data-cart-toggle>
+            <span class="mobile-cart-link__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" />
+                <path d="M9.2 19.2h.01M16.2 19.2h.01" />
+              </svg>
+            </span>
+            <span>Carrito</span>
+            <span class="mobile-cart-count" data-cart-count hidden>0</span>
+          </button>
+          <a href="login.html">Iniciar sesión</a>
+          <a class="mobile-register" href="register.html">Registrarse</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="cart-overlay" data-cart-overlay hidden></div>
+    <aside class="cart-drawer" aria-label="Carrito de compra" aria-hidden="true" data-cart-drawer>
+      <div class="cart-drawer__glow" aria-hidden="true"></div>
+      <header class="cart-drawer__header">
+        <div>
+          <span>Carrito</span>
+          <h2>Tu pedido</h2>
+        </div>
+        <button class="cart-close" type="button" aria-label="Cerrar carrito" data-cart-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="cart-drawer__body" data-cart-body>
+        <div class="cart-empty" data-cart-empty>
+          <div class="cart-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M6.2 7.2h13.1l-1.4 7.1a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.7L5.8 5.4H3.5" /><path d="M9.2 19.2h.01M16.2 19.2h.01" /></svg>
+          </div>
+          <h3>Tu carrito está vacío</h3>
+          <p>Elige un pack para empezar.</p>
+          <a class="button button-primary cart-empty__button" href="index.html#planes" data-cart-prices>Ver precios</a>
+        </div>
+        <div class="cart-list" data-cart-items></div>
+      </div>
+      <footer class="cart-summary" data-cart-summary hidden>
+        <div class="cart-total-row"><span>Total</span><strong data-cart-total>0 EUR</strong></div>
+        <a class="button button-primary cart-checkout" href="checkout/" data-cart-checkout>Finalizar pedido</a>
+        <button class="button button-secondary cart-continue" type="button" data-cart-continue>Seguir viendo packs</button>
+      </footer>
+    </aside>
+
+    <main class="panel-main" data-panel-page>
+      <section class="panel-loading" data-panel-loading>
+        <span></span>
+        <p>Cargando panel...</p>
+      </section>
+
+      <section class="panel-auth-empty" data-panel-auth-empty hidden>
+        <p class="panel-kicker">Panel privado</p>
+        <h1>Inicia sesión para ver tu panel</h1>
+        <p>Accede a tus pedidos, personalizaciones pendientes, prueba gratuita y soporte asociado a tu cuenta.</p>
+        <div class="panel-auth-empty__actions">
+          <a class="panel-action panel-action--primary" href="login.html">Iniciar sesión</a>
+          <a class="panel-action panel-action--secondary" href="register.html">Crear cuenta</a>
+        </div>
+      </section>
+
+      <section class="panel-shell" data-panel-shell hidden>
+        <section class="panel-hero" aria-labelledby="panel-title">
+          <div>
+            <p class="panel-kicker">Panel cliente</p>
+            <h1 id="panel-title">Hola, <span data-panel-name>cliente</span></h1>
+            <p data-panel-welcome>Consulta el estado de tus pedidos y las acciones pendientes de tu cuenta.</p>
+          </div>
+          <a class="panel-profile-link" href="perfil.html">Ir al perfil</a>
+        </section>
+
+        <section class="panel-pending-card" data-panel-pending></section>
+
+        <div class="panel-workspace">
+          <aside class="panel-tabs" aria-label="Secciones del panel" role="tablist">
+            <button class="panel-tab" type="button" role="tab" aria-selected="false" data-panel-tab="summary">
+              <span>Resumen</span>
+            </button>
+            <button class="panel-tab is-active" type="button" role="tab" aria-selected="true" data-panel-tab="orders">
+              <span>Pedidos</span>
+              <small data-panel-orders-count>0</small>
+            </button>
+            <button class="panel-tab" type="button" role="tab" aria-selected="false" data-panel-tab="trial">
+              <span>Prueba gratuita</span>
+            </button>
+            <button class="panel-tab" type="button" role="tab" aria-selected="false" data-panel-tab="support">
+              <span>Soporte</span>
+            </button>
+          </aside>
+
+          <div class="panel-content">
+            <section class="panel-tab-panel" data-panel-panel="summary" hidden>
+              <div class="panel-section-head">
+                <div>
+                  <p class="panel-kicker">Resumen</p>
+                  <h2>Tu cuenta de un vistazo</h2>
+                </div>
+              </div>
+              <div class="panel-summary-grid" aria-label="Resumen de cuenta">
+                <article class="panel-stat-card">
+                  <span>Pedidos totales</span>
+                  <strong data-panel-stat="orders">0</strong>
+                  <small>Historial asociado a tu cuenta.</small>
+                </article>
+                <article class="panel-stat-card">
+                  <span>Pedidos pendientes</span>
+                  <strong data-panel-stat="pendingOrders">0</strong>
+                  <small>Pedidos que aún requieren seguimiento.</small>
+                </article>
+                <article class="panel-stat-card">
+                  <span>Reseñas en proceso</span>
+                  <strong data-panel-stat="reviewsInProcess">0</strong>
+                  <small>Textos o personalizaciones en marcha.</small>
+                </article>
+                <article class="panel-stat-card panel-stat-card--completed">
+                  <span>Pedidos completados</span>
+                  <strong data-panel-stat="completedOrders">0</strong>
+                  <small>Pedidos cerrados o finalizados.</small>
+                </article>
+              </div>
+            </section>
+
+            <section class="panel-tab-panel is-active" data-panel-panel="orders">
+              <section class="panel-orders" aria-labelledby="panel-orders-title">
+                <div class="panel-section-head">
+                  <div>
+                    <p class="panel-kicker">Pedidos</p>
+                    <h2 id="panel-orders-title">Tus pedidos</h2>
+                  </div>
+                  <p data-panel-orders-count-label>0 pedidos</p>
+                </div>
+                <div class="panel-orders-list" data-panel-orders></div>
+              </section>
+            </section>
+
+            <section class="panel-tab-panel" data-panel-panel="trial" hidden>
+              <section class="panel-side-card" data-panel-trial-card></section>
+            </section>
+
+            <section class="panel-tab-panel" data-panel-panel="support" hidden>
+              <section class="panel-side-card panel-support-card" id="panel-support" data-panel-support-card>
+                <span>Soporte básico</span>
+                <h2>¿Necesitas ayuda con un pedido?</h2>
+                <p>Puedes contactar con nosotros indicando la referencia de tu pedido.</p>
+                <a class="panel-action panel-action--primary panel-action--with-icon" href="https://wa.me/34603826428?text=Hola%2C%20quiero%20ayuda%20con%20un%20pedido%20de%20Destroyer%20Reviews." target="_blank" rel="noopener noreferrer" data-panel-whatsapp>
+                  <svg class="panel-action__icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 4a12 12 0 0 0-10.2 18.3L4.3 28l5.8-1.5A12 12 0 1 0 16 4Zm0 21.8c-1.8 0-3.5-.5-5-1.3l-.4-.2-3.4.9.9-3.3-.2-.4A9.8 9.8 0 1 1 16 25.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-1.7-.7-3.2-2-4.1-3.6-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.3Z"/></svg>
+                  <span>Contactar por WhatsApp</span>
+                </a>
+                <button class="panel-action panel-action--ghost" type="button" disabled>Centro de soporte · Próximamente</button>
+              </section>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-error-state" data-panel-error hidden>
+        <p class="panel-kicker">Error</p>
+        <h1>No se pudo cargar el panel</h1>
+        <p>Revisa tu sesión o vuelve a intentarlo en unos minutos.</p>
+        <button class="panel-action panel-action--primary" type="button" data-panel-retry>Reintentar</button>
+      </section>
+    </main>
+
+    <div class="panel-order-overlay" data-panel-order-overlay hidden></div>
+    <aside class="panel-order-drawer" role="dialog" aria-modal="true" aria-label="Detalle del pedido" aria-hidden="true" data-panel-order-drawer>
+      <header class="panel-order-drawer__header">
+        <div>
+          <span data-panel-drawer-eyebrow>Pedido</span>
+          <h2 data-panel-drawer-title>Pedido</h2>
+          <p data-panel-drawer-status></p>
+        </div>
+        <button class="panel-icon-button" type="button" aria-label="Cerrar pedido" data-panel-drawer-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="panel-order-drawer__body" data-panel-drawer-body data-lenis-prevent></div>
+    </aside>
+
+    <div class="panel-support-overlay" data-panel-support-overlay hidden></div>
+    <section class="panel-support-modal" role="dialog" aria-modal="true" aria-labelledby="panel-support-modal-title" aria-hidden="true" data-panel-support-modal hidden>
+      <header class="panel-support-modal__header">
+        <div>
+          <span>Soporte</span>
+          <h2 id="panel-support-modal-title">Soporte del pedido</h2>
+          <p data-panel-support-modal-ref></p>
+        </div>
+        <button class="panel-icon-button" type="button" aria-label="Cerrar soporte" data-panel-support-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div class="panel-support-modal__body">
+        <a class="panel-action panel-action--primary" href="#" target="_blank" rel="noopener noreferrer" data-panel-support-whatsapp>Contactar por WhatsApp</a>
+        <button class="panel-action panel-action--secondary" type="button" data-panel-support-copy>Copiar referencia</button>
+        <p class="panel-copy-status" role="status" aria-live="polite" data-panel-support-status></p>
+      </div>
+    </section>
+
+    <a
+      class="whatsapp-float"
+      href="https://wa.me/34603826428?text=Hola%2C%20quiero%20ayuda%20con%20mi%20panel%20de%20Destroyer%20Reviews."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Hablar por WhatsApp"
+      data-whatsapp-float
+    >
+      <span class="whatsapp-float__icon" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none" role="img">
+          <path
+            fill="currentColor"
+            d="M16.02 3.2c-6.98 0-12.66 5.6-12.66 12.5 0 2.2.58 4.34 1.68 6.23L3.25 28.8l7.08-1.84a12.8 12.8 0 0 0 5.69 1.34c6.98 0 12.66-5.6 12.66-12.5S23 3.2 16.02 3.2Zm0 22.94c-1.82 0-3.61-.47-5.17-1.37l-.37-.21-4.2 1.09 1.11-4.01-.24-.41a10.24 10.24 0 0 1-1.55-5.44c0-5.7 4.67-10.33 10.42-10.33 5.76 0 10.43 4.63 10.43 10.33s-4.67 10.35-10.43 10.35Zm5.71-7.74c-.31-.15-1.85-.9-2.14-1-.29-.1-.5-.15-.71.15-.21.31-.81 1-.99 1.2-.18.2-.36.23-.67.08-.31-.15-1.32-.48-2.52-1.53-.93-.83-1.56-1.85-1.74-2.16-.18-.31-.02-.48.14-.63.14-.14.31-.36.47-.54.16-.18.21-.31.31-.51.1-.2.05-.38-.03-.53-.08-.15-.71-1.69-.97-2.31-.25-.6-.51-.52-.71-.53h-.6c-.21 0-.55.08-.84.38-.29.31-1.1 1.06-1.1 2.59s1.13 3.01 1.28 3.22c.16.2 2.22 3.35 5.38 4.7.75.32 1.34.51 1.8.66.76.24 1.45.21 2 .13.61-.09 1.85-.75 2.11-1.47.26-.73.26-1.35.18-1.48-.08-.13-.29-.2-.61-.36Z"
+          />
+        </svg>
+      </span>
+      <span class="whatsapp-float__text-wrap" aria-hidden="true">
+        <span class="whatsapp-float__text-effect"></span>
+        <span class="whatsapp-float__text-real">Hablar por WhatsApp</span>
+      </span>
+    </a>
+
+    <script defer src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="js/supabase-config.js"></script>
+    <script defer src="js/auth.js"></script>
+    <script defer src="js/profile-data.js"></script>
+    <script defer src="js/main.js?v=client-panel-flow-20260711"></script>
+    <script defer src="js/panel.js?v=client-panel-flow-20260711"></script>
+  </body>
+</html>
