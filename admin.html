@@ -159,37 +159,37 @@
             <small>Acceso interno</small>
           </div>
 
-          <nav class="admin-nav" aria-label="Secciones internas">
-            <a class="admin-nav-item is-active" href="#admin-ready" aria-current="page">
+          <nav class="admin-nav" aria-label="Secciones internas" role="tablist">
+            <button class="admin-nav-item is-active" type="button" role="tab" aria-selected="true" aria-controls="admin-view-summary" data-admin-view-target="summary">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></svg>
               </span>
               Resumen
-            </a>
-            <span class="admin-nav-item" aria-disabled="true">
+            </button>
+            <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-orders" data-admin-view-target="orders">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
               </span>
               Pedidos
-            </span>
-            <span class="admin-nav-item" aria-disabled="true">
+            </button>
+            <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-reviews" data-admin-view-target="reviews">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" /></svg>
               </span>
               Reseñas
-            </span>
-            <span class="admin-nav-item" aria-disabled="true">
+            </button>
+            <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-trials" data-admin-view-target="trials">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
               </span>
               Pruebas gratuitas
-            </span>
-            <span class="admin-nav-item" aria-disabled="true">
+            </button>
+            <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-clients" data-admin-view-target="clients">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11h4M19 9v4" /></svg>
               </span>
               Clientes
-            </span>
+            </button>
           </nav>
 
           <div class="admin-sidebar-foot">
@@ -208,65 +208,181 @@
               <h1>Gestión interna</h1>
               <span>Pedidos, reseñas y solicitudes en un único espacio.</span>
             </div>
-            <div class="admin-identity">
-              <span>Sesión administrativa</span>
+            <div class="admin-identity" aria-label="Estado de la sesión administrativa">
+              <div class="admin-identity__status">
+                <i aria-hidden="true"></i>
+                <span>Admin activo</span>
+              </div>
               <strong data-admin-email>Admin verificado</strong>
+              <small>Permisos verificados</small>
             </div>
           </header>
 
           <section class="admin-main" id="admin-ready" aria-labelledby="admin-ready-title">
-            <div class="admin-ready-panel">
-              <div class="admin-ready-copy">
-                <span class="admin-ready-status"><i aria-hidden="true"></i> Acceso concedido</span>
-                <h2 id="admin-ready-title">Panel admin preparado</h2>
-                <p>La base visual y el control de acceso ya están activos. La carga de pedidos se incorporará en la siguiente fase.</p>
+            <header class="admin-page-heading">
+              <div>
+                <span class="admin-ready-status"><i aria-hidden="true"></i> Panel interno</span>
+                <h2 id="admin-ready-title" data-admin-view-title>Resumen operativo</h2>
+                <p data-admin-view-description>Seguimiento interno de pedidos y reseñas asociadas.</p>
               </div>
-              <div class="admin-ready-signal" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-                <strong>OK</strong>
-              </div>
-            </div>
+              <span class="admin-sync-label" data-admin-view-meta>Datos actuales</span>
+            </header>
 
-            <div class="admin-preview" aria-label="Módulos preparados sin datos reales">
-              <article class="admin-preview-primary">
-                <header>
-                  <div>
-                    <span>Espacio de trabajo</span>
-                    <h3>Resumen operativo</h3>
+            <section class="admin-data-loading" data-admin-data-loading aria-live="polite">
+              <div class="admin-data-loading__head">
+                <span></span>
+                <p>Cargando pedidos y datos asociados...</p>
+              </div>
+              <div class="admin-data-loading__metrics" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div class="admin-data-loading__rows" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+            </section>
+
+            <section class="admin-data-error" data-admin-data-error hidden>
+              <span class="admin-status-icon admin-status-icon--error" aria-hidden="true">!</span>
+              <div>
+                <h3>No se pudieron cargar los pedidos</h3>
+                <p>La sesión admin sigue activa. Reintenta la lectura o vuelve más tarde.</p>
+              </div>
+              <button class="admin-button admin-button--primary" type="button" data-admin-data-retry>Reintentar carga</button>
+            </section>
+
+            <div class="admin-dashboard" data-admin-dashboard hidden>
+              <section class="admin-view is-active" id="admin-view-summary" role="tabpanel" data-admin-view="summary">
+                <section class="admin-summary-section" aria-labelledby="admin-summary-title">
+                  <div class="admin-section-heading">
+                    <div>
+                      <h3 id="admin-summary-title">Estado general</h3>
+                      <p>Conteos actuales del flujo de pedidos.</p>
+                    </div>
                   </div>
-                  <small>Sin datos cargados</small>
-                </header>
-                <div class="admin-placeholder-list" aria-hidden="true">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <p>Los indicadores y acciones que requieren atención aparecerán aquí cuando se conecte la lectura de pedidos.</p>
-              </article>
+                  <div class="admin-summary-grid" data-admin-summary></div>
+                </section>
 
-              <div class="admin-preview-stack">
-                <article class="admin-preview-note">
-                  <span>Seguridad</span>
-                  <strong>Autorización comprobada</strong>
-                  <p>La interfaz valida la sesión y consulta <code>is_admin()</code>. La protección de datos permanece en RLS.</p>
-                </article>
-                <article class="admin-preview-note admin-preview-note--next">
-                  <span>Siguiente fase</span>
-                  <strong>Lectura de pedidos</strong>
-                  <p>Se añadirá después de revisar consultas, filtros y estados vacíos.</p>
-                </article>
-              </div>
+                <section class="admin-attention-section" aria-labelledby="admin-attention-title">
+                  <div class="admin-section-heading">
+                    <div>
+                      <h3 id="admin-attention-title">Acciones que requieren atención</h3>
+                      <p>Se muestran como máximo cinco incidencias reales.</p>
+                    </div>
+                  </div>
+                  <div class="admin-attention-list" data-admin-attention></div>
+                </section>
+
+                <div class="admin-summary-shortcut" data-admin-summary-shortcut></div>
+              </section>
+
+              <section class="admin-view" id="admin-view-orders" role="tabpanel" data-admin-view="orders" hidden>
+                <section class="admin-orders-section" aria-labelledby="admin-orders-title">
+                  <div class="admin-section-heading admin-section-heading--orders">
+                    <div>
+                      <h3 id="admin-orders-title">Pedidos</h3>
+                      <p data-admin-orders-count>0 pedidos</p>
+                    </div>
+                  </div>
+
+                  <form class="admin-filters" data-admin-filters role="search">
+                    <label class="admin-search-field">
+                      <span class="admin-filter-label">Buscar pedido</span>
+                      <span class="admin-search-control">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" /></svg>
+                        <input type="search" name="search" placeholder="Referencia, cliente, email o WhatsApp" autocomplete="off" data-admin-search />
+                      </span>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Estado</span>
+                      <select name="status" data-admin-filter="status">
+                        <option value="">Todos</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="review">En revisión</option>
+                        <option value="in_progress">En preparación</option>
+                        <option value="completed">Completado</option>
+                        <option value="cancelled">Cancelado</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Pago</span>
+                      <select name="payment" data-admin-filter="payment">
+                        <option value="">Todos</option>
+                        <option value="unpaid">Pendiente</option>
+                        <option value="pending">En proceso</option>
+                        <option value="paid">Pagado</option>
+                        <option value="failed">Fallido</option>
+                        <option value="refunded">Reembolsado</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Gestión</span>
+                      <select name="mode" data-admin-filter="mode">
+                        <option value="">Todas</option>
+                        <option value="manual">Cliente</option>
+                        <option value="team">Equipo</option>
+                      </select>
+                    </label>
+                  </form>
+
+                  <div class="admin-partial-warning" data-admin-partial-warning hidden></div>
+                  <div class="admin-orders-list" data-admin-orders-list></div>
+                </section>
+              </section>
+
+              <section class="admin-view admin-placeholder-view" id="admin-view-reviews" role="tabpanel" data-admin-view="reviews" hidden>
+                <div class="admin-placeholder-panel">
+                  <span class="admin-placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" /></svg></span>
+                  <span class="admin-placeholder-phase">Próxima fase</span>
+                  <h3>Sección preparada</h3>
+                  <p>Aquí se revisarán los textos, valoraciones y estados reales de las reseñas.</p>
+                </div>
+              </section>
+
+              <section class="admin-view admin-placeholder-view" id="admin-view-trials" role="tabpanel" data-admin-view="trials" hidden>
+                <div class="admin-placeholder-panel">
+                  <span class="admin-placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg></span>
+                  <span class="admin-placeholder-phase">Próxima fase</span>
+                  <h3>Sección preparada</h3>
+                  <p>Las solicitudes de prueba gratuita se conectarán aquí más adelante.</p>
+                </div>
+              </section>
+
+              <section class="admin-view admin-placeholder-view" id="admin-view-clients" role="tabpanel" data-admin-view="clients" hidden>
+                <div class="admin-placeholder-panel">
+                  <span class="admin-placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11h4M19 9v4" /></svg></span>
+                  <span class="admin-placeholder-phase">Próxima fase</span>
+                  <h3>Sección preparada</h3>
+                  <p>La vista ligera de clientes llegará después, sin convertir el panel en un CRM avanzado.</p>
+                </div>
+              </section>
             </div>
           </section>
         </div>
       </section>
+
+      <dialog class="admin-order-dialog" data-admin-order-dialog aria-labelledby="admin-order-dialog-title">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Detalle de pedido</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-order-dialog-title" data-admin-order-dialog-title>Pedido</h2>
+              <button class="admin-copy-icon" type="button" aria-label="Copiar referencia" data-admin-dialog-copy-ref>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></svg>
+              </button>
+            </div>
+            <p data-admin-order-dialog-status></p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar detalle" data-admin-order-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="admin-order-dialog__body" data-admin-order-dialog-body></div>
+        <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-copy-feedback></p>
+      </dialog>
     </main>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-ui-base-20260712"></script>
+    <script defer src="js/admin.js?v=admin-orders-read-20260713"></script>
   </body>
 </html>
