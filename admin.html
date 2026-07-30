@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#040712" />
     <title>Admin Panel | Destroyer Reviews</title>
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/admin.css?v=admin-ui-base-20260712" />
+    <link rel="stylesheet" href="css/admin.css?v=admin-media-lightbox-20260730" />
   </head>
   <body class="admin-page">
     <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
@@ -379,10 +379,23 @@
         <div class="admin-order-dialog__body" data-admin-order-dialog-body></div>
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-copy-feedback></p>
       </dialog>
+
+      <dialog class="admin-image-lightbox" data-admin-image-lightbox aria-labelledby="admin-image-lightbox-title">
+        <div class="admin-image-lightbox__stage">
+          <button class="admin-image-lightbox__close" type="button" aria-label="Cerrar imagen ampliada" data-admin-image-lightbox-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+          <img alt="" data-admin-image-lightbox-image />
+        </div>
+        <footer class="admin-image-lightbox__caption">
+          <span>Imagen</span>
+          <strong id="admin-image-lightbox-title" data-admin-image-lightbox-name></strong>
+        </footer>
+      </dialog>
     </main>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-orders-read-20260713"></script>
+    <script defer src="js/admin.js?v=admin-media-lightbox-20260730"></script>
   </body>
 </html>

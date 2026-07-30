@@ -27,12 +27,18 @@
   const orderDialogClose = root.querySelector("[data-admin-order-dialog-close]");
   const copyFeedback = root.querySelector("[data-admin-copy-feedback]");
   const dialogCopyRef = root.querySelector("[data-admin-dialog-copy-ref]");
+  const imageLightbox = root.querySelector("[data-admin-image-lightbox]");
+  const imageLightboxImage = root.querySelector("[data-admin-image-lightbox-image]");
+  const imageLightboxName = root.querySelector("[data-admin-image-lightbox-name]");
+  const imageLightboxClose = root.querySelector("[data-admin-image-lightbox-close]");
   const navButtons = [...root.querySelectorAll("[data-admin-view-target]")];
   const viewNodes = [...root.querySelectorAll("[data-admin-view]")];
   const viewTitle = root.querySelector("[data-admin-view-title]");
   const viewDescription = root.querySelector("[data-admin-view-description]");
   const viewMeta = root.querySelector("[data-admin-view-meta]");
   const summaryShortcut = root.querySelector("[data-admin-summary-shortcut]");
+  const REVIEW_MEDIA_BUCKET = "review-media";
+  const SIGNED_MEDIA_TTL_SECONDS = 600;
 
   const adminState = {
     session: null,
@@ -52,6 +58,9 @@
     activeView: "summary",
     activeOrderId: "",
     copyFeedbackTimer: null,
+    mediaGalleryStates: new Map(),
+    mediaExpiryTimers: new Map(),
+    activeLightboxReviewId: "",
   };
 
   const viewConfig = {
@@ -141,6 +150,39 @@
   }).format((Number(cents) || 0) / 100);
 
   const pluralize = (value, singular, plural) => `${value} ${value === 1 ? singular : plural}`;
+
+  const formatFileSize = (bytes) => {
+    const value = Number(bytes);
+    if (!Number.isFinite(value) || value <= 0) return "Tamaño no disponible";
+    const units = ["B", "KB", "MB", "GB"];
+    const unitIndex = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+    const amount = value / (1024 ** unitIndex);
+    const precision = unitIndex === 0 || amount >= 10 ? 0 : 1;
+    return `${amount.toFixed(precision)} ${units[unitIndex]}`;
+  };
+
+  const isImageMedia = (media) => media?.file_type === "image";
+  const isVideoMedia = (media) => media?.file_type === "video";
+  const isSupportedMedia = (media) => isImageMedia(media) || isVideoMedia(media);
+
+  const mediaDomId = (reviewId) => `admin-review-media-${`${reviewId || ""}`.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const safeDownloadFileName = (value) => `${value || "archivo"}`
+    .replace(/[\u0000-\u001f\u007f<>:"/\\|?*]+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 180)
+    .trim() || "archivo";
+
+  const getReviewMedia = (reviewId) => adminState.media
+    .filter((media) => media.order_review_id === reviewId)
+    .filter(isSupportedMedia);
+
+  const hasReviewMedia = (review) => getReviewMedia(review?.id).length > 0;
+
+  const getReviewMediaPanel = (reviewId) => [...(orderDialogBody?.querySelectorAll("[data-review-media-panel]") || [])]
+    .find((panel) => panel.dataset.reviewMediaPanel === reviewId) || null;
+
+  const getReviewMediaButton = (reviewId) => [...(orderDialogBody?.querySelectorAll("[data-review-media-open]") || [])]
+    .find((button) => button.dataset.reviewMediaOpen === reviewId) || null;
 
   const copyIconMarkup = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -248,6 +290,7 @@
   };
 
   const clearAdminData = () => {
+    adminState.mediaExpiryTimers.forEach((timer) => window.clearTimeout(timer));
     adminState.orders = [];
     adminState.items = [];
     adminState.reviews = [];
@@ -255,6 +298,9 @@
     adminState.viewOrders = [];
     adminState.partialErrors = {};
     adminState.activeOrderId = "";
+    adminState.activeLightboxReviewId = "";
+    adminState.mediaGalleryStates.clear();
+    adminState.mediaExpiryTimers.clear();
   };
 
   const renderLoading = () => {
@@ -345,8 +391,9 @@
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
       .from("review_media")
-      .select("id,order_review_id,order_id,file_type")
+      .select("id,order_review_id,order_id,file_path,file_name,file_type,mime_type,file_size_bytes,sort_order,created_at")
       .in("order_id", orderIds)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw error;
     return data || [];
@@ -691,18 +738,348 @@
     `;
   };
 
+  const renderMediaError = (reviewId, message = "No se pudieron generar los enlaces temporales.") => `
+    <div class="admin-review-media-state admin-review-media-state--error" role="alert">
+      <span class="admin-review-media-state__icon" aria-hidden="true">!</span>
+      <div>
+        <strong>No se pudo cargar la multimedia</strong>
+        <p>${escapeHtml(message)}</p>
+      </div>
+      <button class="admin-media-reload-button" type="button" data-review-media-reload="${escapeHtml(reviewId)}">Volver a cargar</button>
+    </div>
+  `;
+
+  const renderMediaCard = (reviewId, item) => {
+    const media = item.media;
+    const typeLabel = isImageMedia(media) ? "Imagen" : "Vídeo";
+    const fileName = `${media.file_name || ""}`.trim() || `${typeLabel} sin nombre`;
+    const mimeType = `${media.mime_type || ""}`.trim();
+    const metadata = [typeLabel, formatFileSize(media.file_size_bytes), mimeType].filter(Boolean);
+
+    if (item.error || !item.signedUrl) {
+      return `
+        <article class="admin-media-card is-error">
+          <div class="admin-media-preview admin-media-preview--error">
+            <span class="admin-review-media-state__icon" aria-hidden="true">!</span>
+            <strong>Enlace no disponible</strong>
+            <span>Prueba a generar uno nuevo.</span>
+          </div>
+          <div class="admin-media-card__body">
+            <strong title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</strong>
+            <span>${escapeHtml(metadata.join(" · "))}</span>
+          </div>
+          <button class="admin-media-reload-button" type="button" data-review-media-reload="${escapeHtml(reviewId)}">Reintentar</button>
+        </article>
+      `;
+    }
+
+    const preview = isImageMedia(media)
+      ? `<button class="admin-media-image-trigger" type="button" data-image-lightbox-open="${escapeHtml(media.id)}" data-review-id="${escapeHtml(reviewId)}" aria-label="Ver imagen en grande: ${escapeHtml(fileName)}">
+          <img src="${escapeHtml(item.signedUrl)}" alt="Vista previa de ${escapeHtml(fileName)}" loading="lazy" data-review-media-asset="${escapeHtml(media.id)}" />
+          <span class="admin-media-image-trigger__overlay" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5" /></svg>
+            Ver imagen
+          </span>
+        </button>`
+      : `<video src="${escapeHtml(item.signedUrl)}" controls preload="metadata" aria-label="Vista previa de ${escapeHtml(fileName)}" data-review-media-asset="${escapeHtml(media.id)}"></video>`;
+
+    return `
+      <article class="admin-media-card">
+        <div class="admin-media-preview" aria-busy="true">
+          ${preview}
+          <span class="admin-media-preview__status">Cargando vista previa…</span>
+        </div>
+        <div class="admin-media-card__body">
+          <strong title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</strong>
+          <span>${escapeHtml(metadata.join(" · "))}</span>
+        </div>
+        <button class="admin-media-download-button" type="button" data-review-media-download="${escapeHtml(media.id)}" data-review-id="${escapeHtml(reviewId)}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14" /></svg>
+          <span>Descargar</span>
+        </button>
+      </article>
+    `;
+  };
+
+  const bindReviewMediaAssets = (panel) => {
+    panel.querySelectorAll("[data-review-media-asset]").forEach((asset) => {
+      const preview = asset.closest(".admin-media-preview");
+      const status = preview?.querySelector(".admin-media-preview__status");
+      const markLoaded = () => {
+        preview?.classList.add("is-loaded");
+        preview?.setAttribute("aria-busy", "false");
+      };
+      const markError = () => {
+        preview?.classList.add("is-error");
+        preview?.setAttribute("aria-busy", "false");
+        if (status) status.textContent = "No se pudo abrir. Vuelve a cargar el enlace.";
+      };
+
+      asset.addEventListener(asset.tagName === "VIDEO" ? "loadedmetadata" : "load", markLoaded, { once: true });
+      asset.addEventListener("error", markError, { once: true });
+      if (asset.tagName === "IMG" && asset.complete) {
+        if (asset.naturalWidth) markLoaded();
+        else markError();
+      }
+    });
+  };
+
+  const renderReviewMediaPreview = (reviewId) => {
+    const panel = getReviewMediaPanel(reviewId);
+    if (!panel) return;
+    const state = adminState.mediaGalleryStates.get(reviewId) || { status: "idle", items: [] };
+    panel.dataset.state = state.status;
+
+    if (state.status === "loading") {
+      panel.innerHTML = `
+        <div class="admin-review-media-state" role="status">
+          <span class="admin-media-spinner" aria-hidden="true"></span>
+          <div><strong>Generando enlaces seguros</strong><p>Las vistas previas estarán disponibles en unos segundos.</p></div>
+        </div>
+      `;
+      return;
+    }
+
+    if (state.status === "error") {
+      panel.innerHTML = renderMediaError(reviewId, state.message);
+      return;
+    }
+
+    if (state.status === "expired") {
+      panel.innerHTML = `
+        <div class="admin-review-media-state admin-review-media-state--expired" role="status">
+          <span class="admin-review-media-state__icon" aria-hidden="true">↻</span>
+          <div><strong>Los enlaces han caducado</strong><p>Genera enlaces nuevos para volver a ver o descargar estos archivos.</p></div>
+          <button class="admin-media-reload-button" type="button" data-review-media-reload="${escapeHtml(reviewId)}">Volver a cargar</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (state.status === "empty") {
+      panel.innerHTML = `
+        <div class="admin-review-media-state" role="status">
+          <div><strong>Sin multimedia</strong><p>Esta reseña no tiene archivos asociados.</p></div>
+        </div>
+      `;
+      return;
+    }
+
+    if (state.status !== "loaded") {
+      panel.innerHTML = "";
+      return;
+    }
+
+    const successfulItems = state.items.filter((item) => item.signedUrl);
+    if (!successfulItems.length) {
+      panel.innerHTML = renderMediaError(reviewId);
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="admin-review-media-toolbar">
+        <div>
+          <strong>${pluralize(state.items.length, "archivo", "archivos")}</strong>
+          <span><i aria-hidden="true"></i> Enlaces temporales, 10 minutos</span>
+        </div>
+        <button class="admin-media-reload-button" type="button" data-review-media-reload="${escapeHtml(reviewId)}">Volver a cargar</button>
+      </div>
+      <div class="admin-media-grid">
+        ${state.items.map((item) => renderMediaCard(reviewId, item)).join("")}
+      </div>
+      <p class="admin-review-media-live" role="status" aria-live="polite" data-review-media-live></p>
+    `;
+    bindReviewMediaAssets(panel);
+  };
+
+  const createMediaSignedUrl = async (media, options = {}) => {
+    if (!adminState.accessGranted || !adminState.session?.user) {
+      throw new Error("La sesión admin ya no está validada.");
+    }
+    if (!isSupportedMedia(media) || !media?.file_path) {
+      throw new Error("El archivo no tiene una ruta o un tipo válido.");
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase?.storage) throw new Error("Supabase Storage no está disponible.");
+    const signedOptions = options.download
+      ? { download: safeDownloadFileName(media.file_name) }
+      : undefined;
+    const { data, error } = await supabase.storage
+      .from(REVIEW_MEDIA_BUCKET)
+      .createSignedUrl(media.file_path, SIGNED_MEDIA_TTL_SECONDS, signedOptions);
+
+    if (error) throw error;
+    const signedUrl = data?.signedUrl || "";
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(signedUrl, window.location.origin);
+    } catch {
+      throw new Error("Storage devolvió un enlace no válido.");
+    }
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      throw new Error("Storage devolvió un enlace no válido.");
+    }
+    return {
+      signedUrl: parsedUrl.href,
+      expiresAt: Date.now() + (SIGNED_MEDIA_TTL_SECONDS * 1000),
+    };
+  };
+
+  const resetImageLightbox = () => {
+    adminState.activeLightboxReviewId = "";
+    imageLightboxImage?.removeAttribute("src");
+    if (imageLightboxImage) imageLightboxImage.alt = "";
+    if (imageLightboxName) imageLightboxName.textContent = "";
+  };
+
+  const closeImageLightbox = () => {
+    if (imageLightbox?.open) {
+      imageLightbox.close();
+      return;
+    }
+    resetImageLightbox();
+  };
+
+  const openImageLightbox = (reviewId, mediaId) => {
+    if (!adminState.accessGranted || !adminState.session?.user || !imageLightbox || !imageLightboxImage) return;
+    const state = adminState.mediaGalleryStates.get(reviewId);
+    const item = state?.status === "loaded"
+      ? state.items.find((candidate) => candidate.media.id === mediaId && isImageMedia(candidate.media))
+      : null;
+    const isActiveUrl = item?.signedUrl && state.expiresAt > Date.now();
+    if (!isActiveUrl) {
+      const liveRegion = getReviewMediaPanel(reviewId)?.querySelector("[data-review-media-live]");
+      if (liveRegion) liveRegion.textContent = "La imagen ya no está disponible. Vuelve a cargar los enlaces.";
+      return;
+    }
+
+    const fileName = `${item.media.file_name || ""}`.trim() || "Imagen sin nombre";
+    adminState.activeLightboxReviewId = reviewId;
+    imageLightboxImage.src = item.signedUrl;
+    imageLightboxImage.alt = `Imagen ampliada: ${fileName}`;
+    if (imageLightboxName) imageLightboxName.textContent = fileName;
+    if (!imageLightbox.open) imageLightbox.showModal();
+  };
+
+  const scheduleReviewMediaExpiry = (reviewId, expiresAt) => {
+    window.clearTimeout(adminState.mediaExpiryTimers.get(reviewId));
+    const delay = Math.max(0, expiresAt - Date.now() + 250);
+    const timer = window.setTimeout(() => {
+      const current = adminState.mediaGalleryStates.get(reviewId);
+      if (!current || current.expiresAt !== expiresAt) return;
+      if (adminState.activeLightboxReviewId === reviewId) closeImageLightbox();
+      adminState.mediaGalleryStates.set(reviewId, {
+        status: "expired",
+        items: current.items.map((item) => ({ media: item.media, signedUrl: "", error: null })),
+      });
+      renderReviewMediaPreview(reviewId);
+    }, delay);
+    adminState.mediaExpiryTimers.set(reviewId, timer);
+  };
+
+  const loadSignedMediaForReview = async (reviewId) => {
+    if (!adminState.accessGranted || !adminState.session?.user) return;
+    const mediaRows = getReviewMedia(reviewId);
+    if (!mediaRows.length) {
+      adminState.mediaGalleryStates.set(reviewId, { status: "empty", items: [] });
+      renderReviewMediaPreview(reviewId);
+      return;
+    }
+
+    adminState.mediaGalleryStates.set(reviewId, { status: "loading", items: [] });
+    renderReviewMediaPreview(reviewId);
+
+    const results = await Promise.allSettled(mediaRows.map((media) => createMediaSignedUrl(media)));
+    if (!adminState.accessGranted) return;
+
+    const items = results.map((result, index) => ({
+      media: mediaRows[index],
+      signedUrl: result.status === "fulfilled" ? result.value.signedUrl : "",
+      error: result.status === "rejected" ? result.reason : null,
+    }));
+    const successfulResults = results.filter((result) => result.status === "fulfilled");
+    const expiresAt = successfulResults.length
+      ? Math.min(...successfulResults.map((result) => result.value.expiresAt))
+      : 0;
+
+    adminState.mediaGalleryStates.set(reviewId, successfulResults.length
+      ? { status: "loaded", items, expiresAt }
+      : { status: "error", items, message: "Storage no pudo crear ningún enlace temporal." });
+    renderReviewMediaPreview(reviewId);
+    if (expiresAt) scheduleReviewMediaExpiry(reviewId, expiresAt);
+  };
+
+  const openReviewMedia = async (reviewId) => {
+    if (!adminState.accessGranted || !adminState.session?.user) return;
+    const panel = getReviewMediaPanel(reviewId);
+    const button = getReviewMediaButton(reviewId);
+    if (!panel || !button || !getReviewMedia(reviewId).length) return;
+
+    const willOpen = panel.hidden;
+    panel.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    const label = button.querySelector("span");
+    if (label) label.textContent = willOpen ? "Ocultar multimedia" : "Ver multimedia";
+    if (!willOpen) return;
+
+    const state = adminState.mediaGalleryStates.get(reviewId);
+    if (state?.status === "loaded" && state.expiresAt > Date.now()) {
+      renderReviewMediaPreview(reviewId);
+      return;
+    }
+    await loadSignedMediaForReview(reviewId);
+  };
+
+  const downloadReviewMedia = async (reviewId, mediaId, button) => {
+    if (!adminState.accessGranted || !adminState.session?.user) return;
+    const media = getReviewMedia(reviewId).find((item) => item.id === mediaId);
+    if (!media) return;
+    const panel = getReviewMediaPanel(reviewId);
+    const liveRegion = panel?.querySelector("[data-review-media-live]");
+    const label = button.querySelector("span");
+    const previousLabel = label?.textContent || "Descargar";
+    button.disabled = true;
+    if (label) label.textContent = "Preparando…";
+    if (liveRegion) liveRegion.textContent = "Preparando descarga segura…";
+
+    try {
+      const { signedUrl } = await createMediaSignedUrl(media, { download: true });
+      const link = document.createElement("a");
+      link.href = signedUrl;
+      link.download = safeDownloadFileName(media.file_name);
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      if (liveRegion) liveRegion.textContent = `Descarga preparada: ${link.download}`;
+    } catch (error) {
+      console.error("No se pudo generar el enlace temporal de descarga.", error);
+      if (liveRegion) liveRegion.textContent = "No se pudo preparar la descarga. Vuelve a intentarlo.";
+    } finally {
+      button.disabled = false;
+      if (label) label.textContent = previousLabel;
+    }
+  };
+
   const renderReviewDetail = (review) => {
     const imageCount = review.media.filter((media) => media.file_type === "image").length;
     const videoCount = review.media.filter((media) => media.file_type === "video").length;
     const context = getReviewContext(review);
-    const mediaMarkup = adminState.partialErrors.media
-      ? `<div class="admin-review-card__media-note">Conteo multimedia no disponible</div>`
-      : imageCount || videoCount
+    const reviewHasMedia = hasReviewMedia(review);
+    const mediaMarkup = !adminState.partialErrors.media && reviewHasMedia
         ? `<div class="admin-review-card__media">
-            ${imageCount ? `<span>${pluralize(imageCount, "imagen", "imágenes")}</span>` : ""}
-            ${videoCount ? `<span>${pluralize(videoCount, "vídeo", "vídeos")}</span>` : ""}
-          </div>`
-        : "";
+            <div class="admin-review-card__media-chips">
+              ${imageCount ? `<span>${pluralize(imageCount, "imagen", "imágenes")}</span>` : ""}
+              ${videoCount ? `<span>${pluralize(videoCount, "vídeo", "vídeos")}</span>` : ""}
+            </div>
+            <button class="admin-review-media-button" type="button" data-review-media-open="${escapeHtml(review.id)}" aria-expanded="false" aria-controls="${escapeHtml(mediaDomId(review.id))}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h.01M4 15l4-4 4 4 2-2 6 5" /></svg>
+              <span>Ver multimedia</span>
+            </button>
+          </div>
+          <div class="admin-review-media-panel" id="${escapeHtml(mediaDomId(review.id))}" data-review-media-panel="${escapeHtml(review.id)}" data-state="idle" hidden></div>`
+      : "";
 
     return `
       <article class="admin-review-card">
@@ -801,6 +1178,7 @@
 
   const closeOrderDialog = () => {
     if (!orderDialog?.open) return;
+    closeImageLightbox();
     orderDialog.close();
     document.body.classList.remove("admin-dialog-open");
     adminState.activeOrderId = "";
@@ -881,6 +1259,37 @@
       return;
     }
 
+    const mediaButton = event.target.closest("[data-review-media-open]");
+    if (mediaButton) {
+      await openReviewMedia(mediaButton.dataset.reviewMediaOpen);
+      return;
+    }
+
+    const mediaReloadButton = event.target.closest("[data-review-media-reload]");
+    if (mediaReloadButton) {
+      await loadSignedMediaForReview(mediaReloadButton.dataset.reviewMediaReload);
+      return;
+    }
+
+    const mediaDownloadButton = event.target.closest("[data-review-media-download]");
+    if (mediaDownloadButton) {
+      await downloadReviewMedia(
+        mediaDownloadButton.dataset.reviewId,
+        mediaDownloadButton.dataset.reviewMediaDownload,
+        mediaDownloadButton,
+      );
+      return;
+    }
+
+    const imageLightboxButton = event.target.closest("[data-image-lightbox-open]");
+    if (imageLightboxButton) {
+      openImageLightbox(
+        imageLightboxButton.dataset.reviewId,
+        imageLightboxButton.dataset.imageLightboxOpen,
+      );
+      return;
+    }
+
     const clearButton = event.target.closest("[data-admin-clear-filters]");
     if (clearButton) {
       clearFilters();
@@ -918,6 +1327,20 @@
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeOrderDialog();
   });
+  imageLightboxClose?.addEventListener("click", closeImageLightbox);
+  imageLightbox?.addEventListener("close", resetImageLightbox);
+  imageLightbox?.addEventListener("click", (event) => {
+    if (event.target !== imageLightbox) return;
+    const rect = imageLightbox.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeImageLightbox();
+  });
+  imageLightboxImage?.addEventListener("error", () => {
+    const reviewId = adminState.activeLightboxReviewId;
+    closeImageLightbox();
+    const liveRegion = getReviewMediaPanel(reviewId)?.querySelector("[data-review-media-live]");
+    if (liveRegion) liveRegion.textContent = "No se pudo abrir la imagen ampliada. Vuelve a cargar los enlaces.";
+  });
 
   window.DestroyerAdmin = {
     adminState,
@@ -929,6 +1352,18 @@
     fetchOrderItems,
     fetchOrderReviews,
     fetchReviewMedia,
+    getReviewMedia,
+    hasReviewMedia,
+    openReviewMedia,
+    loadSignedMediaForReview,
+    createMediaSignedUrl,
+    renderReviewMediaPreview,
+    renderMediaError,
+    openImageLightbox,
+    closeImageLightbox,
+    formatFileSize,
+    isImageMedia,
+    isVideoMedia,
     buildAdminViewModel,
     renderLoading,
     renderSignedOut,
