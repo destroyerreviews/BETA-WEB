@@ -20,6 +20,16 @@
   const searchInput = root.querySelector("[data-admin-search]");
   const filterInputs = [...root.querySelectorAll("[data-admin-filter]")];
   const partialWarning = root.querySelector("[data-admin-partial-warning]");
+  const reviewsCount = root.querySelector("[data-admin-reviews-count]");
+  const reviewsMetrics = root.querySelector("[data-admin-reviews-metrics]");
+  const reviewsFiltersForm = root.querySelector("[data-admin-reviews-filters]");
+  const reviewsSearchInput = root.querySelector("[data-admin-reviews-search]");
+  const reviewsFilterInputs = [...root.querySelectorAll("[data-admin-reviews-filter]")];
+  const reviewsStatusInput = root.querySelector('[data-admin-reviews-filter="status"]');
+  const reviewsRatingFilter = root.querySelector("[data-admin-reviews-rating-filter]");
+  const reviewsMediaFilter = root.querySelector("[data-admin-reviews-media-filter]");
+  const reviewsWarning = root.querySelector("[data-admin-reviews-warning]");
+  const reviewsList = root.querySelector("[data-admin-reviews-list]");
   const orderDialog = root.querySelector("[data-admin-order-dialog]");
   const orderDialogTitle = root.querySelector("[data-admin-order-dialog-title]");
   const orderDialogStatus = root.querySelector("[data-admin-order-dialog-status]");
@@ -27,6 +37,13 @@
   const orderDialogClose = root.querySelector("[data-admin-order-dialog-close]");
   const copyFeedback = root.querySelector("[data-admin-copy-feedback]");
   const dialogCopyRef = root.querySelector("[data-admin-dialog-copy-ref]");
+  const reviewDialog = root.querySelector("[data-admin-review-dialog]");
+  const reviewDialogTitle = root.querySelector("[data-admin-review-dialog-title]");
+  const reviewDialogStatus = root.querySelector("[data-admin-review-dialog-status]");
+  const reviewDialogBody = root.querySelector("[data-admin-review-dialog-body]");
+  const reviewDialogClose = root.querySelector("[data-admin-review-dialog-close]");
+  const reviewCopyRef = root.querySelector("[data-admin-review-copy-ref]");
+  const reviewCopyFeedback = root.querySelector("[data-admin-review-copy-feedback]");
   const imageLightbox = root.querySelector("[data-admin-image-lightbox]");
   const imageLightboxImage = root.querySelector("[data-admin-image-lightbox-image]");
   const imageLightboxName = root.querySelector("[data-admin-image-lightbox-name]");
@@ -62,6 +79,7 @@
     reviews: [],
     media: [],
     viewOrders: [],
+    viewReviews: [],
     freeTrialRequests: [],
     viewFreeTrialRequests: [],
     partialErrors: {},
@@ -71,12 +89,20 @@
       payment: "",
       mode: "",
     },
+    reviewFilters: {
+      search: "",
+      source: "",
+      status: "",
+      rating: "",
+      media: "",
+    },
     freeTrialFilters: {
       search: "",
       status: "",
     },
     activeView: "summary",
     activeOrderId: "",
+    activeReviewId: "",
     activeFreeTrialId: "",
     copyFeedbackTimer: null,
     mediaGalleryStates: new Map(),
@@ -97,8 +123,8 @@
     },
     reviews: {
       title: "Reseñas",
-      description: "Espacio reservado para la revisión de textos y estados.",
-      meta: "Próxima fase",
+      description: "Textos y valoraciones asociados a pedidos.",
+      meta: "Más recientes primero",
     },
     trials: {
       title: "Pruebas gratuitas",
@@ -137,6 +163,16 @@
     approved: "Aprobada",
     completed: "Completada",
   };
+
+  const reviewStatusOrder = [
+    "awaiting_client",
+    "draft",
+    "submitted",
+    "awaiting_team",
+    "prepared",
+    "approved",
+    "completed",
+  ];
 
   const freeTrialStatusLabels = {
     pending: "Pendiente",
@@ -207,10 +243,16 @@
 
   const hasReviewMedia = (review) => getReviewMedia(review?.id).length > 0;
 
-  const getReviewMediaPanel = (reviewId) => [...(orderDialogBody?.querySelectorAll("[data-review-media-panel]") || [])]
+  const getReviewMediaContainer = () => {
+    if (reviewDialog?.open) return reviewDialogBody;
+    if (orderDialog?.open) return orderDialogBody;
+    return reviewDialogBody || orderDialogBody;
+  };
+
+  const getReviewMediaPanel = (reviewId) => [...(getReviewMediaContainer()?.querySelectorAll("[data-review-media-panel]") || [])]
     .find((panel) => panel.dataset.reviewMediaPanel === reviewId) || null;
 
-  const getReviewMediaButton = (reviewId) => [...(orderDialogBody?.querySelectorAll("[data-review-media-open]") || [])]
+  const getReviewMediaButton = (reviewId) => [...(getReviewMediaContainer()?.querySelectorAll("[data-review-media-open]") || [])]
     .find((button) => button.dataset.reviewMediaOpen === reviewId) || null;
 
   const copyIconMarkup = `
@@ -251,6 +293,15 @@
     approved: "success",
     completed: "success",
   })[status] || "neutral";
+
+  const formatReviewStatus = (status) => reviewStatusLabels[status] || `${status || ""}`.trim() || "Sin estado";
+
+  const formatReviewSource = (source) => ({
+    client: "Cliente",
+    team: "Equipo",
+  })[source] || `${source || ""}`.trim() || "Sin origen";
+
+  const getReviewBadgeType = (status) => reviewTone(status);
 
   const formatFreeTrialStatus = (status) => freeTrialStatusLabels[status] || "Sin estado";
 
@@ -340,10 +391,12 @@
     adminState.reviews = [];
     adminState.media = [];
     adminState.viewOrders = [];
+    adminState.viewReviews = [];
     adminState.freeTrialRequests = [];
     adminState.viewFreeTrialRequests = [];
     adminState.partialErrors = {};
     adminState.activeOrderId = "";
+    adminState.activeReviewId = "";
     adminState.activeFreeTrialId = "";
     adminState.activeLightboxReviewId = "";
     adminState.mediaGalleryStates.clear();
@@ -395,7 +448,14 @@
     return data === true;
   };
 
+  const assertAdminAccess = () => {
+    if (!adminState.accessGranted || !adminState.session?.user) {
+      throw new Error("La lectura requiere acceso admin confirmado");
+    }
+  };
+
   const fetchOrders = async () => {
+    assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
@@ -408,6 +468,7 @@
 
   const fetchOrderItems = async (orderIds) => {
     if (!orderIds.length) return [];
+    assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
@@ -421,12 +482,14 @@
 
   const fetchOrderReviews = async (orderIds) => {
     if (!orderIds.length) return [];
+    assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
       .from("order_reviews")
-      .select("id,order_id,review_index,source,rating,review_text,review_notes,status")
+      .select("id,order_id,review_index,source,rating,review_text,review_notes,status,created_at,updated_at")
       .in("order_id", orderIds)
+      .order("created_at", { ascending: false })
       .order("review_index", { ascending: true });
     if (error) throw error;
     return data || [];
@@ -434,6 +497,7 @@
 
   const fetchReviewMedia = async (orderIds) => {
     if (!orderIds.length) return [];
+    assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
@@ -447,9 +511,7 @@
   };
 
   const fetchFreeTrialRequests = async () => {
-    if (!adminState.accessGranted) {
-      throw new Error("La consulta de pruebas gratuitas requiere acceso admin confirmado");
-    }
+    assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
@@ -529,6 +591,294 @@
     }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return adminState.viewOrders;
+  };
+
+  const getReviewMediaCounts = (review) => {
+    const media = Array.isArray(review?.media) ? review.media.filter(isSupportedMedia) : [];
+    return {
+      images: media.filter(isImageMedia).length,
+      videos: media.filter(isVideoMedia).length,
+      total: media.length,
+    };
+  };
+
+  const buildReviewsViewModel = () => {
+    if (adminState.partialErrors.reviews) {
+      adminState.viewReviews = [];
+      return adminState.viewReviews;
+    }
+
+    const ordersById = new Map(adminState.viewOrders.map((order) => [order.id, order]));
+    const mediaByReview = new Map();
+    if (!adminState.partialErrors.media) {
+      adminState.media.filter(isSupportedMedia).forEach((media) => {
+        const current = mediaByReview.get(media.order_review_id) || [];
+        current.push(media);
+        mediaByReview.set(media.order_review_id, current);
+      });
+    }
+
+    adminState.viewReviews = adminState.reviews.map((review) => {
+      const order = ordersById.get(review.order_id) || null;
+      const media = mediaByReview.get(review.id) || [];
+      return {
+        ...review,
+        order,
+        orderRef: order?.ref || shortRef(review.order_id),
+        sourceLabel: formatReviewSource(review.source),
+        statusLabel: formatReviewStatus(review.status),
+        badgeType: getReviewBadgeType(review.status),
+        media,
+        mediaCounts: getReviewMediaCounts({ media }),
+      };
+    }).sort((a, b) => {
+      const dateA = new Date(a.created_at || a.order?.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || b.order?.created_at || 0).getTime();
+      return dateB - dateA || (Number(a.review_index) || 0) - (Number(b.review_index) || 0);
+    });
+
+    return adminState.viewReviews;
+  };
+
+  const summarizeReviewText = (value, maxLength = 190) => {
+    const text = `${value || ""}`.trim().replace(/\s+/g, " ");
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+  };
+
+  const getReviewSearchText = (review) => normalizeSearch([
+    review.orderRef,
+    review.order_id,
+    review.review_text,
+    review.review_notes,
+    review.status,
+    review.statusLabel,
+    review.source,
+    review.sourceLabel,
+    review.order?.customer_name,
+    review.order?.customer_email,
+  ].filter(Boolean).join(" "));
+
+  const filterReviews = () => {
+    const search = normalizeSearch(adminState.reviewFilters.search);
+    return adminState.viewReviews.filter((review) => (
+      (!search || getReviewSearchText(review).includes(search))
+      && (!adminState.reviewFilters.source || review.source === adminState.reviewFilters.source)
+      && (!adminState.reviewFilters.status || review.status === adminState.reviewFilters.status)
+      && (!adminState.reviewFilters.rating || `${review.rating ?? ""}` === adminState.reviewFilters.rating)
+      && (!adminState.reviewFilters.media
+        || (adminState.reviewFilters.media === "with" ? review.mediaCounts.total > 0 : review.mediaCounts.total === 0))
+    ));
+  };
+
+  const renderReviewStars = (review, compact = false) => {
+    const rating = Number(review?.rating);
+    const hasRating = Number.isInteger(rating) && rating >= 1 && rating <= 5;
+    if (!hasRating) return "";
+    const stars = Array.from({ length: 5 }, (_, index) => `<span class="${index < rating ? "is-filled" : ""}">★</span>`).join("");
+    return `
+      <div class="admin-review-stars-display${compact ? " admin-review-stars-display--compact" : ""}" aria-label="${rating} de 5 estrellas">
+        <span class="admin-review-stars" aria-hidden="true">${stars}</span>
+        <strong>${rating}/5</strong>
+      </div>
+    `;
+  };
+
+  const renderReviewMediaChips = (review) => {
+    if (adminState.partialErrors.media || !review.mediaCounts.total) return "";
+    return `
+      <div class="admin-review-media-chips">
+        ${review.mediaCounts.images ? `<span>${pluralize(review.mediaCounts.images, "imagen", "imágenes")}</span>` : ""}
+        ${review.mediaCounts.videos ? `<span>${pluralize(review.mediaCounts.videos, "vídeo", "vídeos")}</span>` : ""}
+      </div>
+    `;
+  };
+
+  const renderReviewCard = (review) => {
+    const reviewNumber = Number(review.review_index) || "";
+    const text = summarizeReviewText(review.review_text);
+    const note = summarizeReviewText(review.review_notes, 120);
+    const context = getReviewContext(review);
+    const order = review.order;
+
+    return `
+      <article class="admin-review-row">
+        <header class="admin-review-row__head">
+          <div class="admin-review-row__identity">
+            <span class="admin-order-ref">${escapeHtml(review.orderRef)}</span>
+            <div>
+              <h4>Reseña ${escapeHtml(reviewNumber)}</h4>
+              <p>${escapeHtml(order?.customer_name || order?.customer_email || "Pedido relacionado")}</p>
+            </div>
+          </div>
+          <div class="admin-review-row__chips">
+            <span class="admin-review-source-chip" data-source="${escapeHtml(review.source)}">${escapeHtml(review.sourceLabel)}</span>
+            <span class="admin-state-chip" data-tone="${escapeHtml(review.badgeType)}">${escapeHtml(review.statusLabel)}</span>
+          </div>
+        </header>
+
+        <div class="admin-review-row__content">
+          <div class="admin-review-row__text${text ? "" : " is-empty"}">
+            <span>${escapeHtml(context.label)}</span>
+            <p>${escapeHtml(text || context.empty)}</p>
+          </div>
+          ${note ? `
+            <div class="admin-review-row__note">
+              <span>Nota</span>
+              <p>${escapeHtml(note)}</p>
+            </div>
+          ` : ""}
+        </div>
+
+        <footer class="admin-review-row__foot">
+          <div class="admin-review-row__facts">
+            ${renderReviewStars(review, true)}
+            ${renderReviewMediaChips(review)}
+            ${review.created_at ? `<span class="admin-review-date">Creada ${escapeHtml(formatDate(review.created_at))}</span>` : ""}
+          </div>
+          <div class="admin-review-row__actions">
+            <button class="admin-row-button" type="button" data-review-open="${escapeHtml(review.id)}">Ver detalle</button>
+            ${order ? `<button class="admin-row-button admin-row-button--quiet" type="button" data-order-open="${escapeHtml(order.id)}">Abrir pedido</button>` : ""}
+          </div>
+        </footer>
+      </article>
+    `;
+  };
+
+  const renderReviewFilterOptions = () => {
+    if (reviewsStatusInput) {
+      const statuses = [...new Set(adminState.viewReviews.map((review) => review.status).filter(Boolean))]
+        .sort((a, b) => {
+          const indexA = reviewStatusOrder.indexOf(a);
+          const indexB = reviewStatusOrder.indexOf(b);
+          if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+      reviewsStatusInput.innerHTML = `
+        <option value="">Todos</option>
+        ${statuses.map((status) => `<option value="${escapeHtml(status)}">${escapeHtml(formatReviewStatus(status))}</option>`).join("")}
+      `;
+    }
+
+    const ratingInput = reviewsFilterInputs.find((input) => input.dataset.adminReviewsFilter === "rating");
+    const ratings = [...new Set(adminState.viewReviews
+      .map((review) => Number(review.rating))
+      .filter((rating) => Number.isInteger(rating) && rating >= 1 && rating <= 5))]
+      .sort((a, b) => b - a);
+    if (ratingInput) {
+      ratingInput.innerHTML = `
+        <option value="">Todas</option>
+        ${ratings.map((rating) => `<option value="${rating}">${rating} ${rating === 1 ? "estrella" : "estrellas"}</option>`).join("")}
+      `;
+    }
+    if (reviewsRatingFilter) reviewsRatingFilter.hidden = !ratings.length;
+    if (!ratings.length) adminState.reviewFilters.rating = "";
+    if (reviewsMediaFilter) reviewsMediaFilter.hidden = Boolean(adminState.partialErrors.media);
+    if (adminState.partialErrors.media) adminState.reviewFilters.media = "";
+  };
+
+  const renderReviewsMetrics = () => {
+    if (!reviewsMetrics) return;
+    if (adminState.partialErrors.reviews) {
+      reviewsMetrics.innerHTML = "";
+      return;
+    }
+
+    const reviews = adminState.viewReviews;
+    const metrics = [
+      { label: "Reseñas totales", value: reviews.length, tone: "neutral" },
+      { label: "Reseñas de cliente", value: reviews.filter((review) => review.source === "client").length, tone: "info" },
+      { label: "Reseñas de equipo", value: reviews.filter((review) => review.source === "team").length, tone: "info" },
+      { label: "Pendientes de cliente", value: reviews.filter((review) => review.source === "client" && ["awaiting_client", "draft"].includes(review.status)).length, tone: "warning" },
+      { label: "Pendientes de equipo", value: reviews.filter((review) => review.source === "team" && review.status === "awaiting_team").length, tone: "warning" },
+    ];
+    if (!adminState.partialErrors.media) {
+      metrics.push({ label: "Con multimedia", value: reviews.filter((review) => review.mediaCounts.total > 0).length, tone: "success" });
+    }
+
+    reviewsMetrics.innerHTML = metrics.map((metric) => `
+      <article class="admin-metric" data-tone="${metric.tone}">
+        <span>${escapeHtml(metric.label)}</span>
+        <strong>${metric.value}</strong>
+      </article>
+    `).join("");
+  };
+
+  const renderReviewsWarning = () => {
+    if (!reviewsWarning) return;
+    const reviewsFailed = Boolean(adminState.partialErrors.reviews);
+    const mediaFailed = Boolean(adminState.partialErrors.media);
+    reviewsWarning.hidden = !reviewsFailed && !mediaFailed;
+    if (reviewsFailed) {
+      reviewsWarning.innerHTML = "<strong>Reseñas no disponibles</strong><span>No se pudieron recuperar las reseñas en esta carga.</span>";
+      return;
+    }
+    if (mediaFailed) {
+      reviewsWarning.innerHTML = "<strong>Carga parcial</strong><span>Los conteos y el visor multimedia no están disponibles en esta carga.</span>";
+      return;
+    }
+    reviewsWarning.innerHTML = "";
+  };
+
+  const renderReviewsView = () => {
+    if (!reviewsList) return;
+    const hasError = Boolean(adminState.partialErrors.reviews);
+    if (reviewsFiltersForm) reviewsFiltersForm.hidden = hasError;
+    renderReviewsMetrics();
+    renderReviewsWarning();
+    renderReviewFilterOptions();
+
+    if (hasError) {
+      if (reviewsCount) reviewsCount.textContent = "Datos no disponibles";
+      reviewsList.innerHTML = "";
+      return;
+    }
+
+    if (reviewsSearchInput && reviewsSearchInput.value !== adminState.reviewFilters.search) {
+      reviewsSearchInput.value = adminState.reviewFilters.search;
+    }
+    reviewsFilterInputs.forEach((input) => {
+      const filterName = input.dataset.adminReviewsFilter;
+      if (filterName && input.value !== adminState.reviewFilters[filterName]) {
+        input.value = adminState.reviewFilters[filterName];
+      }
+    });
+
+    const filteredReviews = filterReviews();
+    const total = adminState.viewReviews.length;
+    if (reviewsCount) {
+      reviewsCount.textContent = filteredReviews.length === total
+        ? pluralize(total, "reseña", "reseñas")
+        : `${filteredReviews.length} de ${total} reseñas`;
+    }
+
+    if (!total) {
+      reviewsList.innerHTML = `
+        <div class="admin-reviews-empty">
+          <span class="admin-reviews-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4"></path></svg>
+          </span>
+          <h4>Todavía no hay reseñas</h4>
+          <p>Las reseñas asociadas a pedidos aparecerán aquí.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (!filteredReviews.length) {
+      reviewsList.innerHTML = `
+        <div class="admin-reviews-empty">
+          <h4>No hay resultados con estos filtros</h4>
+          <p>Prueba otra referencia, texto, nota, origen, estado o valoración.</p>
+          <button class="admin-row-button" type="button" data-admin-reviews-clear>Limpiar filtros</button>
+        </div>
+      `;
+      return;
+    }
+
+    reviewsList.innerHTML = filteredReviews.map(renderReviewCard).join("");
   };
 
   const buildFreeTrialsViewModel = () => {
@@ -857,12 +1207,14 @@
 
   const renderAdminData = () => {
     buildAdminViewModel();
+    buildReviewsViewModel();
     buildFreeTrialsViewModel();
     renderAdminSummary();
     renderAttentionActions();
     renderSummaryShortcut();
     renderPartialWarning();
     renderFilters();
+    renderReviewsView();
     renderFreeTrialsView();
     setDataState("ready");
     activateAdminView(adminState.activeView);
@@ -1326,6 +1678,107 @@
     `;
   };
 
+  const renderReviewDetailMedia = (review) => {
+    if (adminState.partialErrors.media || !review.mediaCounts.total) return "";
+    return `
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head">
+          <h3>Multimedia</h3>
+          ${renderReviewMediaChips(review)}
+        </div>
+        <button class="admin-review-media-button admin-review-media-button--detail" type="button" data-review-media-open="${escapeHtml(review.id)}" aria-expanded="false" aria-controls="${escapeHtml(mediaDomId(review.id))}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h.01M4 15l4-4 4 4 2-2 6 5"></path></svg>
+          <span>Ver multimedia</span>
+        </button>
+        <div class="admin-review-media-panel" id="${escapeHtml(mediaDomId(review.id))}" data-review-media-panel="${escapeHtml(review.id)}" data-state="idle" hidden></div>
+      </section>
+    `;
+  };
+
+  const renderReviewDetailModal = (reviewId) => {
+    const review = adminState.viewReviews.find((item) => item.id === reviewId);
+    if (!review || !reviewDialog || !reviewDialogBody) return;
+    const order = review.order;
+    const reviewNumber = Number(review.review_index) || "";
+    const context = getReviewContext(review);
+    const reviewText = `${review.review_text || ""}`.trim();
+    const reviewNotes = `${review.review_notes || ""}`.trim();
+    const mapsUrl = getValidGoogleMapsUrl(order?.google_maps_url);
+    adminState.activeReviewId = reviewId;
+
+    if (reviewDialogTitle) reviewDialogTitle.textContent = `${review.orderRef} · Reseña ${reviewNumber}`;
+    if (reviewDialogStatus) reviewDialogStatus.textContent = `${review.sourceLabel} · ${review.statusLabel}`;
+    if (reviewCopyRef) reviewCopyRef.dataset.copyValue = review.orderRef;
+
+    reviewDialogBody.innerHTML = `
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head">
+          <h3>Reseña</h3>
+          <div class="admin-review-detail__chips">
+            <span class="admin-review-source-chip" data-source="${escapeHtml(review.source)}">${escapeHtml(review.sourceLabel)}</span>
+            <span class="admin-state-chip" data-tone="${escapeHtml(review.badgeType)}">${escapeHtml(review.statusLabel)}</span>
+          </div>
+        </div>
+        <dl class="admin-detail-grid admin-review-detail-grid">
+          <div><dt>Pedido</dt><dd>${escapeHtml(review.orderRef)}</dd></div>
+          <div><dt>Número</dt><dd>Reseña ${escapeHtml(reviewNumber)}</dd></div>
+          <div><dt>Origen</dt><dd>${escapeHtml(review.sourceLabel)}</dd></div>
+          <div><dt>Estado</dt><dd>${escapeHtml(review.statusLabel)}</dd></div>
+          <div><dt>Creada</dt><dd>${escapeHtml(formatDate(review.created_at, true))}</dd></div>
+          <div><dt>Actualizada</dt><dd>${escapeHtml(formatDate(review.updated_at, true))}</dd></div>
+        </dl>
+        ${renderReviewStars(review)}
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head">
+          <h3>Texto completo</h3>
+          ${reviewText ? `<button class="admin-copy-section-button" type="button" data-copy-value="${escapeHtml(reviewText)}">${copyIconMarkup}<span>Copiar texto</span></button>` : ""}
+        </div>
+        <div class="admin-review-detail__text${reviewText ? "" : " is-empty"}">
+          <span>${escapeHtml(context.label)}</span>
+          <p>${escapeHtml(reviewText || context.empty)}</p>
+        </div>
+      </section>
+
+      ${reviewNotes ? `
+        <section class="admin-detail-section">
+          <div class="admin-detail-section__head">
+            <h3>Nota</h3>
+            <button class="admin-copy-section-button" type="button" data-copy-value="${escapeHtml(reviewNotes)}">${copyIconMarkup}<span>Copiar nota</span></button>
+          </div>
+          <div class="admin-review-detail__note">
+            <p>${escapeHtml(reviewNotes)}</p>
+          </div>
+        </section>
+      ` : ""}
+
+      ${order ? `
+        <section class="admin-detail-section">
+          <div class="admin-detail-section__head"><h3>Pedido relacionado</h3></div>
+          <dl class="admin-detail-grid admin-review-order-grid">
+            <div><dt>Cliente</dt><dd>${escapeHtml(order.customer_name || "No disponible")}</dd></div>
+            <div><dt>Email</dt><dd>${escapeHtml(order.customer_email || "No disponible")}</dd></div>
+            <div><dt>Fecha</dt><dd>${escapeHtml(formatDate(order.created_at, true))}</dd></div>
+            <div><dt>Gestión</dt><dd>${escapeHtml(managementLabel(order.management_mode))}</dd></div>
+            <div><dt>Estado</dt><dd><span class="admin-state-chip" data-tone="${orderTone(order.status)}">${escapeHtml(orderStatusLabels[order.status] || "Sin estado")}</span></dd></div>
+            <div><dt>Pago</dt><dd><span class="admin-state-chip" data-tone="${paymentTone(order.payment_status)}">${escapeHtml(paymentStatusLabels[order.payment_status] || "Pago sin estado")}</span></dd></div>
+          </dl>
+          <div class="admin-detail-actions">
+            <button type="button" data-review-order-open="${escapeHtml(order.id)}">Abrir pedido</button>
+            ${mapsUrl ? `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a>` : ""}
+          </div>
+        </section>
+      ` : ""}
+
+      ${renderReviewDetailMedia(review)}
+    `;
+
+    if (reviewCopyFeedback) reviewCopyFeedback.textContent = "";
+    reviewDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+  };
+
   const renderFreeTrialDetail = (requestId) => {
     const request = adminState.viewFreeTrialRequests.find((item) => item.id === requestId);
     if (!request || !freeTrialDialog || !freeTrialDialogBody) return;
@@ -1458,18 +1911,32 @@
     document.body.classList.add("admin-dialog-open");
   };
 
+  const syncDialogOpenClass = () => {
+    document.body.classList.toggle("admin-dialog-open", Boolean(
+      orderDialog?.open || reviewDialog?.open || freeTrialDialog?.open,
+    ));
+  };
+
   const closeOrderDialog = () => {
     if (!orderDialog?.open) return;
     closeImageLightbox();
     orderDialog.close();
-    document.body.classList.remove("admin-dialog-open");
+    syncDialogOpenClass();
     adminState.activeOrderId = "";
+  };
+
+  const closeReviewDialog = () => {
+    if (!reviewDialog?.open) return;
+    closeImageLightbox();
+    reviewDialog.close();
+    syncDialogOpenClass();
+    adminState.activeReviewId = "";
   };
 
   const closeFreeTrialDialog = () => {
     if (!freeTrialDialog?.open) return;
     freeTrialDialog.close();
-    document.body.classList.remove("admin-dialog-open");
+    syncDialogOpenClass();
     adminState.activeFreeTrialId = "";
   };
 
@@ -1490,7 +1957,11 @@
   };
 
   const showCopyFeedback = (message) => {
-    const feedback = freeTrialDialog?.open ? freeTrialCopyFeedback : copyFeedback;
+    const feedback = reviewDialog?.open
+      ? reviewCopyFeedback
+      : freeTrialDialog?.open
+        ? freeTrialCopyFeedback
+        : copyFeedback;
     if (!feedback) return;
     feedback.textContent = message;
     window.clearTimeout(adminState.copyFeedbackTimer);
@@ -1502,6 +1973,11 @@
   const clearFilters = () => {
     adminState.filters = { search: "", status: "", payment: "", mode: "" };
     renderFilters();
+  };
+
+  const clearReviewFilters = () => {
+    adminState.reviewFilters = { search: "", source: "", status: "", rating: "", media: "" };
+    renderReviewsView();
   };
 
   const clearFreeTrialFilters = () => {
@@ -1551,6 +2027,17 @@
       renderOrdersList();
     });
   });
+  reviewsFiltersForm?.addEventListener("submit", (event) => event.preventDefault());
+  reviewsSearchInput?.addEventListener("input", () => {
+    adminState.reviewFilters.search = reviewsSearchInput.value;
+    renderReviewsView();
+  });
+  reviewsFilterInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      adminState.reviewFilters[input.dataset.adminReviewsFilter] = input.value;
+      renderReviewsView();
+    });
+  });
   freeTrialsFilters?.addEventListener("submit", (event) => event.preventDefault());
   freeTrialsSearch?.addEventListener("input", () => {
     adminState.freeTrialFilters.search = freeTrialsSearch.value;
@@ -1566,6 +2053,20 @@
   });
 
   root.addEventListener("click", async (event) => {
+    const reviewOpenButton = event.target.closest("[data-review-open]");
+    if (reviewOpenButton) {
+      renderReviewDetailModal(reviewOpenButton.dataset.reviewOpen);
+      return;
+    }
+
+    const reviewOrderOpenButton = event.target.closest("[data-review-order-open]");
+    if (reviewOrderOpenButton) {
+      const orderId = reviewOrderOpenButton.dataset.reviewOrderOpen;
+      closeReviewDialog();
+      renderOrderDetail(orderId);
+      return;
+    }
+
     const freeTrialOpenButton = event.target.closest("[data-free-trial-open]");
     if (freeTrialOpenButton) {
       renderFreeTrialDetail(freeTrialOpenButton.dataset.freeTrialOpen);
@@ -1581,6 +2082,12 @@
     const clearFreeTrialsButton = event.target.closest("[data-free-trials-clear]");
     if (clearFreeTrialsButton) {
       clearFreeTrialFilters();
+      return;
+    }
+
+    const clearReviewsButton = event.target.closest("[data-admin-reviews-clear]");
+    if (clearReviewsButton) {
+      clearReviewFilters();
       return;
     }
 
@@ -1645,15 +2152,23 @@
   });
 
   orderDialogClose?.addEventListener("click", closeOrderDialog);
-  orderDialog?.addEventListener("close", () => document.body.classList.remove("admin-dialog-open"));
+  orderDialog?.addEventListener("close", syncDialogOpenClass);
   orderDialog?.addEventListener("click", (event) => {
     if (event.target !== orderDialog) return;
     const rect = orderDialog.getBoundingClientRect();
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeOrderDialog();
   });
+  reviewDialogClose?.addEventListener("click", closeReviewDialog);
+  reviewDialog?.addEventListener("close", syncDialogOpenClass);
+  reviewDialog?.addEventListener("click", (event) => {
+    if (event.target !== reviewDialog) return;
+    const rect = reviewDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeReviewDialog();
+  });
   freeTrialDialogClose?.addEventListener("click", closeFreeTrialDialog);
-  freeTrialDialog?.addEventListener("close", () => document.body.classList.remove("admin-dialog-open"));
+  freeTrialDialog?.addEventListener("close", syncDialogOpenClass);
   freeTrialDialog?.addEventListener("click", (event) => {
     if (event.target !== freeTrialDialog) return;
     const rect = freeTrialDialog.getBoundingClientRect();
@@ -1699,6 +2214,7 @@
     isImageMedia,
     isVideoMedia,
     buildAdminViewModel,
+    buildReviewsViewModel,
     buildFreeTrialsViewModel,
     renderLoading,
     renderSignedOut,
@@ -1710,6 +2226,16 @@
     renderSummaryShortcut,
     renderOrdersList,
     renderOrderDetail,
+    renderReviewsView,
+    renderReviewCard,
+    renderReviewDetailModal,
+    filterReviews,
+    getReviewSearchText,
+    formatReviewStatus,
+    formatReviewSource,
+    getReviewBadgeType,
+    renderReviewStars,
+    getReviewMediaCounts,
     renderFreeTrialsView,
     renderFreeTrialCard,
     renderFreeTrialDetail,

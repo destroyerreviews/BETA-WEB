@@ -1149,6 +1149,7 @@ a:focus-visible {
 .admin-summary-section,
 .admin-attention-section,
 .admin-orders-section,
+.admin-reviews-section,
 .admin-free-trials-section {
   min-width: 0;
   padding: 21px;
@@ -1924,6 +1925,305 @@ a:focus-visible {
   font-size: 0.8rem;
 }
 
+.admin-reviews-section {
+  min-width: 0;
+  scroll-margin-top: 22px;
+}
+
+.admin-section-heading--reviews {
+  align-items: center;
+}
+
+.admin-reviews-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.admin-reviews-metrics .admin-metric {
+  min-height: 88px;
+}
+
+.admin-reviews-filters {
+  grid-template-columns: minmax(260px, 1.7fr) repeat(4, minmax(125px, 0.55fr));
+}
+
+.admin-reviews-filters[hidden] {
+  display: none !important;
+}
+
+.admin-reviews-warning {
+  justify-content: flex-start;
+}
+
+.admin-reviews-list {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-review-row {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(141, 164, 214, 0.14);
+  border-radius: 12px;
+  background:
+    linear-gradient(115deg, rgba(47, 107, 255, 0.035), transparent 42%),
+    rgba(255, 255, 255, 0.025);
+  transition: border-color 180ms var(--admin-ease), background 180ms var(--admin-ease);
+}
+
+.admin-review-row:hover {
+  border-color: rgba(116, 151, 237, 0.31);
+  background:
+    linear-gradient(115deg, rgba(47, 107, 255, 0.055), transparent 42%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.admin-review-row__head,
+.admin-review-row__foot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-review-row__head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(141, 164, 214, 0.1);
+}
+
+.admin-review-row__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.admin-review-row__identity > div {
+  min-width: 0;
+}
+
+.admin-review-row__identity h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.admin-review-row__identity p {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-review-row__chips,
+.admin-review-detail__chips {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-review-source-chip {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: #cbd5e8;
+  background: rgba(141, 154, 181, 0.1);
+  font-size: 0.65rem;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.admin-review-source-chip[data-source="client"] {
+  color: #ead6b3;
+  background: rgba(198, 154, 84, 0.12);
+}
+
+.admin-review-source-chip[data-source="team"] {
+  color: #c5d8ff;
+  background: rgba(47, 107, 255, 0.14);
+}
+
+.admin-review-row__content {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(210px, 0.75fr);
+  gap: 10px;
+}
+
+.admin-review-row__content > :only-child {
+  grid-column: 1 / -1;
+}
+
+.admin-review-row__text,
+.admin-review-row__note,
+.admin-review-detail__text,
+.admin-review-detail__note {
+  min-width: 0;
+  padding: 12px 13px;
+  border-radius: 9px;
+  background: rgba(4, 8, 18, 0.43);
+}
+
+.admin-review-row__text.is-empty,
+.admin-review-detail__text.is-empty {
+  background: rgba(141, 154, 181, 0.055);
+}
+
+.admin-review-row__note {
+  background: rgba(47, 107, 255, 0.065);
+}
+
+.admin-review-row__text > span,
+.admin-review-row__note > span,
+.admin-review-detail__text > span {
+  color: #9ca9c2;
+  font-size: 0.67rem;
+  font-weight: 720;
+}
+
+.admin-review-row__text p,
+.admin-review-row__note p {
+  display: -webkit-box;
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: #cbd5e8;
+  font-size: 0.77rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.admin-review-row__note p {
+  -webkit-line-clamp: 2;
+}
+
+.admin-review-row__text.is-empty p {
+  color: #9da9c0;
+}
+
+.admin-review-row__foot {
+  align-items: flex-end;
+}
+
+.admin-review-row__facts,
+.admin-review-row__actions,
+.admin-review-media-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.admin-review-stars-display {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 9px;
+  padding: 9px 11px;
+  color: #f1d69f;
+  background: rgba(244, 197, 107, 0.06);
+}
+
+.admin-review-stars-display strong {
+  font-size: 0.76rem;
+}
+
+.admin-review-stars-display--compact {
+  gap: 6px;
+  padding: 5px 8px;
+}
+
+.admin-review-stars-display--compact .admin-review-stars {
+  font-size: 0.84rem;
+}
+
+.admin-review-stars-display--compact strong {
+  font-size: 0.67rem;
+}
+
+.admin-review-media-chips span {
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #aebbd4;
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.admin-review-date {
+  color: var(--admin-muted);
+  font-size: 0.68rem;
+}
+
+.admin-row-button--quiet {
+  border-color: transparent;
+  color: #aebbd4;
+  background: transparent;
+}
+
+.admin-reviews-empty {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 34px;
+  border-radius: 11px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(47, 107, 255, 0.09), transparent 15rem),
+    rgba(255, 255, 255, 0.022);
+  text-align: center;
+}
+
+.admin-reviews-empty__icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+  border-radius: 11px;
+  color: #a8c5ff;
+  background: rgba(47, 107, 255, 0.12);
+}
+
+.admin-reviews-empty__icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-reviews-empty h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.admin-reviews-empty p {
+  max-width: 48ch;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.admin-reviews-empty .admin-row-button {
+  margin-top: 5px;
+}
+
 .admin-order-dialog {
   width: min(880px, calc(100vw - 34px));
   max-width: none;
@@ -1939,6 +2239,10 @@ a:focus-visible {
 
 .admin-free-trial-dialog {
   width: min(720px, calc(100vw - 34px));
+}
+
+.admin-review-dialog {
+  width: min(820px, calc(100vw - 34px));
 }
 
 .admin-order-dialog::backdrop {
@@ -2220,7 +2524,8 @@ a:focus-visible {
   gap: 8px;
 }
 
-.admin-detail-actions a {
+.admin-detail-actions a,
+.admin-detail-actions button {
   min-height: 44px;
   flex: 1 1 150px;
   border-color: rgba(104, 160, 255, 0.25);
@@ -2232,19 +2537,86 @@ a:focus-visible {
 }
 
 .admin-detail-actions a:hover,
-.admin-detail-actions a:focus-visible {
+.admin-detail-actions a:focus-visible,
+.admin-detail-actions button:hover,
+.admin-detail-actions button:focus-visible {
   border-color: rgba(104, 160, 255, 0.5);
   color: #fff;
   background: rgba(47, 107, 255, 0.14);
 }
 
-.admin-detail-actions a:focus-visible {
+.admin-detail-actions a:focus-visible,
+.admin-detail-actions button:focus-visible {
   outline: 2px solid rgba(104, 160, 255, 0.54);
   outline-offset: 2px;
 }
 
-.admin-detail-actions a:active {
+.admin-detail-actions a:active,
+.admin-detail-actions button:active {
   transform: translateY(1px);
+}
+
+.admin-review-detail-grid,
+.admin-review-order-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-review-detail__text p,
+.admin-review-detail__note p {
+  margin: 6px 0 0;
+  color: #d5deef;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.admin-review-detail__note p {
+  margin-top: 0;
+}
+
+.admin-review-detail__text.is-empty p {
+  color: #9da9c0;
+}
+
+.admin-copy-section-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(104, 160, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 9px;
+  color: #b8cbef;
+  background: rgba(47, 107, 255, 0.07);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 760;
+  cursor: pointer;
+  transition: border-color 180ms var(--admin-ease), color 180ms var(--admin-ease), background 180ms var(--admin-ease);
+}
+
+.admin-copy-section-button:hover,
+.admin-copy-section-button:focus-visible {
+  border-color: rgba(104, 160, 255, 0.48);
+  color: #fff;
+  background: rgba(47, 107, 255, 0.13);
+}
+
+.admin-copy-section-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.admin-review-media-button--detail {
+  width: fit-content;
+  min-height: 40px;
+  padding-inline: 13px;
 }
 
 .admin-detail-grid {
@@ -3057,6 +3429,18 @@ body.admin-dialog-open {
     flex-direction: column;
     padding-left: 12px;
   }
+
+  .admin-reviews-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-review-row__content {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-row__content > * {
+    grid-column: 1;
+  }
 }
 
 @media (max-width: 620px) {
@@ -3073,6 +3457,7 @@ body.admin-dialog-open {
   .admin-summary-section,
   .admin-attention-section,
   .admin-orders-section,
+  .admin-reviews-section,
   .admin-free-trials-section,
   .admin-data-loading {
     padding: 15px;
@@ -3163,6 +3548,50 @@ body.admin-dialog-open {
 
   .admin-free-trial-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-section-heading--reviews {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .admin-reviews-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-review-row {
+    padding: 13px;
+  }
+
+  .admin-review-row__head,
+  .admin-review-row__foot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-review-row__chips {
+    justify-content: flex-start;
+  }
+
+  .admin-review-row__actions {
+    width: 100%;
+  }
+
+  .admin-review-row__actions .admin-row-button {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  .admin-review-detail-grid,
+  .admin-review-order-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-copy-section-button,
+  .admin-review-media-button--detail {
+    width: 100%;
+    justify-content: center;
   }
 
   .admin-row-button {
