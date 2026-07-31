@@ -428,13 +428,52 @@
                 </section>
               </section>
 
-              <section class="admin-view admin-placeholder-view" id="admin-view-clients" role="tabpanel" data-admin-view="clients" hidden>
-                <div class="admin-placeholder-panel">
-                  <span class="admin-placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11h4M19 9v4" /></svg></span>
-                  <span class="admin-placeholder-phase">Próxima fase</span>
-                  <h3>Sección preparada</h3>
-                  <p>La vista ligera de clientes llegará después, sin convertir el panel en un CRM avanzado.</p>
-                </div>
+              <section class="admin-view" id="admin-view-clients" role="tabpanel" data-admin-view="clients" hidden>
+                <section class="admin-clients-section" aria-labelledby="admin-clients-title">
+                  <div class="admin-section-heading admin-section-heading--clients">
+                    <div>
+                      <h3 id="admin-clients-title">Clientes</h3>
+                      <p>Clientes detectados a partir de pedidos reales</p>
+                    </div>
+                    <span class="admin-section-count" data-admin-clients-count>0 clientes</span>
+                  </div>
+
+                  <div class="admin-clients-metrics" data-admin-clients-metrics></div>
+
+                  <form class="admin-filters admin-clients-filters" data-admin-clients-filters role="search">
+                    <label class="admin-search-field">
+                      <span class="admin-filter-label">Buscar cliente</span>
+                      <span class="admin-search-control">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" /></svg>
+                        <input type="search" name="client-search" placeholder="Nombre, email o WhatsApp" autocomplete="off" data-admin-clients-search />
+                      </span>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">WhatsApp</span>
+                      <select name="client-whatsapp" data-admin-clients-filter="whatsapp">
+                        <option value="">Todos</option>
+                        <option value="with">Con WhatsApp</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Frecuencia</span>
+                      <select name="client-frequency" data-admin-clients-filter="recurrent">
+                        <option value="">Todos</option>
+                        <option value="yes">Recurrentes</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Gestión predominante</span>
+                      <select name="client-mode" data-admin-clients-filter="mode">
+                        <option value="">Todas</option>
+                        <option value="manual">Cliente</option>
+                        <option value="team">Equipo</option>
+                      </select>
+                    </label>
+                  </form>
+
+                  <div class="admin-clients-list" data-admin-clients-list></div>
+                </section>
               </section>
             </div>
           </section>
@@ -501,6 +540,23 @@
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-free-trial-copy-feedback></p>
       </dialog>
 
+      <dialog class="admin-order-dialog admin-client-dialog" data-admin-client-dialog aria-labelledby="admin-client-dialog-title">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Detalle de cliente</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-client-dialog-title" data-admin-client-dialog-title>Cliente</h2>
+            </div>
+            <p data-admin-client-dialog-status></p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar detalle de cliente" data-admin-client-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="admin-order-dialog__body" data-admin-client-dialog-body></div>
+        <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-client-copy-feedback></p>
+      </dialog>
+
       <dialog class="admin-image-lightbox" data-admin-image-lightbox aria-labelledby="admin-image-lightbox-title">
         <div class="admin-image-lightbox__stage">
           <button class="admin-image-lightbox__close" type="button" aria-label="Cerrar imagen ampliada" data-admin-image-lightbox-close>
@@ -517,6 +573,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-reviews-read-20260731"></script>
+    <script defer src="js/admin.js?v=admin-clients-read-20260731"></script>
   </body>
 </html>

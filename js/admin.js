@@ -68,6 +68,18 @@
   const freeTrialDialogClose = root.querySelector("[data-free-trial-dialog-close]");
   const freeTrialCopyRef = root.querySelector("[data-free-trial-copy-ref]");
   const freeTrialCopyFeedback = root.querySelector("[data-free-trial-copy-feedback]");
+  const clientsCount = root.querySelector("[data-admin-clients-count]");
+  const clientsMetrics = root.querySelector("[data-admin-clients-metrics]");
+  const clientsFiltersForm = root.querySelector("[data-admin-clients-filters]");
+  const clientsSearchInput = root.querySelector("[data-admin-clients-search]");
+  const clientsFilterInputs = [...root.querySelectorAll("[data-admin-clients-filter]")];
+  const clientsList = root.querySelector("[data-admin-clients-list]");
+  const clientDialog = root.querySelector("[data-admin-client-dialog]");
+  const clientDialogTitle = root.querySelector("[data-admin-client-dialog-title]");
+  const clientDialogStatus = root.querySelector("[data-admin-client-dialog-status]");
+  const clientDialogBody = root.querySelector("[data-admin-client-dialog-body]");
+  const clientDialogClose = root.querySelector("[data-admin-client-dialog-close]");
+  const clientCopyFeedback = root.querySelector("[data-admin-client-copy-feedback]");
   const REVIEW_MEDIA_BUCKET = "review-media";
   const SIGNED_MEDIA_TTL_SECONDS = 600;
 
@@ -82,6 +94,7 @@
     viewReviews: [],
     freeTrialRequests: [],
     viewFreeTrialRequests: [],
+    clients: [],
     partialErrors: {},
     filters: {
       search: "",
@@ -100,10 +113,17 @@
       search: "",
       status: "",
     },
+    clientFilters: {
+      search: "",
+      whatsapp: "",
+      recurrent: "",
+      mode: "",
+    },
     activeView: "summary",
     activeOrderId: "",
     activeReviewId: "",
     activeFreeTrialId: "",
+    activeClientKey: "",
     copyFeedbackTimer: null,
     mediaGalleryStates: new Map(),
     mediaExpiryTimers: new Map(),
@@ -133,8 +153,8 @@
     },
     clients: {
       title: "Clientes",
-      description: "Espacio reservado para la vista ligera de clientes.",
-      meta: "Próxima fase",
+      description: "Clientes detectados a partir de pedidos reales.",
+      meta: "Último pedido primero",
     },
   };
 
@@ -394,10 +414,12 @@
     adminState.viewReviews = [];
     adminState.freeTrialRequests = [];
     adminState.viewFreeTrialRequests = [];
+    adminState.clients = [];
     adminState.partialErrors = {};
     adminState.activeOrderId = "";
     adminState.activeReviewId = "";
     adminState.activeFreeTrialId = "";
+    adminState.activeClientKey = "";
     adminState.activeLightboxReviewId = "";
     adminState.mediaGalleryStates.clear();
     adminState.mediaExpiryTimers.clear();
@@ -460,7 +482,7 @@
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
       .from("orders")
-      .select("id,customer_name,customer_email,whatsapp,google_maps_url,notes,management_mode,currency,total_cents,status,payment_status,created_at,updated_at")
+      .select("id,user_id,customer_name,customer_email,whatsapp,google_maps_url,notes,management_mode,currency,total_cents,status,payment_status,created_at,updated_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data || [];
@@ -591,6 +613,124 @@
     }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return adminState.viewOrders;
+  };
+
+  const getClientKey = (order) => {
+    const email = `${order?.customer_email || ""}`.trim().toLowerCase();
+    if (email) return `email:${email}`;
+
+    const userId = `${order?.user_id || ""}`.trim();
+    if (userId) return `user:${userId}`;
+
+    const name = normalizeSearch(order?.customer_name);
+    const whatsapp = `${order?.whatsapp || ""}`.replace(/\D/g, "");
+    if (name || whatsapp) return `contact:${name}|${whatsapp}`;
+
+    return `order:${order?.id || ""}`;
+  };
+
+  const getClientOrders = (clientKey) => (
+    adminState.clients.find((client) => client.key === clientKey)?.orders || []
+  );
+
+  const getClientStats = (orders) => {
+    const activeStatuses = new Set(["pending", "review", "in_progress"]);
+    return {
+      orders: orders.length,
+      active: orders.filter((order) => activeStatuses.has(order.status)).length,
+      completed: orders.filter((order) => order.status === "completed").length,
+      cancelled: orders.filter((order) => order.status === "cancelled").length,
+    };
+  };
+
+  const formatClientManagementMode = (orders) => {
+    const modes = orders
+      .map((order) => order.management_mode)
+      .filter((mode) => mode === "manual" || mode === "team");
+    if (!modes.length) return { value: "", label: "" };
+
+    const counts = modes.reduce((result, mode) => {
+      result[mode] = (result[mode] || 0) + 1;
+      return result;
+    }, {});
+    const manualCount = counts.manual || 0;
+    const teamCount = counts.team || 0;
+    const firstKnownMode = orders.find((order) => order.management_mode === "manual" || order.management_mode === "team")?.management_mode;
+    const value = manualCount === teamCount
+      ? firstKnownMode
+      : manualCount > teamCount ? "manual" : "team";
+    return { value, label: managementLabel(value) };
+  };
+
+  const buildClientsViewModel = () => {
+    assertAdminAccess();
+    const groupedClients = new Map();
+
+    adminState.viewOrders.forEach((order) => {
+      const key = getClientKey(order);
+      const current = groupedClients.get(key) || [];
+      current.push(order);
+      groupedClients.set(key, current);
+    });
+
+    adminState.clients = [...groupedClients.entries()].map(([key, groupedOrders]) => {
+      const orders = [...groupedOrders].sort((a, b) => (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ));
+      const latestValue = (field) => orders.find((order) => `${order[field] || ""}`.trim())?.[field] || "";
+      const currencyTotals = new Map();
+      orders.forEach((order) => {
+        const currency = `${order.currency || "EUR"}`.trim().toUpperCase() || "EUR";
+        currencyTotals.set(currency, (currencyTotals.get(currency) || 0) + (Number(order.total_cents) || 0));
+      });
+
+      return {
+        key,
+        name: latestValue("customer_name"),
+        email: latestValue("customer_email"),
+        whatsapp: latestValue("whatsapp"),
+        userId: latestValue("user_id"),
+        orders,
+        stats: getClientStats(orders),
+        management: formatClientManagementMode(orders),
+        currencyTotals: [...currencyTotals.entries()].map(([currency, totalCents]) => ({ currency, totalCents })),
+        firstOrder: orders.at(-1) || null,
+        lastOrder: orders[0] || null,
+        mapsUrl: orders.map((order) => getValidGoogleMapsUrl(order.google_maps_url)).find(Boolean) || "",
+      };
+    }).sort((a, b) => (
+      new Date(b.lastOrder?.created_at || 0).getTime() - new Date(a.lastOrder?.created_at || 0).getTime()
+    ));
+
+    return adminState.clients;
+  };
+
+  const formatClientSpend = (client) => client.currencyTotals
+    .map(({ currency, totalCents }) => formatMoney(totalCents, currency))
+    .join(" · ");
+
+  const getClientSearchText = (client) => normalizeSearch([
+    client.name,
+    client.email,
+    client.whatsapp,
+  ].filter(Boolean).join(" "));
+
+  const filterClients = () => {
+    const search = normalizeSearch(adminState.clientFilters.search);
+    return adminState.clients.filter((client) => (
+      (!search || getClientSearchText(client).includes(search))
+      && (!adminState.clientFilters.whatsapp || Boolean(client.whatsapp))
+      && (!adminState.clientFilters.recurrent || client.stats.orders > 1)
+      && (!adminState.clientFilters.mode || client.management.value === adminState.clientFilters.mode)
+    ));
+  };
+
+  const formatClientStatusSummary = (client) => {
+    const labels = [];
+    if (client.stats.active) labels.push(pluralize(client.stats.active, "activo", "activos"));
+    if (client.stats.completed) labels.push(pluralize(client.stats.completed, "completado", "completados"));
+    if (client.stats.cancelled) labels.push(pluralize(client.stats.cancelled, "cancelado", "cancelados"));
+    return labels.join(" · ") || "Sin estado";
   };
 
   const getReviewMediaCounts = (review) => {
@@ -1016,6 +1156,214 @@
     freeTrialsList.innerHTML = filteredRequests.map(renderFreeTrialCard).join("");
   };
 
+  const renderClientCard = (client) => {
+    const displayName = client.name || client.email || client.whatsapp || "Cliente sin nombre";
+    const initials = displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "CL";
+    const mailtoHref = getMailtoHref(client.email);
+    const whatsappHref = getWhatsappHref(client.whatsapp);
+
+    return `
+      <article class="admin-client-row">
+        <div class="admin-client-row__identity">
+          <span class="admin-client-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
+          <div>
+            <h4>${escapeHtml(displayName)}</h4>
+            <div class="admin-client-contact">
+              ${client.email ? `
+                <button type="button" data-copy-value="${escapeHtml(client.email)}" aria-label="Copiar email ${escapeHtml(client.email)}">
+                  ${escapeHtml(client.email)}${copyIconMarkup}
+                </button>
+              ` : ""}
+              ${client.whatsapp ? `
+                <button type="button" data-copy-value="${escapeHtml(client.whatsapp)}" aria-label="Copiar WhatsApp ${escapeHtml(client.whatsapp)}">
+                  ${escapeHtml(client.whatsapp)}${copyIconMarkup}
+                </button>
+              ` : ""}
+            </div>
+          </div>
+        </div>
+        <div class="admin-client-row__metrics">
+          <div><span>Pedidos</span><strong>${client.stats.orders}</strong></div>
+          <div><span>Importe total</span><strong>${escapeHtml(formatClientSpend(client))}</strong></div>
+          <div><span>Último pedido</span><strong>${escapeHtml(formatDate(client.lastOrder?.created_at))}</strong></div>
+        </div>
+        <div class="admin-client-row__status">
+          <span>${escapeHtml(formatClientStatusSummary(client))}</span>
+          ${client.stats.orders > 1 ? `<strong class="admin-client-recurrent-chip">Recurrente</strong>` : ""}
+          ${client.management.value ? `<strong class="admin-management-chip" data-mode="${escapeHtml(client.management.value)}">${escapeHtml(client.management.label)}</strong>` : ""}
+        </div>
+        <div class="admin-client-row__actions">
+          ${mailtoHref ? `<a class="admin-client-quick-action" href="${escapeHtml(mailtoHref)}" aria-label="Enviar email a ${escapeHtml(client.email)}">Email</a>` : ""}
+          ${whatsappHref ? `<a class="admin-client-quick-action" href="${escapeHtml(whatsappHref)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de ${escapeHtml(client.whatsapp)}">WhatsApp</a>` : ""}
+          <button class="admin-row-button" type="button" data-client-open="${escapeHtml(client.key)}">Ver detalle</button>
+        </div>
+      </article>
+    `;
+  };
+
+  const renderClientsView = () => {
+    if (!clientsList) return;
+    const filteredClients = filterClients();
+    const clients = adminState.clients;
+    const metrics = [
+      { label: "Clientes totales", value: clients.length, tone: "neutral" },
+      { label: "Con pedidos activos", value: clients.filter((client) => client.stats.active > 0).length, tone: "info" },
+      { label: "Con pedidos completados", value: clients.filter((client) => client.stats.completed > 0).length, tone: "success" },
+      { label: "Con WhatsApp", value: clients.filter((client) => Boolean(client.whatsapp)).length, tone: "info" },
+      { label: "Recurrentes", value: clients.filter((client) => client.stats.orders > 1).length, tone: "warning" },
+    ];
+
+    if (clientsMetrics) {
+      clientsMetrics.innerHTML = metrics.map((metric) => `
+        <article class="admin-metric" data-tone="${metric.tone}">
+          <span>${escapeHtml(metric.label)}</span>
+          <strong>${metric.value}</strong>
+        </article>
+      `).join("");
+    }
+
+    if (clientsCount) {
+      clientsCount.textContent = filteredClients.length === clients.length
+        ? pluralize(clients.length, "cliente", "clientes")
+        : `${filteredClients.length} de ${clients.length} clientes`;
+    }
+
+    if (clientsSearchInput && clientsSearchInput.value !== adminState.clientFilters.search) {
+      clientsSearchInput.value = adminState.clientFilters.search;
+    }
+    clientsFilterInputs.forEach((input) => {
+      const filterName = input.dataset.adminClientsFilter;
+      if (filterName && input.value !== adminState.clientFilters[filterName]) {
+        input.value = adminState.clientFilters[filterName];
+      }
+    });
+
+    if (!clients.length) {
+      clientsList.innerHTML = `
+        <div class="admin-clients-empty">
+          <span class="admin-client-avatar" aria-hidden="true">CL</span>
+          <h4>No hay clientes detectados</h4>
+          <p>Los clientes aparecerán aquí cuando existan pedidos reales autorizados.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (!filteredClients.length) {
+      clientsList.innerHTML = `
+        <div class="admin-clients-empty">
+          <h4>No hay clientes con estos filtros</h4>
+          <p>Prueba otra búsqueda o combinación de filtros.</p>
+          <button class="admin-row-button" type="button" data-admin-clients-clear>Limpiar filtros</button>
+        </div>
+      `;
+      return;
+    }
+
+    clientsList.innerHTML = filteredClients.map(renderClientCard).join("");
+  };
+
+  const renderClientDetail = (clientKey) => {
+    const client = adminState.clients.find((item) => item.key === clientKey);
+    if (!client || !clientDialog || !clientDialogBody) return;
+    adminState.activeClientKey = clientKey;
+
+    const displayName = client.name || client.email || client.whatsapp || "Cliente sin nombre";
+    const mailtoHref = getMailtoHref(client.email);
+    const whatsappHref = getWhatsappHref(client.whatsapp);
+    const clientOrders = getClientOrders(clientKey);
+    const internalId = client.userId ? `${client.userId}`.slice(0, 8).toUpperCase() : "";
+
+    if (clientDialogTitle) clientDialogTitle.textContent = displayName;
+    if (clientDialogStatus) {
+      clientDialogStatus.textContent = `${pluralize(client.stats.orders, "pedido", "pedidos")} · ${formatClientStatusSummary(client)}`;
+    }
+
+    clientDialogBody.innerHTML = `
+      <section class="admin-detail-section admin-client-detail-hero">
+        <div class="admin-detail-section__head">
+          <h3>Contacto</h3>
+          ${client.stats.orders > 1 ? `<span class="admin-client-recurrent-chip">Cliente recurrente</span>` : ""}
+        </div>
+        <div class="admin-detail-customer">
+          ${client.name ? `<div><span>Nombre</span><strong>${escapeHtml(client.name)}</strong></div>` : ""}
+          ${client.email ? `
+            <button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(client.email)}" aria-label="Copiar email ${escapeHtml(client.email)}">
+              <span>Email</span><strong>${escapeHtml(client.email)}</strong>${copyIconMarkup}
+            </button>
+          ` : ""}
+          ${client.whatsapp ? `
+            <button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(client.whatsapp)}" aria-label="Copiar WhatsApp ${escapeHtml(client.whatsapp)}">
+              <span>WhatsApp</span><strong>${escapeHtml(client.whatsapp)}</strong>${copyIconMarkup}
+            </button>
+          ` : ""}
+          ${internalId ? `<div><span>ID interno</span><strong>${escapeHtml(internalId)}</strong></div>` : ""}
+        </div>
+        ${(mailtoHref || whatsappHref || client.mapsUrl) ? `
+          <div class="admin-detail-actions">
+            ${mailtoHref ? `<a href="${escapeHtml(mailtoHref)}">Enviar email</a>` : ""}
+            ${whatsappHref ? `<a href="${escapeHtml(whatsappHref)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ""}
+            ${client.mapsUrl ? `<a href="${escapeHtml(client.mapsUrl)}" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a>` : ""}
+          </div>
+        ` : ""}
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head"><h3>Resumen real</h3></div>
+        <dl class="admin-detail-grid">
+          <div><dt>Pedidos totales</dt><dd>${client.stats.orders}</dd></div>
+          <div><dt>Importe total</dt><dd>${escapeHtml(formatClientSpend(client))}</dd></div>
+          <div><dt>Primer pedido</dt><dd>${escapeHtml(formatDate(client.firstOrder?.created_at, true))}</dd></div>
+          <div><dt>Último pedido</dt><dd>${escapeHtml(formatDate(client.lastOrder?.created_at, true))}</dd></div>
+          ${client.stats.active ? `<div><dt>Pedidos activos</dt><dd>${client.stats.active}</dd></div>` : ""}
+          ${client.stats.completed ? `<div><dt>Completados</dt><dd>${client.stats.completed}</dd></div>` : ""}
+          ${client.stats.cancelled ? `<div><dt>Cancelados</dt><dd>${client.stats.cancelled}</dd></div>` : ""}
+          ${client.management.value ? `<div><dt>Gestión predominante</dt><dd><span class="admin-management-chip" data-mode="${escapeHtml(client.management.value)}">${escapeHtml(client.management.label)}</span></dd></div>` : ""}
+        </dl>
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head">
+          <h3>Pedidos asociados</h3>
+          <span>${clientOrders.length}</span>
+        </div>
+        <div class="admin-client-orders">
+          ${clientOrders.map((order) => `
+            <article class="admin-client-order">
+              <div class="admin-client-order__ref">
+                <button type="button" data-copy-value="${escapeHtml(order.ref)}" aria-label="Copiar referencia ${escapeHtml(order.ref)}">
+                  ${escapeHtml(order.ref)}${copyIconMarkup}
+                </button>
+                <span>${escapeHtml(formatDate(order.created_at))}</span>
+              </div>
+              <div class="admin-client-order__total">
+                <span>Total</span>
+                <strong>${escapeHtml(formatMoney(order.total_cents, order.currency))}</strong>
+              </div>
+              <div class="admin-client-order__chips">
+                <span class="admin-state-chip" data-tone="${orderTone(order.status)}">${escapeHtml(orderStatusLabels[order.status] || "Sin estado")}</span>
+                <span class="admin-state-chip" data-tone="${paymentTone(order.payment_status)}">${escapeHtml(paymentStatusLabels[order.payment_status] || "Pago sin estado")}</span>
+                ${order.management_mode ? `<span class="admin-management-chip" data-mode="${escapeHtml(order.management_mode)}">${escapeHtml(managementLabel(order.management_mode))}</span>` : ""}
+              </div>
+              <button class="admin-row-button" type="button" data-client-order-open="${escapeHtml(order.id)}">Abrir pedido</button>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `;
+
+    if (clientCopyFeedback) clientCopyFeedback.textContent = "";
+    clientDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+  };
+
   const renderAdminSummary = () => {
     if (!summaryNode) return;
     const orders = adminState.viewOrders;
@@ -1027,6 +1375,7 @@
       { label: "Reseñas por preparar", value: reviews.filter((review) => review.status === "awaiting_team").length, tone: "warning" },
       { label: "Pedidos completados", value: orders.filter((order) => order.status === "completed").length, tone: "success" },
       { label: "Pedidos cancelados", value: orders.filter((order) => order.status === "cancelled").length, tone: "danger" },
+      { label: "Clientes", value: adminState.clients.length, tone: "info" },
       { label: "Pruebas gratuitas", value: adminState.partialErrors.freeTrials ? "—" : adminState.viewFreeTrialRequests.length, tone: "info" },
     ];
 
@@ -1207,6 +1556,7 @@
 
   const renderAdminData = () => {
     buildAdminViewModel();
+    buildClientsViewModel();
     buildReviewsViewModel();
     buildFreeTrialsViewModel();
     renderAdminSummary();
@@ -1216,6 +1566,7 @@
     renderFilters();
     renderReviewsView();
     renderFreeTrialsView();
+    renderClientsView();
     setDataState("ready");
     activateAdminView(adminState.activeView);
   };
@@ -1913,7 +2264,7 @@
 
   const syncDialogOpenClass = () => {
     document.body.classList.toggle("admin-dialog-open", Boolean(
-      orderDialog?.open || reviewDialog?.open || freeTrialDialog?.open,
+      orderDialog?.open || reviewDialog?.open || freeTrialDialog?.open || clientDialog?.open,
     ));
   };
 
@@ -1940,6 +2291,13 @@
     adminState.activeFreeTrialId = "";
   };
 
+  const closeClientDialog = () => {
+    if (!clientDialog?.open) return;
+    clientDialog.close();
+    syncDialogOpenClass();
+    adminState.activeClientKey = "";
+  };
+
   const copyText = async (value) => {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(value);
@@ -1957,7 +2315,9 @@
   };
 
   const showCopyFeedback = (message) => {
-    const feedback = reviewDialog?.open
+    const feedback = clientDialog?.open
+      ? clientCopyFeedback
+      : reviewDialog?.open
       ? reviewCopyFeedback
       : freeTrialDialog?.open
         ? freeTrialCopyFeedback
@@ -1983,6 +2343,11 @@
   const clearFreeTrialFilters = () => {
     adminState.freeTrialFilters = { search: "", status: "" };
     renderFreeTrialsView();
+  };
+
+  const clearClientFilters = () => {
+    adminState.clientFilters = { search: "", whatsapp: "", recurrent: "", mode: "" };
+    renderClientsView();
   };
 
   const initAdminPanel = async () => {
@@ -2047,12 +2412,37 @@
     adminState.freeTrialFilters.status = freeTrialsStatus.value;
     renderFreeTrialsView();
   });
+  clientsFiltersForm?.addEventListener("submit", (event) => event.preventDefault());
+  clientsSearchInput?.addEventListener("input", () => {
+    adminState.clientFilters.search = clientsSearchInput.value;
+    renderClientsView();
+  });
+  clientsFilterInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      adminState.clientFilters[input.dataset.adminClientsFilter] = input.value;
+      renderClientsView();
+    });
+  });
 
   navButtons.forEach((button) => {
     button.addEventListener("click", () => activateAdminView(button.dataset.adminViewTarget));
   });
 
   root.addEventListener("click", async (event) => {
+    const clientOpenButton = event.target.closest("[data-client-open]");
+    if (clientOpenButton) {
+      renderClientDetail(clientOpenButton.dataset.clientOpen);
+      return;
+    }
+
+    const clientOrderOpenButton = event.target.closest("[data-client-order-open]");
+    if (clientOrderOpenButton) {
+      const orderId = clientOrderOpenButton.dataset.clientOrderOpen;
+      closeClientDialog();
+      renderOrderDetail(orderId);
+      return;
+    }
+
     const reviewOpenButton = event.target.closest("[data-review-open]");
     if (reviewOpenButton) {
       renderReviewDetailModal(reviewOpenButton.dataset.reviewOpen);
@@ -2088,6 +2478,12 @@
     const clearReviewsButton = event.target.closest("[data-admin-reviews-clear]");
     if (clearReviewsButton) {
       clearReviewFilters();
+      return;
+    }
+
+    const clearClientsButton = event.target.closest("[data-admin-clients-clear]");
+    if (clearClientsButton) {
+      clearClientFilters();
       return;
     }
 
@@ -2175,6 +2571,14 @@
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeFreeTrialDialog();
   });
+  clientDialogClose?.addEventListener("click", closeClientDialog);
+  clientDialog?.addEventListener("close", syncDialogOpenClass);
+  clientDialog?.addEventListener("click", (event) => {
+    if (event.target !== clientDialog) return;
+    const rect = clientDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeClientDialog();
+  });
   imageLightboxClose?.addEventListener("click", closeImageLightbox);
   imageLightbox?.addEventListener("close", resetImageLightbox);
   imageLightbox?.addEventListener("click", (event) => {
@@ -2214,6 +2618,7 @@
     isImageMedia,
     isVideoMedia,
     buildAdminViewModel,
+    buildClientsViewModel,
     buildReviewsViewModel,
     buildFreeTrialsViewModel,
     renderLoading,
@@ -2226,6 +2631,15 @@
     renderSummaryShortcut,
     renderOrdersList,
     renderOrderDetail,
+    renderClientsView,
+    renderClientCard,
+    renderClientDetail,
+    filterClients,
+    getClientSearchText,
+    getClientKey,
+    getClientOrders,
+    getClientStats,
+    formatClientManagementMode,
     renderReviewsView,
     renderReviewCard,
     renderReviewDetailModal,
