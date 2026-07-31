@@ -338,13 +338,48 @@
                 </div>
               </section>
 
-              <section class="admin-view admin-placeholder-view" id="admin-view-trials" role="tabpanel" data-admin-view="trials" hidden>
-                <div class="admin-placeholder-panel">
-                  <span class="admin-placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg></span>
-                  <span class="admin-placeholder-phase">Próxima fase</span>
-                  <h3>Sección preparada</h3>
-                  <p>Las solicitudes de prueba gratuita se conectarán aquí más adelante.</p>
-                </div>
+              <section class="admin-view" id="admin-view-trials" role="tabpanel" data-admin-view="trials" hidden>
+                <section class="admin-free-trials-section" aria-labelledby="admin-free-trials-title">
+                  <div class="admin-section-heading admin-section-heading--trials">
+                    <div>
+                      <h3 id="admin-free-trials-title">Pruebas gratuitas</h3>
+                      <p>Solicitudes recibidas desde la web</p>
+                    </div>
+                    <span class="admin-section-count" data-free-trials-count>0 solicitudes</span>
+                  </div>
+
+                  <div class="admin-free-trials-metrics" data-free-trials-metrics></div>
+
+                  <form class="admin-filters admin-free-trials-filters" data-free-trials-filters role="search">
+                    <label class="admin-search-field">
+                      <span class="admin-filter-label">Buscar solicitud</span>
+                      <span class="admin-search-control">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" /></svg>
+                        <input type="search" name="trial-search" placeholder="Referencia, URL, notas o estado" autocomplete="off" data-free-trials-search />
+                      </span>
+                    </label>
+                    <label>
+                      <span class="admin-filter-label">Estado</span>
+                      <select name="trial-status" data-free-trials-status>
+                        <option value="">Todos</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="review">En revisión</option>
+                        <option value="active">Activa</option>
+                        <option value="completed">Completada</option>
+                      </select>
+                    </label>
+                  </form>
+
+                  <div class="admin-free-trials-error" data-free-trials-error hidden>
+                    <div>
+                      <strong>No se pudieron cargar las solicitudes</strong>
+                      <p>La vista de pedidos sigue disponible. Puedes volver a intentar esta consulta.</p>
+                    </div>
+                    <button class="admin-row-button" type="button" data-free-trials-retry>Reintentar</button>
+                  </div>
+
+                  <div class="admin-free-trials-list" data-free-trials-list></div>
+                </section>
               </section>
 
               <section class="admin-view admin-placeholder-view" id="admin-view-clients" role="tabpanel" data-admin-view="clients" hidden>
@@ -380,6 +415,26 @@
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-copy-feedback></p>
       </dialog>
 
+      <dialog class="admin-order-dialog admin-free-trial-dialog" data-free-trial-dialog aria-labelledby="admin-free-trial-dialog-title">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Detalle de solicitud</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-free-trial-dialog-title" data-free-trial-dialog-title>Solicitud</h2>
+              <button class="admin-copy-icon" type="button" aria-label="Copiar referencia" data-free-trial-copy-ref>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></svg>
+              </button>
+            </div>
+            <p data-free-trial-dialog-status></p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar detalle" data-free-trial-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="admin-order-dialog__body" data-free-trial-dialog-body></div>
+        <p class="admin-copy-feedback" role="status" aria-live="polite" data-free-trial-copy-feedback></p>
+      </dialog>
+
       <dialog class="admin-image-lightbox" data-admin-image-lightbox aria-labelledby="admin-image-lightbox-title">
         <div class="admin-image-lightbox__stage">
           <button class="admin-image-lightbox__close" type="button" aria-label="Cerrar imagen ampliada" data-admin-image-lightbox-close>
@@ -396,6 +451,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-media-lightbox-20260730"></script>
+    <script defer src="js/admin.js?v=admin-free-trials-read-20260731"></script>
   </body>
 </html>
