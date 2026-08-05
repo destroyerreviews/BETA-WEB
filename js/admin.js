@@ -44,6 +44,19 @@
   const reviewDialogClose = root.querySelector("[data-admin-review-dialog-close]");
   const reviewCopyRef = root.querySelector("[data-admin-review-copy-ref]");
   const reviewCopyFeedback = root.querySelector("[data-admin-review-copy-feedback]");
+  const reviewPrepareDialog = root.querySelector("[data-admin-review-prepare-dialog]");
+  const reviewPrepareDialogTitle = root.querySelector("[data-admin-review-prepare-dialog-title]");
+  const reviewPrepareDialogStatus = root.querySelector("[data-admin-review-prepare-dialog-status]");
+  const reviewPrepareDialogClose = root.querySelector("[data-admin-review-prepare-dialog-close]");
+  const reviewPrepareForm = root.querySelector("[data-admin-review-prepare-form]");
+  const reviewPrepareOrder = root.querySelector("[data-admin-review-prepare-order]");
+  const reviewPrepareNumber = root.querySelector("[data-admin-review-prepare-number]");
+  const reviewPrepareCurrentStatus = root.querySelector("[data-admin-review-prepare-current-status]");
+  const reviewPrepareText = root.querySelector("[data-admin-review-prepare-text]");
+  const reviewPrepareNotes = root.querySelector("[data-admin-review-prepare-notes]");
+  const reviewPrepareFeedback = root.querySelector("[data-admin-review-prepare-feedback]");
+  const reviewPrepareCancel = root.querySelector("[data-admin-review-prepare-cancel]");
+  const reviewPrepareSave = root.querySelector("[data-admin-review-prepare-save]");
   const imageLightbox = root.querySelector("[data-admin-image-lightbox]");
   const imageLightboxImage = root.querySelector("[data-admin-image-lightbox-image]");
   const imageLightboxName = root.querySelector("[data-admin-image-lightbox-name]");
@@ -86,6 +99,7 @@
   const adminState = {
     session: null,
     accessGranted: false,
+    dataReady: false,
     orders: [],
     items: [],
     reviews: [],
@@ -122,6 +136,9 @@
     activeView: "summary",
     activeOrderId: "",
     activeReviewId: "",
+    activePreparationReviewId: "",
+    preparationOrigin: "",
+    preparationSaving: false,
     activeFreeTrialId: "",
     activeClientKey: "",
     copyFeedbackTimer: null,
@@ -323,6 +340,14 @@
 
   const getReviewBadgeType = (status) => reviewTone(status);
 
+  const canPrepareTeamReview = (review) => Boolean(
+    adminState.accessGranted
+    && adminState.session?.user
+    && adminState.dataReady
+    && review?.source === "team"
+    && ["awaiting_team", "prepared"].includes(review.status)
+  );
+
   const formatFreeTrialStatus = (status) => freeTrialStatusLabels[status] || "Sin estado";
 
   const getFreeTrialBadgeType = (status) => ({
@@ -416,8 +441,12 @@
     adminState.viewFreeTrialRequests = [];
     adminState.clients = [];
     adminState.partialErrors = {};
+    adminState.dataReady = false;
     adminState.activeOrderId = "";
     adminState.activeReviewId = "";
+    adminState.activePreparationReviewId = "";
+    adminState.preparationOrigin = "";
+    adminState.preparationSaving = false;
     adminState.activeFreeTrialId = "";
     adminState.activeClientKey = "";
     adminState.activeLightboxReviewId = "";
@@ -442,6 +471,7 @@
   const renderAdminShell = (session) => {
     const email = session?.user?.email || "Admin verificado";
     if (adminEmail) adminEmail.innerHTML = escapeHtml(email);
+    adminState.dataReady = false;
     showState("shell");
     setDataState("loading");
   };
@@ -1559,6 +1589,7 @@
     buildClientsViewModel();
     buildReviewsViewModel();
     buildFreeTrialsViewModel();
+    adminState.dataReady = true;
     renderAdminSummary();
     renderAttentionActions();
     renderSummaryShortcut();
@@ -1573,6 +1604,7 @@
 
   const loadAdminData = async () => {
     if (!adminState.accessGranted) return;
+    adminState.dataReady = false;
     setDataState("loading");
     adminState.partialErrors = {};
 
@@ -1996,6 +2028,32 @@
     }
   };
 
+  const renderTeamReviewPrepareAction = (review, variant = "detail") => {
+    if (!canPrepareTeamReview(review)) return "";
+    const isPrepared = review.status === "prepared";
+    const label = variant === "order"
+      ? (isPrepared ? "Editar preparación" : "Preparar")
+      : (isPrepared ? "Editar preparación" : "Preparar reseña");
+
+    if (variant === "order") {
+      return `
+        <div class="admin-review-card__actions">
+          <button class="admin-review-prepare-link" type="button" data-review-prepare="${escapeHtml(review.id)}">${escapeHtml(label)}</button>
+        </div>
+      `;
+    }
+
+    return `
+      <section class="admin-team-prepare-callout">
+        <div>
+          <span>${isPrepared ? "Texto preparado" : "Preparación pendiente"}</span>
+          <p>${isPrepared ? "Puedes corregir la valoración, el texto o la nota interna." : "Prepara la valoración y el texto interno de esta reseña de equipo."}</p>
+        </div>
+        <button class="admin-button admin-button--primary" type="button" data-review-prepare="${escapeHtml(review.id)}">${escapeHtml(label)}</button>
+      </section>
+    `;
+  };
+
   const renderReviewDetail = (review) => {
     const imageCount = review.media.filter((media) => media.file_type === "image").length;
     const videoCount = review.media.filter((media) => media.file_type === "video").length;
@@ -2025,6 +2083,7 @@
         <div class="admin-review-card__text"><span>${escapeHtml(context.label)}</span><p>${review.review_text ? escapeHtml(review.review_text) : escapeHtml(context.empty)}</p></div>
         ${review.review_notes ? `<div class="admin-review-card__note"><span>Nota específica</span><p>${escapeHtml(review.review_notes)}</p></div>` : ""}
         ${mediaMarkup}
+        ${renderTeamReviewPrepareAction(review, "order")}
       </article>
     `;
   };
@@ -2092,6 +2151,8 @@
         </div>
       </section>
 
+      ${renderTeamReviewPrepareAction(review)}
+
       ${reviewNotes ? `
         <section class="admin-detail-section">
           <div class="admin-detail-section__head">
@@ -2126,7 +2187,7 @@
     `;
 
     if (reviewCopyFeedback) reviewCopyFeedback.textContent = "";
-    reviewDialog.showModal();
+    if (!reviewDialog.open) reviewDialog.showModal();
     document.body.classList.add("admin-dialog-open");
   };
 
@@ -2258,13 +2319,175 @@
     `;
 
     if (copyFeedback) copyFeedback.textContent = "";
-    orderDialog.showModal();
+    if (!orderDialog.open) orderDialog.showModal();
     document.body.classList.add("admin-dialog-open");
+  };
+
+  const getPreparationErrorMessage = (error) => {
+    const errorText = [error?.message, error?.details, error?.hint, error?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const knownErrors = [
+      ["review_text_required", "Escribe el texto de la reseña."],
+      ["invalid_rating", "Elige una valoración entre 3 y 5 estrellas."],
+      ["invalid_review_status", "Esta reseña ya no se puede preparar desde aquí."],
+      ["only_team_reviews_can_be_prepared", "Solo se pueden preparar reseñas del equipo."],
+      ["admin_required", "No tienes permisos para esta acción."],
+      ["authentication_required", "No tienes permisos para esta acción."],
+    ];
+    return knownErrors.find(([errorKey]) => errorText.includes(errorKey))?.[1]
+      || "No se pudo guardar la preparación.";
+  };
+
+  const showPreparationFeedback = (message = "") => {
+    if (!reviewPrepareFeedback) return;
+    reviewPrepareFeedback.textContent = message;
+    reviewPrepareFeedback.hidden = !message;
+  };
+
+  const setPreparationSaving = (isSaving) => {
+    adminState.preparationSaving = isSaving;
+    if (reviewPrepareSave) {
+      reviewPrepareSave.disabled = isSaving;
+      reviewPrepareSave.setAttribute("aria-busy", String(isSaving));
+      const label = reviewPrepareSave.querySelector("span");
+      if (label) label.textContent = isSaving ? "Guardando…" : "Guardar preparación";
+    }
+    if (reviewPrepareCancel) reviewPrepareCancel.disabled = isSaving;
+    if (reviewPrepareDialogClose) reviewPrepareDialogClose.disabled = isSaving;
+  };
+
+  const resetPreparationState = () => {
+    reviewPrepareForm?.reset();
+    showPreparationFeedback();
+    setPreparationSaving(false);
+    adminState.activePreparationReviewId = "";
+    adminState.preparationOrigin = "";
+  };
+
+  const closeReviewPreparationDialog = () => {
+    if (!reviewPrepareDialog?.open || adminState.preparationSaving) return;
+    reviewPrepareDialog.close();
+  };
+
+  const openReviewPreparationDialog = (reviewId, origin) => {
+    const review = adminState.viewReviews.find((item) => item.id === reviewId);
+    if (!reviewPrepareDialog || !reviewPrepareForm || !canPrepareTeamReview(review)) return;
+    if (!['review', 'order'].includes(origin)) return;
+
+    adminState.activePreparationReviewId = review.id;
+    adminState.preparationOrigin = origin;
+    setPreparationSaving(false);
+    reviewPrepareForm.reset();
+    showPreparationFeedback();
+
+    const isPrepared = review.status === "prepared";
+    if (reviewPrepareDialogTitle) reviewPrepareDialogTitle.textContent = isPrepared ? "Editar preparación" : "Preparar reseña";
+    if (reviewPrepareDialogStatus) reviewPrepareDialogStatus.textContent = "Solo prepara el texto; no inicia ninguna acción externa.";
+    if (reviewPrepareOrder) reviewPrepareOrder.textContent = review.orderRef;
+    if (reviewPrepareNumber) reviewPrepareNumber.textContent = `Reseña ${Number(review.review_index) || "—"}`;
+    if (reviewPrepareCurrentStatus) reviewPrepareCurrentStatus.textContent = review.statusLabel;
+
+    const rating = Number(review.rating);
+    if ([3, 4, 5].includes(rating)) {
+      const ratingInput = reviewPrepareForm.querySelector(`input[name="review-rating"][value="${rating}"]`);
+      if (ratingInput) ratingInput.checked = true;
+    }
+    if (reviewPrepareText) reviewPrepareText.value = review.review_text || "";
+    if (reviewPrepareNotes) reviewPrepareNotes.value = review.review_notes || "";
+
+    if (!reviewPrepareDialog.open) reviewPrepareDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+    window.requestAnimationFrame(() => {
+      if (reviewPrepareText?.value) reviewPrepareText.focus();
+      else reviewPrepareForm.querySelector('input[name="review-rating"]:checked, input[name="review-rating"]')?.focus();
+    });
+  };
+
+  const replacePreparedReviewInMemory = (updatedReview) => {
+    adminState.reviews = adminState.reviews.map((review) => (
+      review.id === updatedReview.id ? { ...review, ...updatedReview } : review
+    ));
+  };
+
+  const submitReviewPreparation = async () => {
+    if (adminState.preparationSaving || !reviewPrepareForm) return;
+    const review = adminState.reviews.find((item) => item.id === adminState.activePreparationReviewId);
+
+    if (!adminState.accessGranted || !adminState.session?.user || !adminState.dataReady) {
+      showPreparationFeedback("No tienes permisos para esta acción.");
+      return;
+    }
+    if (!review || !["awaiting_team", "prepared"].includes(review.status)) {
+      showPreparationFeedback("Esta reseña ya no se puede preparar desde aquí.");
+      return;
+    }
+    if (review.source !== "team") {
+      showPreparationFeedback("Solo se pueden preparar reseñas del equipo.");
+      return;
+    }
+
+    const ratingInput = reviewPrepareForm.querySelector('input[name="review-rating"]:checked');
+    const rating = Number(ratingInput?.value);
+    const reviewText = `${reviewPrepareText?.value || ""}`.trim();
+    const reviewNotes = `${reviewPrepareNotes?.value || ""}`.trim();
+
+    if (![3, 4, 5].includes(rating)) {
+      showPreparationFeedback("Elige una valoración entre 3 y 5 estrellas.");
+      reviewPrepareForm.querySelector('input[name="review-rating"]')?.focus();
+      return;
+    }
+    if (!reviewText) {
+      showPreparationFeedback("Escribe el texto de la reseña.");
+      reviewPrepareText?.focus();
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      showPreparationFeedback("No se pudo guardar la preparación.");
+      return;
+    }
+
+    setPreparationSaving(true);
+    showPreparationFeedback();
+    try {
+      const { data, error } = await supabase.rpc("admin_prepare_team_review", {
+        p_review_id: review.id,
+        p_rating: rating,
+        p_review_text: reviewText,
+        p_review_notes: reviewNotes || null,
+      });
+      if (error) throw error;
+
+      const updatedReview = Array.isArray(data) ? data[0] : data;
+      if (!updatedReview || updatedReview.id !== review.id) {
+        throw new Error("invalid_prepare_response");
+      }
+
+      const origin = adminState.preparationOrigin;
+      replacePreparedReviewInMemory(updatedReview);
+      setPreparationSaving(false);
+      reviewPrepareDialog?.close();
+      renderAdminData();
+
+      if (origin === "review" && reviewDialog?.open) {
+        renderReviewDetailModal(updatedReview.id);
+      } else if (origin === "order" && orderDialog?.open) {
+        renderOrderDetail(updatedReview.order_id);
+      }
+      showCopyFeedback("Preparación guardada.");
+    } catch (error) {
+      console.error("No se pudo guardar la preparación de la reseña.", error);
+      showPreparationFeedback(getPreparationErrorMessage(error));
+      setPreparationSaving(false);
+    }
   };
 
   const syncDialogOpenClass = () => {
     document.body.classList.toggle("admin-dialog-open", Boolean(
-      orderDialog?.open || reviewDialog?.open || freeTrialDialog?.open || clientDialog?.open,
+      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || freeTrialDialog?.open || clientDialog?.open,
     ));
   };
 
@@ -2353,6 +2576,7 @@
   const initAdminPanel = async () => {
     renderLoading();
     adminState.accessGranted = false;
+    adminState.dataReady = false;
     adminState.session = null;
 
     try {
@@ -2428,7 +2652,26 @@
     button.addEventListener("click", () => activateAdminView(button.dataset.adminViewTarget));
   });
 
+  reviewPrepareForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitReviewPreparation();
+  });
+  reviewPrepareForm?.addEventListener("input", () => {
+    if (!adminState.preparationSaving) showPreparationFeedback();
+  });
+
   root.addEventListener("click", async (event) => {
+    const reviewPrepareButton = event.target.closest("[data-review-prepare]");
+    if (reviewPrepareButton) {
+      const origin = reviewPrepareButton.closest("[data-admin-review-dialog]")
+        ? "review"
+        : reviewPrepareButton.closest("[data-admin-order-dialog]")
+          ? "order"
+          : "";
+      openReviewPreparationDialog(reviewPrepareButton.dataset.reviewPrepare, origin);
+      return;
+    }
+
     const clientOpenButton = event.target.closest("[data-client-open]");
     if (clientOpenButton) {
       renderClientDetail(clientOpenButton.dataset.clientOpen);
@@ -2562,6 +2805,22 @@
     const rect = reviewDialog.getBoundingClientRect();
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeReviewDialog();
+  });
+  reviewPrepareDialogClose?.addEventListener("click", closeReviewPreparationDialog);
+  reviewPrepareCancel?.addEventListener("click", closeReviewPreparationDialog);
+  reviewPrepareDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeReviewPreparationDialog();
+  });
+  reviewPrepareDialog?.addEventListener("close", () => {
+    resetPreparationState();
+    syncDialogOpenClass();
+  });
+  reviewPrepareDialog?.addEventListener("click", (event) => {
+    if (event.target !== reviewPrepareDialog) return;
+    const rect = reviewPrepareDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeReviewPreparationDialog();
   });
   freeTrialDialogClose?.addEventListener("click", closeFreeTrialDialog);
   freeTrialDialog?.addEventListener("close", syncDialogOpenClass);

@@ -520,6 +520,85 @@
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-review-copy-feedback></p>
       </dialog>
 
+      <dialog class="admin-order-dialog admin-review-prepare-dialog" data-admin-review-prepare-dialog aria-labelledby="admin-review-prepare-dialog-title">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Preparación de equipo</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-review-prepare-dialog-title" data-admin-review-prepare-dialog-title>Preparar reseña</h2>
+            </div>
+            <p data-admin-review-prepare-dialog-status>Solo prepara el texto; no inicia ninguna acción externa.</p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar preparación" data-admin-review-prepare-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+
+        <form class="admin-review-prepare-form" data-admin-review-prepare-form novalidate>
+          <div class="admin-order-dialog__body admin-review-prepare-form__body">
+            <section class="admin-prepare-context" aria-label="Reseña seleccionada">
+              <div>
+                <span>Pedido</span>
+                <strong data-admin-review-prepare-order>—</strong>
+              </div>
+              <div>
+                <span>Número</span>
+                <strong data-admin-review-prepare-number>—</strong>
+              </div>
+              <div>
+                <span>Estado actual</span>
+                <strong data-admin-review-prepare-current-status>—</strong>
+              </div>
+            </section>
+
+            <section class="admin-prepare-editor">
+              <div class="admin-prepare-editor__intro">
+                <span>Texto preparado</span>
+                <p>Define la valoración y deja listo el texto interno de esta reseña de equipo.</p>
+              </div>
+
+              <fieldset class="admin-prepare-rating" data-admin-review-prepare-rating>
+                <legend>Valoración <span aria-hidden="true">*</span></legend>
+                <div class="admin-prepare-rating__options">
+                  <label>
+                    <input type="radio" name="review-rating" value="3" required />
+                    <span><strong>3</strong><small>★★★</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="review-rating" value="4" required />
+                    <span><strong>4</strong><small>★★★★</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="review-rating" value="5" required />
+                    <span><strong>5</strong><small>★★★★★</small></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <label class="admin-prepare-field">
+                <span>Texto de la reseña <i aria-hidden="true">*</i></span>
+                <textarea name="review-text" rows="7" required data-admin-review-prepare-text placeholder="Escribe el texto preparado para esta reseña"></textarea>
+              </label>
+
+              <label class="admin-prepare-field">
+                <span>Nota interna <small>Opcional</small></span>
+                <textarea name="review-notes" rows="4" data-admin-review-prepare-notes placeholder="Añade contexto útil para el equipo"></textarea>
+              </label>
+            </section>
+          </div>
+
+          <footer class="admin-review-prepare-form__footer">
+            <p class="admin-prepare-feedback" role="alert" aria-live="assertive" data-admin-review-prepare-feedback></p>
+            <div>
+              <button class="admin-button admin-button--quiet" type="button" data-admin-review-prepare-cancel>Cancelar</button>
+              <button class="admin-button admin-button--primary admin-prepare-save" type="submit" data-admin-review-prepare-save>
+                <span>Guardar preparación</span>
+              </button>
+            </div>
+          </footer>
+        </form>
+      </dialog>
+
       <dialog class="admin-order-dialog admin-free-trial-dialog" data-free-trial-dialog aria-labelledby="admin-free-trial-dialog-title">
         <header class="admin-order-dialog__head">
           <div>
@@ -573,6 +652,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-clients-read-20260731"></script>
+    <script defer src="js/admin.js?v=admin-team-review-prepare-20260805"></script>
   </body>
 </html>
