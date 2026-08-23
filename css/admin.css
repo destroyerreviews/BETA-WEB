@@ -2558,6 +2558,13 @@ a:focus-visible {
     #080e1c;
 }
 
+.admin-review-edit-dialog {
+  border-color: rgba(104, 160, 255, 0.42);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 107, 255, 0.17), transparent 22rem),
+    #080e1c;
+}
+
 .admin-review-prepare-dialog[open] {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -2797,7 +2804,8 @@ a:focus-visible {
 }
 
 .admin-review-prepare-form__footer button:disabled,
-.admin-review-prepare-dialog .admin-dialog-close:disabled {
+.admin-review-prepare-dialog .admin-dialog-close:disabled,
+.admin-review-edit-dialog .admin-dialog-close:disabled {
   cursor: wait;
   opacity: 0.58;
   transform: none;
@@ -3168,6 +3176,44 @@ a:focus-visible {
   min-width: 160px;
 }
 
+.admin-client-edit-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 17px;
+  border: 1px solid rgba(104, 160, 255, 0.32);
+  border-radius: 12px;
+  background:
+    linear-gradient(105deg, rgba(47, 107, 255, 0.14), transparent 62%),
+    rgba(6, 12, 27, 0.78);
+}
+
+.admin-client-edit-callout > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-client-edit-callout span {
+  color: #c5d8ff;
+  font-size: 0.72rem;
+  font-weight: 820;
+  letter-spacing: 0.025em;
+}
+
+.admin-client-edit-callout p {
+  margin: 0;
+  color: #a4b2cd;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.admin-client-edit-callout .admin-button {
+  min-width: 160px;
+  flex: 0 0 auto;
+}
+
 .admin-review-card__actions {
   display: flex;
   justify-content: flex-end;
@@ -3187,12 +3233,33 @@ a:focus-visible {
   transition: border-color 180ms var(--admin-ease), color 180ms var(--admin-ease), background 180ms var(--admin-ease), transform 180ms var(--admin-ease);
 }
 
+.admin-review-edit-link {
+  min-height: 36px;
+  border: 1px solid rgba(104, 160, 255, 0.3);
+  border-radius: 8px;
+  padding: 7px 11px;
+  color: #c5d8ff;
+  background: rgba(47, 107, 255, 0.09);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 760;
+  cursor: pointer;
+  transition: border-color 180ms var(--admin-ease), color 180ms var(--admin-ease), background 180ms var(--admin-ease), transform 180ms var(--admin-ease);
+}
+
 .admin-review-prepare-link:hover,
-.admin-review-prepare-link:focus-visible {
+.admin-review-prepare-link:focus-visible,
+.admin-review-edit-link:hover,
+.admin-review-edit-link:focus-visible {
   border-color: rgba(104, 160, 255, 0.56);
   color: #fff;
   background: rgba(47, 107, 255, 0.14);
   transform: translateY(-1px);
+}
+
+.admin-review-edit-link:focus-visible {
+  outline: 2px solid rgba(104, 160, 255, 0.54);
+  outline-offset: 2px;
 }
 
 .admin-review-detail-grid,
@@ -4684,14 +4751,17 @@ body.admin-dialog-open {
   }
 
   .admin-review-prepare-form__footer > div,
-  .admin-team-prepare-callout {
+  .admin-team-prepare-callout,
+  .admin-client-edit-callout {
     align-items: stretch;
     flex-direction: column;
   }
 
   .admin-review-prepare-form__footer .admin-button,
   .admin-team-prepare-callout .admin-button,
-  .admin-review-prepare-link {
+  .admin-client-edit-callout .admin-button,
+  .admin-review-prepare-link,
+  .admin-review-edit-link {
     width: 100%;
   }
 }

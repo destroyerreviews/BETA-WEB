@@ -57,6 +57,19 @@
   const reviewPrepareFeedback = root.querySelector("[data-admin-review-prepare-feedback]");
   const reviewPrepareCancel = root.querySelector("[data-admin-review-prepare-cancel]");
   const reviewPrepareSave = root.querySelector("[data-admin-review-prepare-save]");
+  const reviewEditDialog = root.querySelector("[data-admin-review-edit-dialog]");
+  const reviewEditDialogTitle = root.querySelector("[data-admin-review-edit-dialog-title]");
+  const reviewEditDialogStatus = root.querySelector("[data-admin-review-edit-dialog-status]");
+  const reviewEditDialogClose = root.querySelector("[data-admin-review-edit-dialog-close]");
+  const reviewEditForm = root.querySelector("[data-admin-review-edit-form]");
+  const reviewEditOrder = root.querySelector("[data-admin-review-edit-order]");
+  const reviewEditNumber = root.querySelector("[data-admin-review-edit-number]");
+  const reviewEditCurrentStatus = root.querySelector("[data-admin-review-edit-current-status]");
+  const reviewEditText = root.querySelector("[data-admin-review-edit-text]");
+  const reviewEditNotes = root.querySelector("[data-admin-review-edit-notes]");
+  const reviewEditFeedback = root.querySelector("[data-admin-review-edit-feedback]");
+  const reviewEditCancel = root.querySelector("[data-admin-review-edit-cancel]");
+  const reviewEditSave = root.querySelector("[data-admin-review-edit-save]");
   const imageLightbox = root.querySelector("[data-admin-image-lightbox]");
   const imageLightboxImage = root.querySelector("[data-admin-image-lightbox-image]");
   const imageLightboxName = root.querySelector("[data-admin-image-lightbox-name]");
@@ -139,6 +152,9 @@
     activePreparationReviewId: "",
     preparationOrigin: "",
     preparationSaving: false,
+    activeClientEditReviewId: "",
+    clientEditOrigin: "",
+    clientEditSaving: false,
     activeFreeTrialId: "",
     activeClientKey: "",
     copyFeedbackTimer: null,
@@ -348,6 +364,14 @@
     && ["awaiting_team", "prepared"].includes(review.status)
   );
 
+  const canEditClientReview = (review) => Boolean(
+    adminState.accessGranted
+    && adminState.session?.user
+    && adminState.dataReady
+    && review?.source === "client"
+    && review.status === "submitted"
+  );
+
   const formatFreeTrialStatus = (status) => freeTrialStatusLabels[status] || "Sin estado";
 
   const getFreeTrialBadgeType = (status) => ({
@@ -447,6 +471,9 @@
     adminState.activePreparationReviewId = "";
     adminState.preparationOrigin = "";
     adminState.preparationSaving = false;
+    adminState.activeClientEditReviewId = "";
+    adminState.clientEditOrigin = "";
+    adminState.clientEditSaving = false;
     adminState.activeFreeTrialId = "";
     adminState.activeClientKey = "";
     adminState.activeLightboxReviewId = "";
@@ -2054,6 +2081,28 @@
     `;
   };
 
+  const renderClientReviewEditAction = (review, variant = "detail") => {
+    if (!canEditClientReview(review)) return "";
+
+    if (variant === "order") {
+      return `
+        <div class="admin-review-card__actions">
+          <button class="admin-review-edit-link" type="button" data-review-edit="${escapeHtml(review.id)}">Corregir</button>
+        </div>
+      `;
+    }
+
+    return `
+      <section class="admin-client-edit-callout">
+        <div>
+          <span>Texto enviado por el cliente</span>
+          <p>Corrige la valoración, el texto o la nota interna. No publica nada ni inicia acciones externas.</p>
+        </div>
+        <button class="admin-button admin-button--primary" type="button" data-review-edit="${escapeHtml(review.id)}">Corregir reseña</button>
+      </section>
+    `;
+  };
+
   const renderReviewDetail = (review) => {
     const imageCount = review.media.filter((media) => media.file_type === "image").length;
     const videoCount = review.media.filter((media) => media.file_type === "video").length;
@@ -2084,6 +2133,7 @@
         ${review.review_notes ? `<div class="admin-review-card__note"><span>Nota específica</span><p>${escapeHtml(review.review_notes)}</p></div>` : ""}
         ${mediaMarkup}
         ${renderTeamReviewPrepareAction(review, "order")}
+        ${renderClientReviewEditAction(review, "order")}
       </article>
     `;
   };
@@ -2152,6 +2202,7 @@
       </section>
 
       ${renderTeamReviewPrepareAction(review)}
+      ${renderClientReviewEditAction(review)}
 
       ${reviewNotes ? `
         <section class="admin-detail-section">
@@ -2485,9 +2536,187 @@
     }
   };
 
+  const getClientEditErrorMessage = (error) => {
+    const errorText = [error?.message, error?.details, error?.hint, error?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const knownErrors = [
+      ["review_text_required", "Escribe el texto de la reseña."],
+      ["invalid_rating", "Elige una valoración entre 3 y 5 estrellas."],
+      ["invalid_review_status", "Esta reseña ya no se puede corregir desde aquí."],
+      ["only_client_reviews_can_be_edited", "Solo se pueden corregir reseñas enviadas por clientes."],
+      ["admin_required", "No tienes permisos para esta acción."],
+      ["authentication_required", "No tienes permisos para esta acción."],
+    ];
+    return knownErrors.find(([errorKey]) => errorText.includes(errorKey))?.[1]
+      || "No se pudo guardar la corrección.";
+  };
+
+  const showClientEditFeedback = (message = "") => {
+    if (!reviewEditFeedback) return;
+    reviewEditFeedback.textContent = message;
+    reviewEditFeedback.hidden = !message;
+  };
+
+  const setClientEditSaving = (isSaving) => {
+    adminState.clientEditSaving = isSaving;
+    if (reviewEditSave) {
+      reviewEditSave.disabled = isSaving;
+      reviewEditSave.setAttribute("aria-busy", String(isSaving));
+      const label = reviewEditSave.querySelector("span");
+      if (label) label.textContent = isSaving ? "Guardando…" : "Guardar corrección";
+    }
+    if (reviewEditCancel) reviewEditCancel.disabled = isSaving;
+    if (reviewEditDialogClose) reviewEditDialogClose.disabled = isSaving;
+  };
+
+  const resetClientEditState = () => {
+    reviewEditForm?.reset();
+    showClientEditFeedback();
+    setClientEditSaving(false);
+    adminState.activeClientEditReviewId = "";
+    adminState.clientEditOrigin = "";
+  };
+
+  const closeClientReviewEditDialog = () => {
+    if (!reviewEditDialog?.open || adminState.clientEditSaving) return;
+    reviewEditDialog.close();
+  };
+
+  const openClientReviewEditDialog = (reviewId, origin) => {
+    const review = adminState.viewReviews.find((item) => item.id === reviewId);
+    if (!reviewEditDialog || !reviewEditForm || !canEditClientReview(review)) return;
+    if (!["review", "order"].includes(origin)) return;
+
+    adminState.activeClientEditReviewId = review.id;
+    adminState.clientEditOrigin = origin;
+    setClientEditSaving(false);
+    reviewEditForm.reset();
+    showClientEditFeedback();
+
+    if (reviewEditDialogTitle) reviewEditDialogTitle.textContent = "Corregir reseña";
+    if (reviewEditDialogStatus) reviewEditDialogStatus.textContent = "Corrige el texto enviado por el cliente. No publica nada ni inicia acciones externas.";
+    if (reviewEditOrder) reviewEditOrder.textContent = review.orderRef;
+    if (reviewEditNumber) reviewEditNumber.textContent = `Reseña ${Number(review.review_index) || "—"}`;
+    if (reviewEditCurrentStatus) reviewEditCurrentStatus.textContent = review.statusLabel;
+
+    const rating = Number(review.rating);
+    if ([3, 4, 5].includes(rating)) {
+      const ratingInput = reviewEditForm.querySelector(`input[name="review-edit-rating"][value="${rating}"]`);
+      if (ratingInput) ratingInput.checked = true;
+    }
+    if (reviewEditText) reviewEditText.value = review.review_text || "";
+    if (reviewEditNotes) reviewEditNotes.value = review.review_notes || "";
+
+    if (!reviewEditDialog.open) reviewEditDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+    window.requestAnimationFrame(() => {
+      if (reviewEditText?.value) reviewEditText.focus();
+      else reviewEditForm.querySelector('input[name="review-edit-rating"]:checked, input[name="review-edit-rating"]')?.focus();
+    });
+  };
+
+  const replaceClientReviewContentInMemory = (updatedReview) => {
+    adminState.reviews = adminState.reviews.map((review) => (
+      review.id === updatedReview.id
+        ? {
+            ...review,
+            rating: updatedReview.rating,
+            review_text: updatedReview.review_text,
+            review_notes: updatedReview.review_notes,
+            updated_at: updatedReview.updated_at,
+          }
+        : review
+    ));
+  };
+
+  const submitClientReviewEdit = async () => {
+    if (adminState.clientEditSaving || !reviewEditForm) return;
+    const review = adminState.reviews.find((item) => item.id === adminState.activeClientEditReviewId);
+
+    if (!adminState.accessGranted || !adminState.session?.user || !adminState.dataReady) {
+      showClientEditFeedback("No tienes permisos para esta acción.");
+      return;
+    }
+    if (!review) {
+      showClientEditFeedback("No se pudo guardar la corrección.");
+      return;
+    }
+    if (review.source !== "client") {
+      showClientEditFeedback("Solo se pueden corregir reseñas enviadas por clientes.");
+      return;
+    }
+    if (review.status !== "submitted") {
+      showClientEditFeedback("Esta reseña ya no se puede corregir desde aquí.");
+      return;
+    }
+
+    const ratingInput = reviewEditForm.querySelector('input[name="review-edit-rating"]:checked');
+    const rating = Number(ratingInput?.value);
+    const reviewText = `${reviewEditText?.value || ""}`.trim();
+    const reviewNotes = `${reviewEditNotes?.value || ""}`.trim();
+
+    if (![3, 4, 5].includes(rating)) {
+      showClientEditFeedback("Elige una valoración entre 3 y 5 estrellas.");
+      reviewEditForm.querySelector('input[name="review-edit-rating"]')?.focus();
+      return;
+    }
+    if (!reviewText) {
+      showClientEditFeedback("Escribe el texto de la reseña.");
+      reviewEditText?.focus();
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      showClientEditFeedback("No se pudo guardar la corrección.");
+      return;
+    }
+
+    setClientEditSaving(true);
+    showClientEditFeedback();
+    try {
+      const { data, error } = await supabase.rpc("admin_update_client_review_content", {
+        p_review_id: review.id,
+        p_rating: rating,
+        p_review_text: reviewText,
+        p_review_notes: reviewNotes || null,
+      });
+      if (error) throw error;
+
+      const updatedReview = Array.isArray(data) ? data[0] : data;
+      if (
+        !updatedReview
+        || updatedReview.id !== review.id
+        || updatedReview.source !== "client"
+        || updatedReview.status !== "submitted"
+      ) {
+        throw new Error("invalid_client_edit_response");
+      }
+
+      const origin = adminState.clientEditOrigin;
+      replaceClientReviewContentInMemory(updatedReview);
+      setClientEditSaving(false);
+      reviewEditDialog?.close();
+      renderAdminData();
+
+      if (origin === "review" && reviewDialog?.open) {
+        renderReviewDetailModal(updatedReview.id);
+      } else if (origin === "order" && orderDialog?.open) {
+        renderOrderDetail(updatedReview.order_id);
+      }
+      showCopyFeedback("Corrección guardada.");
+    } catch (error) {
+      console.error("No se pudo guardar la corrección de la reseña.", error);
+      showClientEditFeedback(getClientEditErrorMessage(error));
+      setClientEditSaving(false);
+    }
+  };
+
   const syncDialogOpenClass = () => {
     document.body.classList.toggle("admin-dialog-open", Boolean(
-      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || freeTrialDialog?.open || clientDialog?.open,
+      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || reviewEditDialog?.open || freeTrialDialog?.open || clientDialog?.open,
     ));
   };
 
@@ -2659,8 +2888,26 @@
   reviewPrepareForm?.addEventListener("input", () => {
     if (!adminState.preparationSaving) showPreparationFeedback();
   });
+  reviewEditForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitClientReviewEdit();
+  });
+  reviewEditForm?.addEventListener("input", () => {
+    if (!adminState.clientEditSaving) showClientEditFeedback();
+  });
 
   root.addEventListener("click", async (event) => {
+    const reviewEditButton = event.target.closest("[data-review-edit]");
+    if (reviewEditButton) {
+      const origin = reviewEditButton.closest("[data-admin-review-dialog]")
+        ? "review"
+        : reviewEditButton.closest("[data-admin-order-dialog]")
+          ? "order"
+          : "";
+      openClientReviewEditDialog(reviewEditButton.dataset.reviewEdit, origin);
+      return;
+    }
+
     const reviewPrepareButton = event.target.closest("[data-review-prepare]");
     if (reviewPrepareButton) {
       const origin = reviewPrepareButton.closest("[data-admin-review-dialog]")
@@ -2821,6 +3068,22 @@
     const rect = reviewPrepareDialog.getBoundingClientRect();
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeReviewPreparationDialog();
+  });
+  reviewEditDialogClose?.addEventListener("click", closeClientReviewEditDialog);
+  reviewEditCancel?.addEventListener("click", closeClientReviewEditDialog);
+  reviewEditDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeClientReviewEditDialog();
+  });
+  reviewEditDialog?.addEventListener("close", () => {
+    resetClientEditState();
+    syncDialogOpenClass();
+  });
+  reviewEditDialog?.addEventListener("click", (event) => {
+    if (event.target !== reviewEditDialog) return;
+    const rect = reviewEditDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeClientReviewEditDialog();
   });
   freeTrialDialogClose?.addEventListener("click", closeFreeTrialDialog);
   freeTrialDialog?.addEventListener("close", syncDialogOpenClass);

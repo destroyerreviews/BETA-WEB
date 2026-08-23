@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#040712" />
     <title>Admin Panel | Destroyer Reviews</title>
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/admin.css?v=admin-reviews-read-20260731" />
+    <link rel="stylesheet" href="css/admin.css?v=admin-client-review-edit-20260823" />
   </head>
   <body class="admin-page">
     <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
@@ -599,6 +599,85 @@
         </form>
       </dialog>
 
+      <dialog class="admin-order-dialog admin-review-prepare-dialog admin-review-edit-dialog" data-admin-review-edit-dialog aria-labelledby="admin-review-edit-dialog-title">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Corrección de cliente</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-review-edit-dialog-title" data-admin-review-edit-dialog-title>Corregir reseña</h2>
+            </div>
+            <p data-admin-review-edit-dialog-status>Corrige el texto enviado por el cliente. No publica nada ni inicia acciones externas.</p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar corrección" data-admin-review-edit-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+
+        <form class="admin-review-prepare-form admin-review-edit-form" data-admin-review-edit-form novalidate>
+          <div class="admin-order-dialog__body admin-review-prepare-form__body">
+            <section class="admin-prepare-context" aria-label="Reseña seleccionada">
+              <div>
+                <span>Pedido</span>
+                <strong data-admin-review-edit-order>—</strong>
+              </div>
+              <div>
+                <span>Número</span>
+                <strong data-admin-review-edit-number>—</strong>
+              </div>
+              <div>
+                <span>Estado actual</span>
+                <strong data-admin-review-edit-current-status>—</strong>
+              </div>
+            </section>
+
+            <section class="admin-prepare-editor admin-review-edit-editor">
+              <div class="admin-prepare-editor__intro">
+                <span>Texto corregido</span>
+                <p>Ajusta la valoración, el texto enviado por el cliente o la nota interna. El estado de la reseña no cambia.</p>
+              </div>
+
+              <fieldset class="admin-prepare-rating" data-admin-review-edit-rating>
+                <legend>Valoración <span aria-hidden="true">*</span></legend>
+                <div class="admin-prepare-rating__options">
+                  <label>
+                    <input type="radio" name="review-edit-rating" value="3" required />
+                    <span><strong>3</strong><small>★★★</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="review-edit-rating" value="4" required />
+                    <span><strong>4</strong><small>★★★★</small></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="review-edit-rating" value="5" required />
+                    <span><strong>5</strong><small>★★★★★</small></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <label class="admin-prepare-field">
+                <span>Texto de la reseña <i aria-hidden="true">*</i></span>
+                <textarea name="review-edit-text" rows="7" required data-admin-review-edit-text placeholder="Escribe el texto corregido de la reseña"></textarea>
+              </label>
+
+              <label class="admin-prepare-field">
+                <span>Nota interna <small>Opcional</small></span>
+                <textarea name="review-edit-notes" rows="4" data-admin-review-edit-notes placeholder="Añade contexto útil para el equipo"></textarea>
+              </label>
+            </section>
+          </div>
+
+          <footer class="admin-review-prepare-form__footer">
+            <p class="admin-prepare-feedback" role="alert" aria-live="assertive" data-admin-review-edit-feedback></p>
+            <div>
+              <button class="admin-button admin-button--quiet" type="button" data-admin-review-edit-cancel>Cancelar</button>
+              <button class="admin-button admin-button--primary admin-prepare-save" type="submit" data-admin-review-edit-save>
+                <span>Guardar corrección</span>
+              </button>
+            </div>
+          </footer>
+        </form>
+      </dialog>
+
       <dialog class="admin-order-dialog admin-free-trial-dialog" data-free-trial-dialog aria-labelledby="admin-free-trial-dialog-title">
         <header class="admin-order-dialog__head">
           <div>
@@ -652,6 +731,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-team-review-prepare-20260805"></script>
+    <script defer src="js/admin.js?v=admin-client-review-edit-20260823"></script>
   </body>
 </html>
