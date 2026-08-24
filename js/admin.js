@@ -70,6 +70,16 @@
   const reviewEditFeedback = root.querySelector("[data-admin-review-edit-feedback]");
   const reviewEditCancel = root.querySelector("[data-admin-review-edit-cancel]");
   const reviewEditSave = root.querySelector("[data-admin-review-edit-save]");
+  const reviewCompleteDialog = root.querySelector("[data-admin-review-complete-dialog]");
+  const reviewCompleteDialogClose = root.querySelector("[data-admin-review-complete-dialog-close]");
+  const reviewCompleteForm = root.querySelector("[data-admin-review-complete-form]");
+  const reviewCompleteOrder = root.querySelector("[data-admin-review-complete-order]");
+  const reviewCompleteNumber = root.querySelector("[data-admin-review-complete-number]");
+  const reviewCompleteSource = root.querySelector("[data-admin-review-complete-source]");
+  const reviewCompleteCurrentStatus = root.querySelector("[data-admin-review-complete-current-status]");
+  const reviewCompleteFeedback = root.querySelector("[data-admin-review-complete-feedback]");
+  const reviewCompleteCancel = root.querySelector("[data-admin-review-complete-cancel]");
+  const reviewCompleteSave = root.querySelector("[data-admin-review-complete-save]");
   const imageLightbox = root.querySelector("[data-admin-image-lightbox]");
   const imageLightboxImage = root.querySelector("[data-admin-image-lightbox-image]");
   const imageLightboxName = root.querySelector("[data-admin-image-lightbox-name]");
@@ -155,6 +165,9 @@
     activeClientEditReviewId: "",
     clientEditOrigin: "",
     clientEditSaving: false,
+    activeCompletionReviewId: "",
+    completionOrigin: "",
+    completionSaving: false,
     activeFreeTrialId: "",
     activeClientKey: "",
     copyFeedbackTimer: null,
@@ -370,6 +383,16 @@
     && adminState.dataReady
     && review?.source === "client"
     && review.status === "submitted"
+  );
+
+  const canCompleteReview = (review) => Boolean(
+    adminState.accessGranted
+    && adminState.session?.user
+    && adminState.dataReady
+    && (
+      (review?.source === "team" && review.status === "prepared")
+      || (review?.source === "client" && review.status === "submitted")
+    )
   );
 
   const formatFreeTrialStatus = (status) => freeTrialStatusLabels[status] || "Sin estado";
@@ -2063,11 +2086,7 @@
       : (isPrepared ? "Editar preparación" : "Preparar reseña");
 
     if (variant === "order") {
-      return `
-        <div class="admin-review-card__actions">
-          <button class="admin-review-prepare-link" type="button" data-review-prepare="${escapeHtml(review.id)}">${escapeHtml(label)}</button>
-        </div>
-      `;
+      return `<button class="admin-review-prepare-link" type="button" data-review-prepare="${escapeHtml(review.id)}">${escapeHtml(label)}</button>`;
     }
 
     return `
@@ -2085,11 +2104,7 @@
     if (!canEditClientReview(review)) return "";
 
     if (variant === "order") {
-      return `
-        <div class="admin-review-card__actions">
-          <button class="admin-review-edit-link" type="button" data-review-edit="${escapeHtml(review.id)}">Corregir</button>
-        </div>
-      `;
+      return `<button class="admin-review-edit-link" type="button" data-review-edit="${escapeHtml(review.id)}">Corregir</button>`;
     }
 
     return `
@@ -2101,6 +2116,35 @@
         <button class="admin-button admin-button--primary" type="button" data-review-edit="${escapeHtml(review.id)}">Corregir reseña</button>
       </section>
     `;
+  };
+
+  const renderCompleteReviewAction = (review, variant = "detail") => {
+    if (!canCompleteReview(review)) return "";
+
+    if (variant === "order") {
+      return `<button class="admin-review-complete-link" type="button" data-review-complete="${escapeHtml(review.id)}">Finalizar</button>`;
+    }
+
+    return `
+      <section class="admin-review-complete-callout">
+        <div>
+          <span>Marcar como completada</span>
+          <p>Marca esta reseña como completada dentro del panel, sin iniciar acciones externas.</p>
+        </div>
+        <button class="admin-button admin-button--primary" type="button" data-review-complete="${escapeHtml(review.id)}">Finalizar reseña</button>
+      </section>
+    `;
+  };
+
+  const renderReviewCardActions = (review) => {
+    const actions = [
+      renderTeamReviewPrepareAction(review, "order"),
+      renderClientReviewEditAction(review, "order"),
+      renderCompleteReviewAction(review, "order"),
+    ].filter(Boolean);
+    return actions.length
+      ? `<div class="admin-review-card__actions">${actions.join("")}</div>`
+      : "";
   };
 
   const renderReviewDetail = (review) => {
@@ -2132,8 +2176,7 @@
         <div class="admin-review-card__text"><span>${escapeHtml(context.label)}</span><p>${review.review_text ? escapeHtml(review.review_text) : escapeHtml(context.empty)}</p></div>
         ${review.review_notes ? `<div class="admin-review-card__note"><span>Nota específica</span><p>${escapeHtml(review.review_notes)}</p></div>` : ""}
         ${mediaMarkup}
-        ${renderTeamReviewPrepareAction(review, "order")}
-        ${renderClientReviewEditAction(review, "order")}
+        ${renderReviewCardActions(review)}
       </article>
     `;
   };
@@ -2203,6 +2246,7 @@
 
       ${renderTeamReviewPrepareAction(review)}
       ${renderClientReviewEditAction(review)}
+      ${renderCompleteReviewAction(review)}
 
       ${reviewNotes ? `
         <section class="admin-detail-section">
@@ -2714,9 +2758,155 @@
     }
   };
 
+  const getCompletionErrorMessage = (error) => {
+    const errorText = [error?.message, error?.details, error?.hint, error?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const knownErrors = [
+      ["invalid_review_status", "Esta reseña ya no se puede finalizar desde aquí."],
+      ["invalid_review_source", "No se puede finalizar esta reseña desde aquí."],
+      ["admin_required", "No tienes permisos para esta acción."],
+      ["authentication_required", "No tienes permisos para esta acción."],
+      ["review_not_found", "No se encontró la reseña."],
+    ];
+    return knownErrors.find(([errorKey]) => errorText.includes(errorKey))?.[1]
+      || "No se pudo finalizar la reseña.";
+  };
+
+  const showCompletionFeedback = (message = "") => {
+    if (!reviewCompleteFeedback) return;
+    reviewCompleteFeedback.textContent = message;
+    reviewCompleteFeedback.hidden = !message;
+  };
+
+  const setCompletionSaving = (isSaving) => {
+    adminState.completionSaving = isSaving;
+    if (reviewCompleteSave) {
+      reviewCompleteSave.disabled = isSaving;
+      reviewCompleteSave.setAttribute("aria-busy", String(isSaving));
+      const label = reviewCompleteSave.querySelector("span");
+      if (label) label.textContent = isSaving ? "Finalizando…" : "Finalizar reseña";
+    }
+    if (reviewCompleteCancel) reviewCompleteCancel.disabled = isSaving;
+    if (reviewCompleteDialogClose) reviewCompleteDialogClose.disabled = isSaving;
+  };
+
+  const resetCompletionState = () => {
+    showCompletionFeedback();
+    setCompletionSaving(false);
+    adminState.activeCompletionReviewId = "";
+    adminState.completionOrigin = "";
+  };
+
+  const closeReviewCompletionDialog = () => {
+    if (!reviewCompleteDialog?.open || adminState.completionSaving) return;
+    reviewCompleteDialog.close();
+  };
+
+  const openReviewCompletionDialog = (reviewId, origin) => {
+    const review = adminState.viewReviews.find((item) => item.id === reviewId);
+    if (!reviewCompleteDialog || !reviewCompleteForm || !canCompleteReview(review)) return;
+    if (!["review", "order"].includes(origin)) return;
+
+    adminState.activeCompletionReviewId = review.id;
+    adminState.completionOrigin = origin;
+    setCompletionSaving(false);
+    showCompletionFeedback();
+
+    if (reviewCompleteOrder) reviewCompleteOrder.textContent = review.orderRef;
+    if (reviewCompleteNumber) reviewCompleteNumber.textContent = `Reseña ${Number(review.review_index) || "—"}`;
+    if (reviewCompleteSource) reviewCompleteSource.textContent = review.sourceLabel;
+    if (reviewCompleteCurrentStatus) reviewCompleteCurrentStatus.textContent = review.statusLabel;
+
+    if (!reviewCompleteDialog.open) reviewCompleteDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+    window.requestAnimationFrame(() => reviewCompleteCancel?.focus());
+  };
+
+  const replaceCompletedReviewInMemory = (updatedReview) => {
+    adminState.reviews = adminState.reviews.map((review) => (
+      review.id === updatedReview.id
+        ? {
+            ...review,
+            status: updatedReview.status,
+            updated_at: updatedReview.updated_at,
+          }
+        : review
+    ));
+  };
+
+  const submitReviewCompletion = async () => {
+    if (adminState.completionSaving || !reviewCompleteForm) return;
+    const review = adminState.reviews.find((item) => item.id === adminState.activeCompletionReviewId);
+
+    if (!adminState.accessGranted || !adminState.session?.user || !adminState.dataReady) {
+      showCompletionFeedback("No tienes permisos para esta acción.");
+      return;
+    }
+    if (!review) {
+      showCompletionFeedback("No se encontró la reseña.");
+      return;
+    }
+    if (!["team", "client"].includes(review.source)) {
+      showCompletionFeedback("No se puede finalizar esta reseña desde aquí.");
+      return;
+    }
+    if (
+      (review.source === "team" && review.status !== "prepared")
+      || (review.source === "client" && review.status !== "submitted")
+    ) {
+      showCompletionFeedback("Esta reseña ya no se puede finalizar desde aquí.");
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      showCompletionFeedback("No se pudo finalizar la reseña.");
+      return;
+    }
+
+    setCompletionSaving(true);
+    showCompletionFeedback();
+    try {
+      const { data, error } = await supabase.rpc("admin_complete_review", {
+        p_review_id: review.id,
+      });
+      if (error) throw error;
+
+      const updatedReview = Array.isArray(data) ? data[0] : data;
+      if (
+        !updatedReview
+        || updatedReview.id !== review.id
+        || updatedReview.order_id !== review.order_id
+        || updatedReview.source !== review.source
+        || updatedReview.status !== "completed"
+      ) {
+        throw new Error("invalid_complete_response");
+      }
+
+      const origin = adminState.completionOrigin;
+      replaceCompletedReviewInMemory(updatedReview);
+      setCompletionSaving(false);
+      reviewCompleteDialog.close();
+      renderAdminData();
+
+      if (origin === "review" && reviewDialog?.open) {
+        renderReviewDetailModal(updatedReview.id);
+      } else if (origin === "order" && orderDialog?.open) {
+        renderOrderDetail(updatedReview.order_id);
+      }
+      showCopyFeedback("Reseña completada.");
+    } catch (error) {
+      console.error("No se pudo finalizar la reseña.", error);
+      showCompletionFeedback(getCompletionErrorMessage(error));
+      setCompletionSaving(false);
+    }
+  };
+
   const syncDialogOpenClass = () => {
     document.body.classList.toggle("admin-dialog-open", Boolean(
-      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || reviewEditDialog?.open || freeTrialDialog?.open || clientDialog?.open,
+      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || reviewEditDialog?.open || reviewCompleteDialog?.open || freeTrialDialog?.open || clientDialog?.open,
     ));
   };
 
@@ -2895,8 +3085,23 @@
   reviewEditForm?.addEventListener("input", () => {
     if (!adminState.clientEditSaving) showClientEditFeedback();
   });
+  reviewCompleteForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitReviewCompletion();
+  });
 
   root.addEventListener("click", async (event) => {
+    const reviewCompleteButton = event.target.closest("[data-review-complete]");
+    if (reviewCompleteButton) {
+      const origin = reviewCompleteButton.closest("[data-admin-review-dialog]")
+        ? "review"
+        : reviewCompleteButton.closest("[data-admin-order-dialog]")
+          ? "order"
+          : "";
+      openReviewCompletionDialog(reviewCompleteButton.dataset.reviewComplete, origin);
+      return;
+    }
+
     const reviewEditButton = event.target.closest("[data-review-edit]");
     if (reviewEditButton) {
       const origin = reviewEditButton.closest("[data-admin-review-dialog]")
@@ -3085,6 +3290,22 @@
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeClientReviewEditDialog();
   });
+  reviewCompleteDialogClose?.addEventListener("click", closeReviewCompletionDialog);
+  reviewCompleteCancel?.addEventListener("click", closeReviewCompletionDialog);
+  reviewCompleteDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeReviewCompletionDialog();
+  });
+  reviewCompleteDialog?.addEventListener("close", () => {
+    resetCompletionState();
+    syncDialogOpenClass();
+  });
+  reviewCompleteDialog?.addEventListener("click", (event) => {
+    if (event.target !== reviewCompleteDialog) return;
+    const rect = reviewCompleteDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeReviewCompletionDialog();
+  });
   freeTrialDialogClose?.addEventListener("click", closeFreeTrialDialog);
   freeTrialDialog?.addEventListener("close", syncDialogOpenClass);
   freeTrialDialog?.addEventListener("click", (event) => {
@@ -3165,6 +3386,9 @@
     renderReviewsView,
     renderReviewCard,
     renderReviewDetailModal,
+    canCompleteReview,
+    openReviewCompletionDialog,
+    submitReviewCompletion,
     filterReviews,
     getReviewSearchText,
     formatReviewStatus,
