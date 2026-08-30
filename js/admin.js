@@ -104,6 +104,20 @@
   const freeTrialDialogClose = root.querySelector("[data-free-trial-dialog-close]");
   const freeTrialCopyRef = root.querySelector("[data-free-trial-copy-ref]");
   const freeTrialCopyFeedback = root.querySelector("[data-free-trial-copy-feedback]");
+  const freeTrialStatusDialog = root.querySelector("[data-free-trial-status-dialog]");
+  const freeTrialStatusDialogClose = root.querySelector("[data-free-trial-status-dialog-close]");
+  const freeTrialStatusForm = root.querySelector("[data-free-trial-status-form]");
+  const freeTrialStatusRef = root.querySelector("[data-free-trial-status-ref]");
+  const freeTrialStatusCurrent = root.querySelector("[data-free-trial-status-current]");
+  const freeTrialStatusMapsRow = root.querySelector("[data-free-trial-status-maps-row]");
+  const freeTrialStatusMaps = root.querySelector("[data-free-trial-status-maps]");
+  const freeTrialStatusClientNote = root.querySelector("[data-free-trial-status-client-note]");
+  const freeTrialStatusReviewText = root.querySelector("[data-free-trial-status-review-text]");
+  const freeTrialReviewRequirement = root.querySelector("[data-free-trial-review-requirement]");
+  const freeTrialStatusFeedback = root.querySelector("[data-free-trial-status-feedback]");
+  const freeTrialStatusCancel = root.querySelector("[data-free-trial-status-cancel]");
+  const freeTrialStatusSave = root.querySelector("[data-free-trial-status-save]");
+  const freeTrialStatusToast = root.querySelector("[data-free-trial-status-toast]");
   const clientsCount = root.querySelector("[data-admin-clients-count]");
   const clientsMetrics = root.querySelector("[data-admin-clients-metrics]");
   const clientsFiltersForm = root.querySelector("[data-admin-clients-filters]");
@@ -169,6 +183,10 @@
     completionOrigin: "",
     completionSaving: false,
     activeFreeTrialId: "",
+    activeFreeTrialStatusId: "",
+    freeTrialStatusOrigin: "",
+    freeTrialStatusSaving: false,
+    freeTrialStatusToastTimer: null,
     activeClientKey: "",
     copyFeedbackTimer: null,
     mediaGalleryStates: new Map(),
@@ -243,9 +261,10 @@
   const freeTrialStatusLabels = {
     pending: "Pendiente",
     review: "En revisión",
-    active: "Activa",
+    active: "En proceso",
     completed: "Completada",
   };
+  const validFreeTrialStatuses = new Set(Object.keys(freeTrialStatusLabels));
 
   const getSupabaseClient = () => window.DestroyerSupabase?.client || null;
 
@@ -400,9 +419,16 @@
   const getFreeTrialBadgeType = (status) => ({
     pending: "warning",
     review: "info",
-    active: "success",
+    active: "active",
     completed: "success",
   })[status] || "neutral";
+
+  const canManageFreeTrialRequest = (request) => Boolean(
+    adminState.accessGranted
+    && adminState.session?.user
+    && adminState.dataReady
+    && request?.id
+  );
 
   const summarizeFreeTrialNote = (value, maxLength = 150) => {
     const note = `${value || ""}`.trim().replace(/\s+/g, " ");
@@ -478,6 +504,8 @@
 
   const clearAdminData = () => {
     adminState.mediaExpiryTimers.forEach((timer) => window.clearTimeout(timer));
+    window.clearTimeout(adminState.freeTrialStatusToastTimer);
+    if (freeTrialStatusToast) freeTrialStatusToast.hidden = true;
     adminState.orders = [];
     adminState.items = [];
     adminState.reviews = [];
@@ -498,6 +526,9 @@
     adminState.clientEditOrigin = "";
     adminState.clientEditSaving = false;
     adminState.activeFreeTrialId = "";
+    adminState.activeFreeTrialStatusId = "";
+    adminState.freeTrialStatusOrigin = "";
+    adminState.freeTrialStatusSaving = false;
     adminState.activeClientKey = "";
     adminState.activeLightboxReviewId = "";
     adminState.mediaGalleryStates.clear();
@@ -618,7 +649,7 @@
     if (!supabase) throw new Error("Supabase no está disponible");
     const { data, error } = await supabase
       .from("free_trial_requests")
-      .select("id,google_maps_url,note,status,created_at,updated_at")
+      .select("id,google_maps_url,note,review_text,status,created_at,updated_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data || [];
@@ -1119,6 +1150,7 @@
     request.id,
     request.google_maps_url,
     request.note,
+    request.review_text,
     request.status,
     request.statusLabel,
   ].filter(Boolean).join(" "));
@@ -1145,11 +1177,12 @@
         <div><span>Estado</span><strong><span class="admin-state-chip" data-tone="${request.badgeType}">${escapeHtml(request.statusLabel)}</span></strong></div>
       </div>
       <div class="admin-free-trial-row__note">
-        <span>Notas</span>
-        <p>${escapeHtml(request.noteSummary || "Sin notas en la solicitud.")}</p>
+        <span>Nota del cliente</span>
+        <p>${escapeHtml(request.noteSummary || "Sin nota del cliente.")}</p>
       </div>
       <div class="admin-free-trial-row__actions">
         ${request.mapsUrl ? `<a class="admin-row-button" href="${escapeHtml(request.mapsUrl)}" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a>` : ""}
+        <button class="admin-row-button admin-free-trial-manage-button" type="button" data-free-trial-manage="${escapeHtml(request.id)}">Gestionar</button>
         <button class="admin-row-button" type="button" data-free-trial-open="${escapeHtml(request.id)}">Ver detalle</button>
       </div>
     </article>
@@ -1167,7 +1200,7 @@
       { label: "Solicitudes totales", value: requests.length, tone: "neutral" },
       { label: "Últimos 7 días", value: requests.filter((request) => isWithinDays(request.created_at, 7)).length, tone: "info" },
       { label: "Pendientes", value: requests.filter((request) => request.status === "pending").length, tone: "warning" },
-      { label: "Activas o completadas", value: requests.filter((request) => ["active", "completed"].includes(request.status)).length, tone: "success" },
+      { label: "En proceso o completadas", value: requests.filter((request) => ["active", "completed"].includes(request.status)).length, tone: "success" },
     ];
 
     freeTrialsMetrics.innerHTML = metrics.map((metric) => `
@@ -1220,7 +1253,7 @@
       freeTrialsList.innerHTML = `
         <div class="admin-free-trials-empty">
           <h4>No hay resultados con estos filtros</h4>
-          <p>Prueba otra referencia, URL, nota o estado.</p>
+          <p>Prueba otra referencia, URL, nota del cliente, reseña o estado.</p>
           <button class="admin-row-button" type="button" data-free-trials-clear>Limpiar filtros</button>
         </div>
       `;
@@ -2307,6 +2340,9 @@
           <div><dt>Estado</dt><dd>${escapeHtml(request.statusLabel)}</dd></div>
           <div><dt>Última actualización</dt><dd>${escapeHtml(formatDate(request.updated_at, true))}</dd></div>
         </dl>
+        <div class="admin-detail-actions">
+          <button type="button" data-free-trial-manage="${escapeHtml(request.id)}">Cambiar estado</button>
+        </div>
       </section>
 
       <section class="admin-detail-section">
@@ -2324,16 +2360,27 @@
       </section>
 
       <section class="admin-detail-section">
-        <div class="admin-detail-section__head"><h3>Notas</h3></div>
+        <div class="admin-detail-section__head"><h3>Nota del cliente</h3></div>
         <div class="admin-detail-note">
-          <span>Mensaje de la solicitud</span>
-          <p>${request.note ? escapeHtml(request.note) : "Sin notas en la solicitud."}</p>
+          <span>Mensaje incluido al solicitar la prueba</span>
+          <p>${request.note ? escapeHtml(request.note) : "Sin nota del cliente."}</p>
+        </div>
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head">
+          <h3>Reseña gratuita</h3>
+          ${renderReviewStars({ rating: 5 }, true)}
+        </div>
+        <div class="admin-detail-note">
+          <span>Texto final preparado por el admin</span>
+          <p>${request.review_text ? escapeHtml(request.review_text) : "Aún no hay texto final para esta prueba."}</p>
         </div>
       </section>
     `;
 
     if (freeTrialCopyFeedback) freeTrialCopyFeedback.textContent = "";
-    freeTrialDialog.showModal();
+    if (!freeTrialDialog.open) freeTrialDialog.showModal();
     document.body.classList.add("admin-dialog-open");
   };
 
@@ -2904,9 +2951,230 @@
     }
   };
 
+  const getFreeTrialStatusErrorMessage = (error) => {
+    const errorText = [error?.message, error?.details, error?.hint, error?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const knownErrors = [
+      ["invalid_free_trial_status", "El estado seleccionado no es válido."],
+      ["request_not_found", "No se encontró la solicitud."],
+      ["admin_required", "No tienes permisos para esta acción."],
+      ["authentication_required", "No tienes permisos para esta acción."],
+      ["review_text_required", "Escribe el texto final de la reseña."],
+    ];
+    return knownErrors.find(([errorKey]) => errorText.includes(errorKey))?.[1]
+      || "No se pudo guardar el estado.";
+  };
+
+  const showFreeTrialStatusFeedback = (message = "") => {
+    if (!freeTrialStatusFeedback) return;
+    freeTrialStatusFeedback.textContent = message;
+    freeTrialStatusFeedback.hidden = !message;
+  };
+
+  const showFreeTrialStatusToast = () => {
+    if (!freeTrialStatusToast) return;
+    window.clearTimeout(adminState.freeTrialStatusToastTimer);
+    freeTrialStatusToast.hidden = false;
+    adminState.freeTrialStatusToastTimer = window.setTimeout(() => {
+      freeTrialStatusToast.hidden = true;
+    }, 2400);
+  };
+
+  const syncFreeTrialReviewTextState = () => {
+    const selectedStatus = freeTrialStatusForm
+      ?.querySelector('input[name="free-trial-status"]:checked')
+      ?.value;
+    const canPrepareReview = selectedStatus === "active" || selectedStatus === "completed";
+    const isCompleted = selectedStatus === "completed";
+
+    if (freeTrialStatusReviewText) {
+      freeTrialStatusReviewText.required = isCompleted;
+      freeTrialStatusReviewText.setAttribute("aria-required", String(isCompleted));
+      freeTrialStatusReviewText.disabled = adminState.freeTrialStatusSaving || !canPrepareReview;
+      freeTrialStatusReviewText.closest(".admin-free-trial-review-field")
+        ?.classList.toggle("is-disabled", !canPrepareReview);
+    }
+    if (freeTrialReviewRequirement) {
+      freeTrialReviewRequirement.textContent = isCompleted
+        ? "Obligatorio"
+        : selectedStatus === "active"
+          ? "Opcional en En proceso"
+          : "Disponible en En proceso";
+    }
+  };
+
+  const setFreeTrialStatusSaving = (isSaving) => {
+    adminState.freeTrialStatusSaving = isSaving;
+    if (freeTrialStatusSave) {
+      freeTrialStatusSave.disabled = isSaving;
+      freeTrialStatusSave.setAttribute("aria-busy", String(isSaving));
+      const label = freeTrialStatusSave.querySelector("span");
+      if (label) label.textContent = isSaving ? "Guardando…" : "Guardar estado";
+    }
+    if (freeTrialStatusCancel) freeTrialStatusCancel.disabled = isSaving;
+    if (freeTrialStatusDialogClose) freeTrialStatusDialogClose.disabled = isSaving;
+    freeTrialStatusForm?.querySelectorAll('input[name="free-trial-status"]').forEach((control) => {
+      control.disabled = isSaving;
+    });
+    syncFreeTrialReviewTextState();
+  };
+
+  const resetFreeTrialStatusState = () => {
+    freeTrialStatusForm?.reset();
+    showFreeTrialStatusFeedback();
+    setFreeTrialStatusSaving(false);
+    adminState.activeFreeTrialStatusId = "";
+    adminState.freeTrialStatusOrigin = "";
+  };
+
+  const closeFreeTrialStatusDialog = () => {
+    if (!freeTrialStatusDialog?.open || adminState.freeTrialStatusSaving) return;
+    freeTrialStatusDialog.close();
+  };
+
+  const openFreeTrialStatusDialog = (requestId, origin) => {
+    const request = adminState.viewFreeTrialRequests.find((item) => item.id === requestId);
+    if (!freeTrialStatusDialog || !freeTrialStatusForm || !canManageFreeTrialRequest(request)) return;
+    if (!["list", "detail"].includes(origin)) return;
+
+    adminState.activeFreeTrialStatusId = request.id;
+    adminState.freeTrialStatusOrigin = origin;
+    freeTrialStatusForm.reset();
+    setFreeTrialStatusSaving(false);
+    showFreeTrialStatusFeedback();
+
+    if (freeTrialStatusRef) freeTrialStatusRef.textContent = request.ref;
+    if (freeTrialStatusCurrent) {
+      freeTrialStatusCurrent.textContent = request.statusLabel;
+      freeTrialStatusCurrent.dataset.tone = request.badgeType;
+    }
+
+    const mapsUrl = `${request.google_maps_url || ""}`.trim();
+    if (freeTrialStatusMapsRow) freeTrialStatusMapsRow.hidden = !mapsUrl;
+    if (freeTrialStatusMaps) freeTrialStatusMaps.textContent = mapsUrl;
+
+    const clientNote = `${request.note || ""}`.trim();
+    if (freeTrialStatusClientNote) {
+      freeTrialStatusClientNote.textContent = clientNote || "Sin nota del cliente.";
+    }
+    if (freeTrialStatusReviewText) {
+      freeTrialStatusReviewText.value = request.review_text || "";
+    }
+
+    if (validFreeTrialStatuses.has(request.status)) {
+      const statusInput = freeTrialStatusForm.querySelector(`input[name="free-trial-status"][value="${request.status}"]`);
+      if (statusInput) statusInput.checked = true;
+    }
+    syncFreeTrialReviewTextState();
+
+    if (!freeTrialStatusDialog.open) freeTrialStatusDialog.showModal();
+    document.body.classList.add("admin-dialog-open");
+    window.requestAnimationFrame(() => {
+      freeTrialStatusForm.querySelector('input[name="free-trial-status"]:checked, input[name="free-trial-status"]')?.focus();
+    });
+  };
+
+  const replaceFreeTrialRequestInMemory = (requestId, updatedRequest) => {
+    adminState.freeTrialRequests = adminState.freeTrialRequests.map((request) => (
+      request.id === requestId
+        ? {
+          ...request,
+          status: updatedRequest.status,
+          review_text: updatedRequest.review_text,
+          updated_at: updatedRequest.updated_at,
+        }
+        : request
+    ));
+  };
+
+  const submitFreeTrialStatus = async () => {
+    if (adminState.freeTrialStatusSaving || !freeTrialStatusForm) return;
+    const request = adminState.freeTrialRequests.find((item) => item.id === adminState.activeFreeTrialStatusId);
+
+    if (!adminState.accessGranted || !adminState.session?.user || !adminState.dataReady) {
+      showFreeTrialStatusFeedback("No tienes permisos para esta acción.");
+      return;
+    }
+    if (!request) {
+      showFreeTrialStatusFeedback("No se encontró la solicitud.");
+      return;
+    }
+
+    const statusInput = freeTrialStatusForm.querySelector('input[name="free-trial-status"]:checked');
+    const status = `${statusInput?.value || ""}`.trim();
+    const reviewTextInput = `${freeTrialStatusReviewText?.value || ""}`.trim();
+    const canPrepareReview = status === "active" || status === "completed";
+    const reviewText = canPrepareReview ? reviewTextInput : "";
+
+    if (!status) {
+      showFreeTrialStatusFeedback("Selecciona un estado.");
+      freeTrialStatusForm.querySelector('input[name="free-trial-status"]')?.focus();
+      return;
+    }
+    if (!validFreeTrialStatuses.has(status)) {
+      showFreeTrialStatusFeedback("El estado seleccionado no es válido.");
+      freeTrialStatusForm.querySelector('input[name="free-trial-status"]')?.focus();
+      return;
+    }
+    if (status === "completed" && !reviewText) {
+      showFreeTrialStatusFeedback("Escribe el texto final de la reseña.");
+      freeTrialStatusReviewText?.focus();
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      showFreeTrialStatusFeedback("No se pudo guardar el estado.");
+      return;
+    }
+
+    setFreeTrialStatusSaving(true);
+    showFreeTrialStatusFeedback();
+    try {
+      const { data, error } = await supabase.rpc("admin_update_free_trial_request", {
+        p_request_id: request.id,
+        p_status: status,
+        p_review_text: reviewText || null,
+      });
+      if (error) throw error;
+
+      const updatedRequest = Array.isArray(data) ? data[0] : data;
+      const updatedReviewText = `${updatedRequest?.review_text || ""}`.trim();
+      const clearsReviewText = status === "pending" || status === "review";
+      if (
+        !updatedRequest
+        || updatedRequest.id !== request.id
+        || updatedRequest.status !== status
+        || !validFreeTrialStatuses.has(updatedRequest.status)
+        || (clearsReviewText && updatedRequest.review_text !== null)
+        || (status === "active" && updatedReviewText !== reviewText)
+        || (status === "completed" && updatedReviewText !== reviewText)
+      ) {
+        throw new Error("invalid_free_trial_status_response");
+      }
+
+      const origin = adminState.freeTrialStatusOrigin;
+      replaceFreeTrialRequestInMemory(request.id, updatedRequest);
+      setFreeTrialStatusSaving(false);
+      freeTrialStatusDialog.close();
+      renderAdminData();
+
+      if (origin === "detail" && freeTrialDialog?.open) {
+        renderFreeTrialDetail(updatedRequest.id);
+      }
+      showFreeTrialStatusToast();
+    } catch (error) {
+      console.error("No se pudo guardar el estado de la solicitud.", error);
+      showFreeTrialStatusFeedback(getFreeTrialStatusErrorMessage(error));
+      setFreeTrialStatusSaving(false);
+    }
+  };
+
   const syncDialogOpenClass = () => {
     document.body.classList.toggle("admin-dialog-open", Boolean(
-      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || reviewEditDialog?.open || reviewCompleteDialog?.open || freeTrialDialog?.open || clientDialog?.open,
+      orderDialog?.open || reviewDialog?.open || reviewPrepareDialog?.open || reviewEditDialog?.open || reviewCompleteDialog?.open || freeTrialDialog?.open || freeTrialStatusDialog?.open || clientDialog?.open,
     ));
   };
 
@@ -3089,6 +3357,16 @@
     event.preventDefault();
     void submitReviewCompletion();
   });
+  freeTrialStatusForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitFreeTrialStatus();
+  });
+  freeTrialStatusForm?.addEventListener("input", (event) => {
+    if (event.target.matches('input[name="free-trial-status"]')) {
+      syncFreeTrialReviewTextState();
+    }
+    if (!adminState.freeTrialStatusSaving) showFreeTrialStatusFeedback();
+  });
 
   root.addEventListener("click", async (event) => {
     const reviewCompleteButton = event.target.closest("[data-review-complete]");
@@ -3149,6 +3427,13 @@
       const orderId = reviewOrderOpenButton.dataset.reviewOrderOpen;
       closeReviewDialog();
       renderOrderDetail(orderId);
+      return;
+    }
+
+    const freeTrialManageButton = event.target.closest("[data-free-trial-manage]");
+    if (freeTrialManageButton) {
+      const origin = freeTrialManageButton.closest("[data-free-trial-dialog]") ? "detail" : "list";
+      openFreeTrialStatusDialog(freeTrialManageButton.dataset.freeTrialManage, origin);
       return;
     }
 
@@ -3313,6 +3598,22 @@
     const rect = freeTrialDialog.getBoundingClientRect();
     const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
     if (!inside) closeFreeTrialDialog();
+  });
+  freeTrialStatusDialogClose?.addEventListener("click", closeFreeTrialStatusDialog);
+  freeTrialStatusCancel?.addEventListener("click", closeFreeTrialStatusDialog);
+  freeTrialStatusDialog?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeFreeTrialStatusDialog();
+  });
+  freeTrialStatusDialog?.addEventListener("close", () => {
+    resetFreeTrialStatusState();
+    syncDialogOpenClass();
+  });
+  freeTrialStatusDialog?.addEventListener("click", (event) => {
+    if (event.target !== freeTrialStatusDialog) return;
+    const rect = freeTrialStatusDialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) closeFreeTrialStatusDialog();
   });
   clientDialogClose?.addEventListener("click", closeClientDialog);
   clientDialog?.addEventListener("close", syncDialogOpenClass);

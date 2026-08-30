@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#040712" />
     <title>Admin Panel | Destroyer Reviews</title>
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/admin.css?v=admin-complete-review-20260824" />
+    <link rel="stylesheet" href="css/admin.css?v=admin-free-trial-review-text-20260829" />
   </head>
   <body class="admin-page">
     <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
@@ -410,7 +410,7 @@
                         <option value="">Todos</option>
                         <option value="pending">Pendiente</option>
                         <option value="review">En revisión</option>
-                        <option value="active">Activa</option>
+                        <option value="active">En proceso</option>
                         <option value="completed">Completada</option>
                       </select>
                     </label>
@@ -753,6 +753,104 @@
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-free-trial-copy-feedback></p>
       </dialog>
 
+      <dialog class="admin-order-dialog admin-free-trial-status-dialog" data-free-trial-status-dialog aria-labelledby="admin-free-trial-status-dialog-title" aria-describedby="admin-free-trial-status-description">
+        <header class="admin-order-dialog__head">
+          <div>
+            <span>Gestionar solicitud</span>
+            <div class="admin-dialog-title-row">
+              <h2 id="admin-free-trial-status-dialog-title">Cambiar estado</h2>
+            </div>
+            <p>Actualiza el estado y prepara la reseña gratuita.</p>
+          </div>
+          <button class="admin-dialog-close" type="button" aria-label="Cerrar cambio de estado" data-free-trial-status-dialog-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+
+        <form class="admin-review-prepare-form admin-free-trial-status-form" data-free-trial-status-form novalidate>
+          <div class="admin-order-dialog__body admin-review-prepare-form__body admin-free-trial-status-form__body">
+            <section class="admin-free-trial-status-context" aria-label="Solicitud seleccionada">
+              <div>
+                <span>Referencia de solicitud</span>
+                <strong data-free-trial-status-ref>—</strong>
+              </div>
+              <div>
+                <span>Estado actual</span>
+                <strong><span class="admin-state-chip" data-free-trial-status-current>—</span></strong>
+              </div>
+              <div class="admin-free-trial-status-context__wide" data-free-trial-status-maps-row hidden>
+                <span>Google Maps URL</span>
+                <p data-free-trial-status-maps></p>
+              </div>
+              <div class="admin-free-trial-status-context__wide">
+                <span>Nota del cliente</span>
+                <p data-free-trial-status-client-note>Sin nota del cliente.</p>
+              </div>
+            </section>
+
+            <section class="admin-free-trial-status-editor">
+              <fieldset class="admin-free-trial-status-selector">
+                <legend>Nuevo estado <span aria-hidden="true">*</span></legend>
+                <div class="admin-free-trial-status-options">
+                  <label data-tone="warning">
+                    <input type="radio" name="free-trial-status" value="pending" required />
+                    <span><i aria-hidden="true"></i><strong>Pendiente</strong></span>
+                  </label>
+                  <label data-tone="info">
+                    <input type="radio" name="free-trial-status" value="review" required />
+                    <span><i aria-hidden="true"></i><strong>En revisión</strong></span>
+                  </label>
+                  <label data-tone="active">
+                    <input type="radio" name="free-trial-status" value="active" required />
+                    <span><i aria-hidden="true"></i><strong>En proceso</strong></span>
+                  </label>
+                  <label data-tone="success">
+                    <input type="radio" name="free-trial-status" value="completed" required />
+                    <span><i aria-hidden="true"></i><strong>Completada</strong></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="admin-free-trial-fixed-rating" role="group" aria-labelledby="admin-free-trial-rating-label">
+                <div>
+                  <span id="admin-free-trial-rating-label">Valoración de la prueba</span>
+                  <div class="admin-review-stars-display" aria-label="5 de 5 estrellas">
+                    <span class="admin-review-stars" aria-hidden="true">
+                      <span class="is-filled">★</span><span class="is-filled">★</span><span class="is-filled">★</span><span class="is-filled">★</span><span class="is-filled">★</span>
+                    </span>
+                    <strong>5/5</strong>
+                  </div>
+                </div>
+                <small>La prueba gratuita usa 5 estrellas fijas.</small>
+              </div>
+
+              <label class="admin-prepare-field admin-free-trial-review-field">
+                <span>Texto de la reseña gratuita <small data-free-trial-review-requirement>Disponible en En proceso</small></span>
+                <small class="admin-free-trial-field-help" id="admin-free-trial-review-help">Texto preparado por el admin. Se puede guardar en En proceso y se mostrará al cliente cuando la prueba esté completada.</small>
+                <textarea name="free-trial-review-text" rows="6" data-free-trial-status-review-text aria-describedby="admin-free-trial-review-help" placeholder="Escribe el texto final de la reseña gratuita"></textarea>
+              </label>
+            </section>
+
+            <section class="admin-complete-notice admin-free-trial-status-notice" aria-label="Efecto de la acción">
+              <span class="admin-complete-notice__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01" /><circle cx="12" cy="12" r="9" /></svg>
+              </span>
+              <p id="admin-free-trial-status-description">Esto solo cambia el estado interno de la solicitud. No crea pedidos, no cobra nada y no inicia acciones externas.</p>
+            </section>
+          </div>
+
+          <footer class="admin-review-prepare-form__footer">
+            <p class="admin-prepare-feedback" role="alert" aria-live="assertive" data-free-trial-status-feedback></p>
+            <div>
+              <button class="admin-button admin-button--quiet" type="button" data-free-trial-status-cancel>Cancelar</button>
+              <button class="admin-button admin-button--primary admin-prepare-save" type="submit" data-free-trial-status-save>
+                <span>Guardar estado</span>
+              </button>
+            </div>
+          </footer>
+        </form>
+      </dialog>
+
       <dialog class="admin-order-dialog admin-client-dialog" data-admin-client-dialog aria-labelledby="admin-client-dialog-title">
         <header class="admin-order-dialog__head">
           <div>
@@ -782,10 +880,15 @@
           <strong id="admin-image-lightbox-title" data-admin-image-lightbox-name></strong>
         </footer>
       </dialog>
+
+      <div class="admin-action-toast" role="status" aria-live="polite" data-free-trial-status-toast hidden>
+        <span aria-hidden="true">✓</span>
+        <strong>Estado actualizado.</strong>
+      </div>
     </main>
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-complete-review-20260824"></script>
+    <script defer src="js/admin.js?v=admin-free-trial-review-text-20260829"></script>
   </body>
 </html>

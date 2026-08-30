@@ -1870,6 +1870,7 @@ a:focus-visible {
 
 .admin-state-chip[data-tone="warning"] { color: #f6d99f; background: rgba(244, 197, 107, 0.11); }
 .admin-state-chip[data-tone="info"] { color: #b9d0ff; background: rgba(47, 107, 255, 0.13); }
+.admin-state-chip[data-tone="active"] { color: #afe9dc; background: rgba(65, 190, 174, 0.12); }
 .admin-state-chip[data-tone="success"] { color: #b1edca; background: rgba(104, 217, 160, 0.1); }
 .admin-state-chip[data-tone="danger"] { color: #ffbdc6; background: rgba(255, 130, 148, 0.1); }
 
@@ -2547,6 +2548,249 @@ a:focus-visible {
   width: min(720px, calc(100vw - 34px));
 }
 
+.admin-free-trial-status-dialog {
+  width: min(760px, calc(100vw - 34px));
+  border-color: rgba(104, 160, 255, 0.42);
+  background:
+    radial-gradient(circle at 86% 0%, rgba(47, 107, 255, 0.17), transparent 22rem),
+    #080e1c;
+}
+
+.admin-free-trial-status-dialog[open] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.admin-free-trial-status-form {
+  min-height: 0;
+}
+
+.admin-free-trial-status-form__body {
+  min-width: 0;
+  gap: 14px;
+  padding-top: 18px;
+}
+
+.admin-free-trial-status-context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.admin-free-trial-status-context > div {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 12px 13px;
+  border: 1px solid rgba(141, 164, 214, 0.12);
+  border-radius: 10px;
+  background: rgba(3, 7, 16, 0.58);
+}
+
+.admin-free-trial-status-context .admin-free-trial-status-context__wide {
+  grid-column: 1 / -1;
+}
+
+.admin-free-trial-status-context span {
+  color: #91b5ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.admin-free-trial-status-context strong,
+.admin-free-trial-status-context p {
+  min-width: 0;
+  margin: 0;
+  color: #edf3ff;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.admin-free-trial-status-context strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.admin-free-trial-status-context strong .admin-state-chip {
+  width: fit-content;
+  font-family: var(--admin-font);
+}
+
+.admin-free-trial-status-context p {
+  color: #c6d0e5;
+}
+
+[data-free-trial-status-client-note] {
+  white-space: pre-wrap;
+}
+
+.admin-free-trial-status-editor {
+  display: grid;
+  gap: 16px;
+  padding: 17px;
+  border: 1px solid rgba(104, 160, 255, 0.2);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(47, 107, 255, 0.075), transparent 42%),
+    rgba(5, 10, 22, 0.68);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.admin-free-trial-status-selector {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-free-trial-status-selector legend {
+  margin-bottom: 8px;
+  color: #c8d4ea;
+  font-size: 0.74rem;
+  font-weight: 760;
+}
+
+.admin-free-trial-status-selector legend span {
+  color: #8eb3ff;
+}
+
+.admin-free-trial-status-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-free-trial-status-options label {
+  position: relative;
+  min-width: 0;
+}
+
+.admin-free-trial-status-options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-free-trial-status-options label > span {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(141, 164, 214, 0.18);
+  border-radius: 10px;
+  color: #bdc9df;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: border-color 180ms var(--admin-ease), color 180ms var(--admin-ease), background 180ms var(--admin-ease), transform 180ms var(--admin-ease);
+}
+
+.admin-free-trial-status-options label > span:hover {
+  border-color: rgba(104, 160, 255, 0.42);
+  color: #f3f7ff;
+  transform: translateY(-1px);
+}
+
+.admin-free-trial-status-options label > span > i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #7e8ca8;
+}
+
+.admin-free-trial-status-options label[data-tone="warning"] > span > i { background: var(--admin-warning); }
+.admin-free-trial-status-options label[data-tone="info"] > span > i { background: var(--admin-blue-bright); }
+.admin-free-trial-status-options label[data-tone="active"] > span > i { background: #52c8b6; }
+.admin-free-trial-status-options label[data-tone="success"] > span > i { background: var(--admin-success); }
+
+.admin-free-trial-status-options input:focus-visible + span {
+  outline: 2px solid rgba(104, 160, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.admin-free-trial-status-options input:checked + span {
+  border-color: rgba(104, 160, 255, 0.68);
+  color: #fff;
+  background: rgba(47, 107, 255, 0.16);
+}
+
+.admin-free-trial-status-options input:disabled + span {
+  cursor: wait;
+  opacity: 0.58;
+  transform: none;
+}
+
+.admin-free-trial-status-notice {
+  align-items: start;
+}
+
+.admin-free-trial-fixed-rating {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 14px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: rgba(244, 197, 107, 0.055);
+}
+
+.admin-free-trial-fixed-rating > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-free-trial-fixed-rating > div > span {
+  color: #d9e2f3;
+  font-size: 0.74rem;
+  font-weight: 760;
+}
+
+.admin-free-trial-fixed-rating .admin-review-stars-display {
+  flex: 0 0 auto;
+}
+
+.admin-free-trial-fixed-rating > small,
+.admin-free-trial-field-help {
+  display: block;
+  color: #9dacc5;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.admin-free-trial-fixed-rating > small {
+  grid-column: 1 / -1;
+}
+
+.admin-free-trial-field-help {
+  margin: -3px 0 8px;
+  text-wrap: pretty;
+}
+
+.admin-free-trial-review-field textarea {
+  min-height: 142px;
+}
+
+.admin-free-trial-review-field textarea::placeholder {
+  color: #8c9ab4;
+}
+
+.admin-free-trial-review-field.is-disabled {
+  opacity: 0.72;
+}
+
+.admin-free-trial-review-field textarea:disabled {
+  cursor: not-allowed;
+  color: #8491a8;
+  background: rgba(3, 7, 16, 0.46);
+}
+
 .admin-review-dialog {
   width: min(820px, calc(100vw - 34px));
 }
@@ -2918,6 +3162,12 @@ a:focus-visible {
 }
 
 .admin-review-complete-dialog .admin-dialog-close:disabled {
+  cursor: wait;
+  opacity: 0.58;
+  transform: none;
+}
+
+.admin-free-trial-status-dialog .admin-dialog-close:disabled {
   cursor: wait;
   opacity: 0.58;
   transform: none;
@@ -4242,6 +4492,46 @@ body.admin-dialog-open {
   overflow: hidden;
 }
 
+.admin-action-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 11px;
+  border: 1px solid rgba(104, 217, 160, 0.34);
+  border-radius: 12px;
+  color: #eafff2;
+  background: rgba(7, 30, 23, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: admin-toast-enter 200ms var(--admin-ease) both;
+}
+
+.admin-action-toast > span {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #072116;
+  background: #87e5b2;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.admin-action-toast strong {
+  font-size: 0.78rem;
+}
+
+@keyframes admin-toast-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes admin-data-pulse {
   from { opacity: 0.45; }
   to { opacity: 1; }
@@ -4907,6 +5197,15 @@ body.admin-dialog-open {
 }
 
 @media (max-width: 720px) {
+  .admin-free-trial-status-context,
+  .admin-free-trial-status-options {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-free-trial-status-context .admin-free-trial-status-context__wide {
+    grid-column: auto;
+  }
+
   .admin-prepare-context {
     grid-template-columns: 1fr;
   }
@@ -4946,12 +5245,31 @@ body.admin-dialog-open {
 }
 
 @media (max-width: 520px) {
+  .admin-action-toast {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+
   .admin-complete-context {
     grid-template-columns: 1fr;
   }
 
   .admin-complete-notice {
     align-items: start;
+  }
+
+  .admin-free-trial-fixed-rating {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-free-trial-fixed-rating > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-free-trial-fixed-rating > small {
+    grid-column: auto;
   }
 }
 
