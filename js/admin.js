@@ -647,12 +647,9 @@
     assertAdminAccess();
     const supabase = getSupabaseClient();
     if (!supabase) throw new Error("Supabase no está disponible");
-    const { data, error } = await supabase
-      .from("free_trial_requests")
-      .select("id,google_maps_url,note,review_text,status,created_at,updated_at")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc("admin_list_free_trial_requests");
     if (error) throw error;
-    return data || [];
+    return Array.isArray(data) ? data : [];
   };
 
   const getRelevantReviewState = (order, reviews) => {

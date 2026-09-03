@@ -849,7 +849,7 @@ const initFreeTrialModal = () => {
   const statusLabels = {
     pending: "Pendiente",
     review: "En revisión",
-    active: "Activa",
+    active: "En proceso",
     completed: "Completada",
   };
 
@@ -971,7 +971,7 @@ const initFreeTrialModal = () => {
   const renderRequestForm = () => {
     renderShell("request", `
       <h2 id="trial-modal-title">Solicita tu prueba gratuita</h2>
-      <p class="free-trial-lead">Activaremos 1 reseña de prueba para que veas cómo funciona el servicio.</p>
+      <p class="free-trial-lead">Prepararemos 1 reseña de prueba para que veas cómo funciona el servicio.</p>
       <form class="free-trial-form" novalidate data-free-trial-form>
         <label class="free-trial-field" data-free-trial-field="google_maps_url">
           <span>Enlace de tu ficha de Google Maps</span>
@@ -1010,7 +1010,7 @@ const initFreeTrialModal = () => {
     const status = getStatusLabel(request?.status);
     renderShell("already", `
       <h2 id="trial-modal-title">Ya has solicitado tu prueba gratuita</h2>
-      <p class="free-trial-lead">Estamos revisando tu solicitud. Te avisaremos cuando esté activa.</p>
+      <p class="free-trial-lead">Puedes consultar el progreso de tu solicitud desde tu cuenta.</p>
       ${status ? `<p class="free-trial-status-pill">Estado: <strong>${status}</strong></p>` : ""}
       <div class="free-trial-actions free-trial-actions--single">
         <button class="button button-primary free-trial-primary" type="button" data-trial-done>Entendido</button>
@@ -1033,17 +1033,17 @@ const initFreeTrialModal = () => {
     const code = `${error?.code || ""}`.toUpperCase();
     const message = `${error?.message || error?.details || ""}`.toLowerCase();
 
-    if (code === "PGRST205" || message.includes("could not find the table") || message.includes("schema cache")) {
+    if (code === "PGRST202" || message.includes("could not find the function") || message.includes("schema cache")) {
       return {
-        message: "Supabase no encuentra la tabla de solicitudes de prueba gratuita.",
-        note: "Revisa que la migración de free_trial_requests esté aplicada y refresca el schema cache si acabas de crearla.",
+        message: "No está disponible la consulta segura de pruebas gratuitas.",
+        note: "Inténtalo de nuevo en unos minutos.",
       };
     }
 
-    if (code === "42501" || message.includes("permission denied")) {
+    if (code === "42501" || code === "28000" || message.includes("permission denied") || message.includes("authentication_required")) {
       return {
-        message: "Supabase está bloqueando la consulta por permisos de base de datos.",
-        note: "La tabla existe, pero el rol authenticated necesita permisos SELECT e INSERT además de las políticas RLS.",
+        message: "No hemos podido confirmar tu acceso a la prueba gratuita.",
+        note: "Cierra sesión, vuelve a iniciar sesión e inténtalo de nuevo.",
       };
     }
 
@@ -1064,13 +1064,10 @@ const initFreeTrialModal = () => {
     const client = getSupabaseClient();
     if (!client) throw new Error("Supabase no está disponible.");
 
-    const { data, error } = await client
-      .from("free_trial_requests")
-      .select("id,status,created_at")
-      .maybeSingle();
+    const { data, error } = await client.rpc("get_my_free_trial_request");
 
     if (error) throw error;
-    return data || null;
+    return Array.isArray(data) ? data[0] || null : data || null;
   };
 
   const syncTrialPromoVisibility = async () => {
@@ -1101,12 +1098,6 @@ const initFreeTrialModal = () => {
       console.warn("[free-trial] Supabase request lookup failed while checking promo visibility", error);
       showTrialPromo();
     }
-  };
-
-  const isDuplicateTrialError = (error) => {
-    const code = `${error?.code || ""}`.toLowerCase();
-    const message = `${error?.message || error?.details || ""}`.toLowerCase();
-    return code === "23505" || message.includes("duplicate") || message.includes("free_trial_requests_user_id_key");
   };
 
   const setFieldError = (form, message) => {
@@ -1164,27 +1155,17 @@ const initFreeTrialModal = () => {
     }
 
     try {
-      const { data, error } = await client
-        .from("free_trial_requests")
-        .insert({
-          google_maps_url: mapsUrl,
-          note: note || null,
-        })
-        .select("id,status,created_at")
-        .single();
+      const { data, error } = await client.rpc("create_my_free_trial_request", {
+        p_google_maps_url: mapsUrl,
+        p_note: note || null,
+      });
 
       if (error) throw error;
-      currentRequest = data || { status: "pending" };
+      currentRequest = Array.isArray(data) ? data[0] || null : data || null;
+      if (!currentRequest) throw new Error("invalid_free_trial_create_response");
       renderSuccess();
       hideTrialPromo();
-    } catch (error) {
-      if (isDuplicateTrialError(error)) {
-        currentRequest = await fetchFreeTrialRequest().catch(() => ({ status: "pending" }));
-        hideTrialPromo();
-        renderAlreadyRequested(currentRequest);
-        return;
-      }
-
+    } catch {
       if (status) {
         status.className = "free-trial-status is-error";
         status.textContent = "No hemos podido enviar la solicitud. Inténtalo de nuevo en unos segundos.";

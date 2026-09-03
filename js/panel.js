@@ -72,6 +72,13 @@
     completed: "Completado",
   };
 
+  const trialStatusLabels = {
+    pending: "Pendiente",
+    review: "En revisión",
+    active: "En proceso",
+    completed: "Completada",
+  };
+
   const pendingOrderStatuses = new Set(["pending", "review", "in_progress"]);
   const inProcessReviewStatuses = new Set(["awaiting_client", "draft", "submitted", "awaiting_team", "prepared", "approved"]);
   const manualPendingStatuses = new Set(["awaiting_client", "draft"]);
@@ -125,8 +132,12 @@
 
   const trialTone = () => {
     if (!state.trial) return "neutral";
-    if (["pending", "review"].includes(state.trial.status)) return "warning";
-    return "info";
+    return ({
+      pending: "warning",
+      review: "info",
+      active: "info",
+      completed: "success",
+    })[state.trial.status] || "neutral";
   };
 
   const escapeHtml = (value) => `${value || ""}`.replace(/[&<>"']/g, (char) => ({
@@ -245,8 +256,7 @@
 
   const getTrialLabel = () => {
     if (!state.trial) return "No solicitada";
-    if (["pending", "review"].includes(state.trial.status)) return "Pendiente de revisión";
-    return "Solicitada";
+    return trialStatusLabels[state.trial.status] || "Sin estado";
   };
 
   const getWhatsappHref = (message) => {
@@ -338,15 +348,29 @@
       return;
     }
 
+    const completedReviewText = state.trial.status === "completed"
+      ? `${state.trial.review_text || ""}`.trim()
+      : "";
+
     trialCard.dataset.tone = trialTone();
     trialCard.innerHTML = `
       <span>Prueba gratuita</span>
-      <h2>Prueba gratuita solicitada</h2>
+      <h2>${state.trial.status === "completed" ? "Tu prueba gratuita está completada" : "Prueba gratuita solicitada"}</h2>
       <p class="panel-trial-status">${getTrialLabel()}</p>
       <dl class="panel-mini-list">
         <div><dt>Fecha</dt><dd>${formatDate(state.trial.created_at)}</dd></div>
         <div><dt>Estado</dt><dd>${escapeHtml(getTrialLabel())}</dd></div>
       </dl>
+      ${completedReviewText ? `
+        <section class="panel-trial-result" aria-labelledby="panel-trial-review-title">
+          <div class="panel-trial-result__header">
+            <span>Resultado final</span>
+            <span class="panel-trial-stars" role="img" aria-label="5 de 5 estrellas"><span aria-hidden="true">★★★★★</span></span>
+          </div>
+          <h3 id="panel-trial-review-title">Texto de la reseña gratuita</h3>
+          <p>${escapeHtml(completedReviewText)}</p>
+        </section>
+      ` : ""}
     `;
   };
 
@@ -671,11 +695,7 @@
 
     const [profileResult, trialResult, ordersResult] = await Promise.all([
       profilePromise,
-      supabase
-        .from("free_trial_requests")
-        .select("id,status,google_maps_url,note,created_at,updated_at")
-        .eq("user_id", state.user.id)
-        .maybeSingle(),
+      supabase.rpc("get_my_free_trial_request"),
       supabase
         .from("orders")
         .select("id,user_id,customer_name,customer_email,whatsapp,google_maps_url,notes,management_mode,currency,total_cents,status,payment_status,created_at,updated_at")
@@ -688,7 +708,7 @@
     if (ordersResult.error) throw ordersResult.error;
 
     state.profile = profileResult.data || null;
-    state.trial = trialResult.data || null;
+    state.trial = Array.isArray(trialResult.data) ? trialResult.data[0] || null : trialResult.data || null;
     state.orders = ordersResult.data || [];
 
     const orderIds = state.orders.map((order) => order.id).filter(Boolean);
