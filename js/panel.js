@@ -24,13 +24,20 @@
   const drawerTitle = document.querySelector("[data-panel-drawer-title]");
   const drawerStatus = document.querySelector("[data-panel-drawer-status]");
   const drawerCloseButtons = [...document.querySelectorAll("[data-panel-drawer-close]")];
-  const supportOverlay = document.querySelector("[data-panel-support-overlay]");
-  const supportModal = document.querySelector("[data-panel-support-modal]");
-  const supportModalRef = document.querySelector("[data-panel-support-modal-ref]");
-  const supportModalWhatsapp = document.querySelector("[data-panel-support-whatsapp]");
-  const supportModalCopy = document.querySelector("[data-panel-support-copy]");
-  const supportModalStatus = document.querySelector("[data-panel-support-status]");
-  const supportModalCloseButtons = [...document.querySelectorAll("[data-panel-support-close]")];
+  const supportListNode = root.querySelector("[data-support-list]");
+  const supportDetailNode = root.querySelector("[data-support-detail]");
+  const supportFeedback = root.querySelector("[data-support-feedback]");
+  const supportUnreadCount = root.querySelector("[data-panel-support-count]");
+  const supportNewButtons = [...document.querySelectorAll("[data-support-new]")];
+  const supportOverlay = document.querySelector("[data-support-compose-overlay]");
+  const supportModal = document.querySelector("[data-support-compose-modal]");
+  const supportForm = document.querySelector("[data-support-compose-form]");
+  const supportOrderSelect = document.querySelector("[data-support-order-select]");
+  const supportComposeStatus = document.querySelector("[data-support-compose-status]");
+  const supportSubjectCount = document.querySelector("[data-support-subject-count]");
+  const supportMessageCount = document.querySelector("[data-support-message-count]");
+  const supportSubmitButton = document.querySelector("[data-support-compose-submit]");
+  const supportModalCloseButtons = [...document.querySelectorAll("[data-support-compose-close], [data-support-compose-cancel]")];
 
   const state = {
     session: null,
@@ -42,7 +49,21 @@
     media: [],
     trial: null,
     activeOrderId: "",
-    activeSupportRef: "",
+    activePanelTab: window.location.hash.toLowerCase() === "#panel-support" ? "support" : "orders",
+    supportThreads: [],
+    supportMessages: [],
+    supportLoaded: false,
+    supportLoading: false,
+    supportError: "",
+    activeSupportThreadId: "",
+    supportDetailLoading: false,
+    supportDetailError: "",
+    supportDetailRequest: 0,
+    supportAction: "",
+    supportDraft: "",
+    supportMessageRequestId: "",
+    supportCreateRequestId: "",
+    supportReturnFocus: null,
     modalScrollY: 0,
   };
 
@@ -79,13 +100,27 @@
     completed: "Completada",
   };
 
+  const supportStatusLabels = {
+    waiting_support: "En espera de soporte",
+    waiting_customer: "Soporte ha respondido",
+    closed: "Conversación cerrada",
+  };
+
+  const supportStatusTones = {
+    waiting_support: "warning",
+    waiting_customer: "success",
+    closed: "neutral",
+  };
+
   const pendingOrderStatuses = new Set(["pending", "review", "in_progress"]);
   const inProcessReviewStatuses = new Set(["awaiting_client", "draft", "submitted", "awaiting_team", "prepared", "approved"]);
   const manualPendingStatuses = new Set(["awaiting_client", "draft"]);
   const teamHiddenTextStatuses = new Set(["awaiting_team", "draft"]);
   const teamPreparedStatuses = new Set(["prepared", "approved", "completed"]);
 
-  const activatePanelTab = (tabName) => {
+  const activatePanelTab = (tabName, { syncHash = false } = {}) => {
+    if (!tabButtons.some((button) => button.dataset.panelTab === tabName)) return;
+    state.activePanelTab = tabName;
     tabButtons.forEach((button) => {
       const isActive = button.dataset.panelTab === tabName;
       button.classList.toggle("is-active", isActive);
@@ -96,6 +131,17 @@
       panel.classList.toggle("is-active", isActive);
       panel.hidden = !isActive;
     });
+
+    if (syncHash) {
+      const nextUrl = tabName === "support"
+        ? `${window.location.pathname}${window.location.search}#panel-support`
+        : `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState(null, "", nextUrl);
+    }
+
+    if (tabName === "support" && state.user && !state.supportLoaded && !state.supportLoading) {
+      void loadSupportThreads();
+    }
   };
 
   const orderTone = (status) => ({
@@ -155,6 +201,58 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Sin fecha";
     return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "Sin fecha";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Sin fecha";
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  const textLength = (value) => [...`${value || ""}`].length;
+
+  const createNode = (tag, className = "", text = "") => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  };
+
+  const firstRpcRow = (data) => Array.isArray(data) ? data[0] || null : data || null;
+
+  const createRequestId = () => {
+    if (!window.crypto?.randomUUID) throw new Error("secure_request_id_unavailable");
+    return window.crypto.randomUUID();
+  };
+
+  const supportErrorMessage = (error, fallback) => {
+    const message = `${error?.message || error || ""}`;
+    const knownErrors = {
+      authentication_required: "Tu sesión ha caducado. Inicia sesión de nuevo.",
+      invalid_subject: "El asunto debe tener entre 3 y 120 caracteres.",
+      message_required: "Escribe un mensaje antes de continuar.",
+      message_too_long: "El mensaje no puede superar los 4000 caracteres.",
+      request_id_required: "No pudimos preparar una solicitud segura. Vuelve a intentarlo.",
+      invalid_support_status: "El estado de la conversación no es válido.",
+      order_not_available: "Ese pedido no está disponible para soporte.",
+      thread_not_available: "La conversación no está disponible.",
+      message_not_available: "No se pudo actualizar la lectura de la conversación.",
+      thread_closed: "La conversación está cerrada. Puedes reabrirla con un mensaje.",
+      thread_not_closed: "La conversación ya está abierta.",
+      too_many_active_threads: "Has alcanzado el máximo de conversaciones abiertas.",
+      rate_limit_exceeded: "Has enviado demasiados mensajes. Inténtalo de nuevo dentro de una hora.",
+      idempotency_conflict: "La solicitud ya se utilizó con otro contenido. Vuelve a intentarlo.",
+      secure_request_id_unavailable: "Tu navegador no permite crear una solicitud segura. Actualízalo e inténtalo de nuevo.",
+    };
+    const key = Object.keys(knownErrors).find((item) => message.includes(item));
+    return key ? knownErrors[key] : fallback;
   };
 
   const formatMoney = (cents, currency = "EUR") => {
@@ -270,25 +368,9 @@
   const updateWhatsappLinks = () => {
     document.querySelectorAll("[data-panel-whatsapp]").forEach((link) => {
       const ref = link.dataset.orderRef ? ` ${link.dataset.orderRef}` : "";
-      link.href = getWhatsappHref(`Hola, quiero ayuda con un pedido de Destroyer Reviews${ref}.`);
+      const message = link.dataset.whatsappMessage || `Hola, quiero ayuda con un pedido de Destroyer Reviews${ref}.`;
+      link.href = getWhatsappHref(message);
     });
-  };
-
-  const copyText = async (text) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    const area = document.createElement("textarea");
-    area.value = text;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.left = "-9999px";
-    document.body.appendChild(area);
-    area.select();
-    const copied = document.execCommand("copy");
-    area.remove();
-    return copied;
   };
 
   const setStat = (name, value) => {
@@ -455,6 +537,558 @@
     }).join("");
   };
 
+  const getActiveSupportThread = () => state.supportThreads.find((thread) => thread.id === state.activeSupportThreadId) || null;
+
+  const setSupportFeedback = (message = "", tone = "") => {
+    if (!supportFeedback) return;
+    supportFeedback.textContent = message;
+    supportFeedback.hidden = !message;
+    if (tone) supportFeedback.dataset.tone = tone;
+    else delete supportFeedback.dataset.tone;
+  };
+
+  const updateSupportUnreadCount = () => {
+    if (!supportUnreadCount) return;
+    const count = state.supportThreads.filter((thread) => thread.has_unread === true).length;
+    supportUnreadCount.textContent = String(count);
+    supportUnreadCount.hidden = count === 0;
+    supportUnreadCount.setAttribute("aria-label", `${count} ${count === 1 ? "conversación sin leer" : "conversaciones sin leer"}`);
+  };
+
+  const appendSupportState = (container, { icon, title, body, actionLabel = "", action = "" }) => {
+    const empty = createNode("div", "panel-support-state");
+    empty.appendChild(createNode("span", "panel-support-state__icon", icon));
+    empty.lastElementChild.setAttribute("aria-hidden", "true");
+    empty.appendChild(createNode("h3", "", title));
+    empty.appendChild(createNode("p", "", body));
+    if (actionLabel && action) {
+      const button = createNode("button", "panel-action panel-action--secondary", actionLabel);
+      button.type = "button";
+      button.dataset[action] = "";
+      empty.appendChild(button);
+    }
+    container.appendChild(empty);
+  };
+
+  const renderSupportList = () => {
+    if (!supportListNode) return;
+    supportListNode.replaceChildren();
+    supportListNode.setAttribute("aria-busy", String(state.supportLoading || !state.supportLoaded));
+
+    if (state.supportError) {
+      appendSupportState(supportListNode, {
+        icon: "!",
+        title: "No pudimos cargar el soporte",
+        body: state.supportError,
+        actionLabel: "Reintentar",
+        action: "supportRetry",
+      });
+      return;
+    }
+
+    if (state.supportLoading || !state.supportLoaded) {
+      const skeleton = createNode("div", "panel-support-skeleton");
+      skeleton.setAttribute("aria-label", "Cargando conversaciones");
+      for (let index = 0; index < 3; index += 1) skeleton.appendChild(createNode("span"));
+      supportListNode.appendChild(skeleton);
+      return;
+    }
+
+    if (!state.supportThreads.length) {
+      appendSupportState(supportListNode, {
+        icon: "+",
+        title: "Aún no hay conversaciones",
+        body: "Crea una conversación para consultar una duda general o sobre uno de tus pedidos.",
+        actionLabel: "Nueva conversación",
+        action: "supportNewInline",
+      });
+      return;
+    }
+
+    state.supportThreads.forEach((thread) => {
+      const button = createNode("button", "panel-support-thread");
+      button.type = "button";
+      button.dataset.supportThreadId = thread.id;
+      const isActive = thread.id === state.activeSupportThreadId;
+      button.classList.toggle("is-active", isActive);
+      if (isActive) button.setAttribute("aria-current", "true");
+
+      const top = createNode("span", "panel-support-thread__top");
+      top.appendChild(createNode("strong", "", thread.reference_code || "Soporte"));
+      if (thread.has_unread === true) {
+        const unread = createNode("span", "panel-support-thread__unread", "Nuevo");
+        unread.setAttribute("aria-label", "Respuesta nueva de soporte");
+        top.appendChild(unread);
+      }
+      button.appendChild(top);
+
+      button.appendChild(createNode("span", "panel-support-thread__subject", thread.subject || "Sin asunto"));
+
+      const meta = createNode("span", "panel-support-thread__meta");
+      const status = createNode("span", "panel-status-chip", supportStatusLabels[thread.status] || "Estado desconocido");
+      status.dataset.tone = supportStatusTones[thread.status] || "neutral";
+      meta.appendChild(status);
+      const activity = createNode("time", "", formatDateTime(thread.last_message_at));
+      if (thread.last_message_at) activity.dateTime = thread.last_message_at;
+      meta.appendChild(activity);
+      button.appendChild(meta);
+
+      if (thread.order_id) button.appendChild(createNode("span", "panel-support-thread__order", `Pedido ${shortRef(thread.order_id)}`));
+      supportListNode.appendChild(button);
+    });
+  };
+
+  const renderSupportDetail = () => {
+    if (!supportDetailNode) return;
+    supportDetailNode.replaceChildren();
+    supportDetailNode.classList.toggle("is-empty", !state.activeSupportThreadId || state.supportDetailLoading || Boolean(state.supportDetailError));
+    supportDetailNode.setAttribute("aria-busy", String(state.supportDetailLoading));
+
+    if (!state.activeSupportThreadId) {
+      appendSupportState(supportDetailNode, {
+        icon: "?",
+        title: "Selecciona una conversación",
+        body: "Abre un hilo para consultar los mensajes o crea una conversación nueva.",
+      });
+      return;
+    }
+
+    if (state.supportDetailLoading) {
+      appendSupportState(supportDetailNode, {
+        icon: "…",
+        title: "Cargando conversación",
+        body: "Estamos recuperando los mensajes más recientes.",
+      });
+      return;
+    }
+
+    if (state.supportDetailError) {
+      appendSupportState(supportDetailNode, {
+        icon: "!",
+        title: "No pudimos abrir la conversación",
+        body: state.supportDetailError,
+        actionLabel: "Reintentar",
+        action: "supportRefreshThread",
+      });
+      return;
+    }
+
+    const thread = getActiveSupportThread();
+    if (!thread) {
+      state.activeSupportThreadId = "";
+      renderSupportDetail();
+      return;
+    }
+
+    const header = createNode("header", "panel-support-detail__header");
+    const heading = createNode("div");
+    const reference = createNode("span", "panel-support-detail__reference", thread.reference_code || "Soporte");
+    heading.appendChild(reference);
+    heading.appendChild(createNode("h3", "", thread.subject || "Sin asunto"));
+    const details = createNode("div", "panel-support-detail__meta");
+    const status = createNode("span", "panel-status-chip", supportStatusLabels[thread.status] || "Estado desconocido");
+    status.dataset.tone = supportStatusTones[thread.status] || "neutral";
+    details.appendChild(status);
+    if (thread.order_id) details.appendChild(createNode("span", "", `Pedido ${shortRef(thread.order_id)}`));
+    heading.appendChild(details);
+    header.appendChild(heading);
+    const refreshButton = createNode("button", "panel-action panel-action--ghost", state.supportAction === "refresh" ? "Actualizando..." : "Actualizar");
+    refreshButton.type = "button";
+    refreshButton.dataset.supportRefreshThread = "";
+    refreshButton.disabled = Boolean(state.supportAction);
+    header.appendChild(refreshButton);
+    supportDetailNode.appendChild(header);
+
+    const messages = createNode("div", "panel-support-messages");
+    messages.setAttribute("role", "log");
+    messages.setAttribute("aria-label", `Mensajes de ${thread.reference_code || "la conversación"}`);
+    messages.dataset.lenisPrevent = "";
+
+    if (!state.supportMessages.length) {
+      appendSupportState(messages, {
+        icon: "?",
+        title: "Sin mensajes disponibles",
+        body: "Actualiza la conversación para volver a intentarlo.",
+      });
+    } else {
+      state.supportMessages.forEach((message) => {
+        const isAdmin = message.author_role === "admin";
+        const item = createNode("article", `panel-support-message panel-support-message--${isAdmin ? "admin" : "client"}`);
+        const author = createNode("strong", "", isAdmin ? "Soporte" : "Tú");
+        const body = createNode("p", "", message.body || "");
+        const time = createNode("time", "", formatDateTime(message.created_at));
+        if (message.created_at) time.dateTime = message.created_at;
+        item.append(author, body, time);
+        messages.appendChild(item);
+      });
+    }
+    supportDetailNode.appendChild(messages);
+
+    const form = createNode("form", "panel-support-reply");
+    form.dataset.supportReplyForm = "";
+    form.noValidate = true;
+    const isClosed = thread.status === "closed";
+    const label = createNode("label", "panel-support-field");
+    label.appendChild(createNode("span", "", isClosed ? "Reabrir con un mensaje" : "Tu respuesta"));
+    const textarea = createNode("textarea");
+    textarea.name = "message";
+    textarea.rows = 3;
+    textarea.maxLength = 4000;
+    textarea.required = true;
+    textarea.placeholder = isClosed ? "Explica qué necesitas para reabrir esta conversación." : "Escribe tu mensaje para soporte.";
+    textarea.value = state.supportDraft;
+    textarea.disabled = Boolean(state.supportAction);
+    label.appendChild(textarea);
+    const count = createNode("small", "", `${textLength(state.supportDraft)} / 4000`);
+    count.dataset.supportReplyCount = "";
+    label.appendChild(count);
+    form.appendChild(label);
+
+    const actions = createNode("div", "panel-support-reply__actions");
+    if (!isClosed) {
+      const closeButton = createNode("button", "panel-action panel-action--ghost", state.supportAction === "close" ? "Cerrando..." : "Cerrar conversación");
+      closeButton.type = "button";
+      closeButton.dataset.supportCloseThread = "";
+      closeButton.disabled = Boolean(state.supportAction);
+      actions.appendChild(closeButton);
+    }
+    const submitButton = createNode("button", "panel-action panel-action--primary", state.supportAction === "message"
+      ? (isClosed ? "Reabriendo..." : "Enviando...")
+      : (isClosed ? "Reabrir conversación" : "Enviar mensaje"));
+    submitButton.type = "submit";
+    submitButton.disabled = Boolean(state.supportAction);
+    actions.appendChild(submitButton);
+    form.appendChild(actions);
+    supportDetailNode.appendChild(form);
+
+    window.requestAnimationFrame(() => {
+      messages.scrollTop = messages.scrollHeight;
+    });
+  };
+
+  const renderSupport = () => {
+    updateSupportUnreadCount();
+    renderSupportList();
+    renderSupportDetail();
+  };
+
+  const loadSupportThreads = async () => {
+    if (!state.user || state.supportLoading) return;
+    const supabase = client();
+    if (!supabase) {
+      state.supportError = "El servicio de soporte no está disponible ahora mismo.";
+      renderSupportList();
+      return;
+    }
+
+    state.supportLoading = true;
+    state.supportError = "";
+    renderSupportList();
+
+    try {
+      const { data, error } = await supabase.rpc("get_my_support_threads", {
+        p_status: null,
+        p_limit: 50,
+      });
+      if (error) throw error;
+      state.supportThreads = Array.isArray(data) ? data : [];
+      state.supportLoaded = true;
+      if (state.activeSupportThreadId && !getActiveSupportThread()) {
+        state.activeSupportThreadId = "";
+        state.supportMessages = [];
+      }
+    } catch (error) {
+      state.supportError = supportErrorMessage(error, "No pudimos cargar tus conversaciones. Vuelve a intentarlo.");
+    } finally {
+      state.supportLoading = false;
+      renderSupport();
+    }
+  };
+
+  const markSupportThreadRead = async (thread, lastMessage) => {
+    if (!thread?.has_unread || !lastMessage?.id) return;
+    const supabase = client();
+    if (!supabase) return;
+    try {
+      const { error } = await supabase.rpc("mark_my_support_thread_read", {
+        p_thread_id: thread.id,
+        p_last_seen_message_id: lastMessage.id,
+      });
+      if (error) throw error;
+      const currentThread = state.supportThreads.find((item) => item.id === thread.id);
+      if (currentThread) currentThread.has_unread = false;
+      updateSupportUnreadCount();
+      renderSupportList();
+    } catch {
+      // Reading messages remains available even if the non-critical read marker fails.
+    }
+  };
+
+  const openSupportThread = async (threadId) => {
+    const thread = state.supportThreads.find((item) => item.id === threadId);
+    if (!thread || !state.user || state.supportAction) return;
+    const supabase = client();
+    if (!supabase) return;
+
+    const request = state.supportDetailRequest + 1;
+    state.supportDetailRequest = request;
+    state.activeSupportThreadId = thread.id;
+    state.supportMessages = [];
+    state.supportDetailLoading = true;
+    state.supportDetailError = "";
+    state.supportDraft = "";
+    state.supportMessageRequestId = "";
+    renderSupport();
+
+    try {
+      const { data, error } = await supabase.rpc("get_my_support_thread_messages", {
+        p_thread_id: thread.id,
+        p_limit: 100,
+      });
+      if (error) throw error;
+      if (request !== state.supportDetailRequest) return;
+      state.supportMessages = Array.isArray(data) ? data : [];
+      state.supportDetailLoading = false;
+      renderSupportDetail();
+      const lastMessage = state.supportMessages[state.supportMessages.length - 1];
+      if (lastMessage) void markSupportThreadRead(thread, lastMessage);
+    } catch (error) {
+      if (request !== state.supportDetailRequest) return;
+      state.supportDetailLoading = false;
+      state.supportDetailError = supportErrorMessage(error, "No pudimos cargar los mensajes. Vuelve a intentarlo.");
+      renderSupportDetail();
+    }
+  };
+
+  const refreshSupportThread = async () => {
+    const threadId = state.activeSupportThreadId;
+    if (!threadId || state.supportAction) return;
+    state.supportAction = "refresh";
+    renderSupportDetail();
+    await loadSupportThreads();
+    state.supportAction = "";
+    if (state.supportThreads.some((thread) => thread.id === threadId)) await openSupportThread(threadId);
+    else renderSupportDetail();
+  };
+
+  const setSupportComposeStatus = (message = "", tone = "") => {
+    if (!supportComposeStatus) return;
+    supportComposeStatus.textContent = message;
+    if (tone) supportComposeStatus.dataset.tone = tone;
+    else delete supportComposeStatus.dataset.tone;
+  };
+
+  const updateSupportComposeCounts = () => {
+    const subject = supportForm?.elements?.subject?.value || "";
+    const message = supportForm?.elements?.message?.value || "";
+    if (supportSubjectCount) supportSubjectCount.textContent = `${textLength(subject)} / 120`;
+    if (supportMessageCount) supportMessageCount.textContent = `${textLength(message)} / 4000`;
+  };
+
+  const populateSupportOrders = (selectedOrderId = "") => {
+    if (!supportOrderSelect) return;
+    supportOrderSelect.replaceChildren();
+    const generalOption = createNode("option", "", "Soporte general");
+    generalOption.value = "";
+    supportOrderSelect.appendChild(generalOption);
+    state.orders.forEach((order) => {
+      const option = createNode("option", "", `Pedido ${shortRef(order.id)} · ${formatDate(order.created_at)}`);
+      option.value = order.id;
+      supportOrderSelect.appendChild(option);
+    });
+    supportOrderSelect.value = state.orders.some((order) => order.id === selectedOrderId) ? selectedOrderId : "";
+  };
+
+  const setSupportComposeBusy = (isBusy) => {
+    if (!supportForm) return;
+    [...supportForm.elements].forEach((field) => {
+      field.disabled = isBusy;
+    });
+    if (supportSubmitButton) supportSubmitButton.textContent = isBusy ? "Creando..." : "Crear conversación";
+  };
+
+  const openSupportComposer = (orderId = "") => {
+    if (!supportModal || !supportOverlay || !supportForm || state.supportAction === "create") return;
+    state.supportReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    state.supportCreateRequestId = "";
+    supportForm.reset();
+    populateSupportOrders(orderId);
+    updateSupportComposeCounts();
+    setSupportComposeStatus();
+    supportForm.querySelectorAll("[aria-invalid='true']").forEach((field) => field.removeAttribute("aria-invalid"));
+    supportOverlay.hidden = false;
+    supportModal.hidden = false;
+    supportModal.setAttribute("aria-hidden", "false");
+    lockPanelPage();
+    window.requestAnimationFrame(() => {
+      supportOverlay.classList.add("is-visible");
+      supportModal.classList.add("is-open");
+      supportForm.elements.subject?.focus({ preventScroll: true });
+    });
+  };
+
+  const closeSupportComposer = ({ force = false } = {}) => {
+    if (!supportModal || supportModal.hidden || (state.supportAction === "create" && !force)) return;
+    supportOverlay?.classList.remove("is-visible");
+    supportModal.classList.remove("is-open");
+    supportModal.setAttribute("aria-hidden", "true");
+    unlockPanelPage();
+    window.setTimeout(() => {
+      if (!supportModal.classList.contains("is-open")) {
+        if (supportOverlay) supportOverlay.hidden = true;
+        supportModal.hidden = true;
+        state.supportReturnFocus?.focus?.({ preventScroll: true });
+        state.supportReturnFocus = null;
+      }
+    }, 220);
+  };
+
+  const submitSupportThread = async (event) => {
+    event.preventDefault();
+    if (!supportForm || state.supportAction) return;
+    const subjectField = supportForm.elements.subject;
+    const messageField = supportForm.elements.message;
+    const orderField = supportForm.elements.orderId;
+    const subject = `${subjectField?.value || ""}`.trim();
+    const message = `${messageField?.value || ""}`.trim();
+    const orderId = `${orderField?.value || ""}`;
+
+    subjectField?.removeAttribute("aria-invalid");
+    messageField?.removeAttribute("aria-invalid");
+    orderField?.removeAttribute("aria-invalid");
+
+    if (textLength(subject) < 3 || textLength(subject) > 120) {
+      subjectField?.setAttribute("aria-invalid", "true");
+      setSupportComposeStatus("El asunto debe tener entre 3 y 120 caracteres.", "error");
+      subjectField?.focus();
+      return;
+    }
+    if (textLength(message) < 1 || textLength(message) > 4000) {
+      messageField?.setAttribute("aria-invalid", "true");
+      setSupportComposeStatus("El mensaje debe tener entre 1 y 4000 caracteres.", "error");
+      messageField?.focus();
+      return;
+    }
+    if (orderId && !state.orders.some((order) => order.id === orderId)) {
+      orderField?.setAttribute("aria-invalid", "true");
+      setSupportComposeStatus("El pedido seleccionado no está disponible.", "error");
+      orderField?.focus();
+      return;
+    }
+
+    const supabase = client();
+    if (!supabase) {
+      setSupportComposeStatus("El servicio de soporte no está disponible ahora mismo.", "error");
+      return;
+    }
+
+    try {
+      state.supportCreateRequestId ||= createRequestId();
+      state.supportAction = "create";
+      setSupportComposeBusy(true);
+      setSupportComposeStatus("Creando conversación...", "loading");
+      const { data, error } = await supabase.rpc("create_my_support_thread", {
+        p_subject: subject,
+        p_message: message,
+        p_order_id: orderId || null,
+        p_request_id: state.supportCreateRequestId,
+      });
+      if (error) throw error;
+      const createdThread = firstRpcRow(data);
+      if (!createdThread?.id) throw new Error("thread_not_available");
+
+      state.supportCreateRequestId = "";
+      state.supportAction = "";
+      setSupportComposeBusy(false);
+      closeSupportComposer({ force: true });
+      setSupportFeedback("Conversación creada. Soporte ya puede revisar tu mensaje.", "success");
+      await loadSupportThreads();
+      if (state.supportThreads.some((thread) => thread.id === createdThread.id)) await openSupportThread(createdThread.id);
+    } catch (error) {
+      state.supportAction = "";
+      setSupportComposeBusy(false);
+      setSupportComposeStatus(supportErrorMessage(error, "No pudimos crear la conversación. Vuelve a intentarlo."), "error");
+    }
+  };
+
+  const submitSupportMessage = async (event) => {
+    event.preventDefault();
+    if (state.supportAction) return;
+    const thread = getActiveSupportThread();
+    const form = event.target.closest("[data-support-reply-form]");
+    const textarea = form?.elements?.message;
+    state.supportDraft = `${textarea?.value || ""}`;
+    const message = `${textarea?.value || ""}`.trim();
+    if (!thread) return;
+
+    if (textLength(message) < 1 || textLength(message) > 4000) {
+      textarea?.setAttribute("aria-invalid", "true");
+      setSupportFeedback("El mensaje debe tener entre 1 y 4000 caracteres.", "error");
+      textarea?.focus();
+      return;
+    }
+
+    const supabase = client();
+    if (!supabase) {
+      setSupportFeedback("El servicio de soporte no está disponible ahora mismo.", "error");
+      return;
+    }
+
+    try {
+      state.supportMessageRequestId ||= createRequestId();
+      state.supportAction = "message";
+      renderSupportDetail();
+      const isClosed = thread.status === "closed";
+      const params = {
+        p_thread_id: thread.id,
+        p_message: message,
+        p_request_id: state.supportMessageRequestId,
+      };
+      const { error } = isClosed
+        ? await supabase.rpc("reopen_my_support_thread", params)
+        : await supabase.rpc("add_my_support_message", params);
+      if (error) throw error;
+
+      state.supportDraft = "";
+      state.supportMessageRequestId = "";
+      state.supportAction = "";
+      setSupportFeedback(isClosed ? "Conversación reabierta." : "Mensaje enviado.", "success");
+      await loadSupportThreads();
+      if (state.supportThreads.some((item) => item.id === thread.id)) await openSupportThread(thread.id);
+    } catch (error) {
+      state.supportAction = "";
+      setSupportFeedback(supportErrorMessage(error, "No pudimos enviar el mensaje. Vuelve a intentarlo."), "error");
+      renderSupportDetail();
+    }
+  };
+
+  const closeCurrentSupportThread = async () => {
+    const thread = getActiveSupportThread();
+    if (!thread || thread.status === "closed" || state.supportAction) return;
+    if (!window.confirm("¿Quieres cerrar esta conversación? Podrás reabrirla más adelante con un mensaje.")) return;
+    const supabase = client();
+    if (!supabase) return;
+
+    state.supportAction = "close";
+    renderSupportDetail();
+    try {
+      const { data, error } = await supabase.rpc("close_my_support_thread", {
+        p_thread_id: thread.id,
+      });
+      if (error) throw error;
+      const updatedThread = firstRpcRow(data);
+      if (updatedThread) Object.assign(thread, updatedThread);
+      state.supportAction = "";
+      setSupportFeedback("Conversación cerrada. Puedes reabrirla cuando lo necesites.", "success");
+      renderSupport();
+      await loadSupportThreads();
+    } catch (error) {
+      state.supportAction = "";
+      setSupportFeedback(supportErrorMessage(error, "No pudimos cerrar la conversación. Vuelve a intentarlo."), "error");
+      renderSupportDetail();
+    }
+  };
+
   const renderReviewDetail = (review) => {
     const isTeamReview = review.source === "team";
     const isTeamPreparing = isTeamReview && teamHiddenTextStatuses.has(review.status);
@@ -572,8 +1206,11 @@
 
       <section class="panel-drawer-section panel-drawer-support">
         <h3>Soporte relacionado</h3>
-        <p>Indica la referencia ${ref} para que podamos ubicar el pedido.</p>
-        <a class="panel-action panel-action--primary" href="${getWhatsappHref(`Hola, quiero ayuda con el pedido ${ref} de Destroyer Reviews.`)}" target="_blank" rel="noopener noreferrer">Contactar por WhatsApp</a>
+        <p>Abre una conversación con el pedido ${ref} ya seleccionado.</p>
+        <div class="panel-order-actions">
+          <button class="panel-action panel-action--primary" type="button" data-order-support="${order.id}">Nueva conversación</button>
+          <a class="panel-action panel-action--secondary" href="${getWhatsappHref(`Hola, quiero ayuda con el pedido ${ref} de Destroyer Reviews.`)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </div>
       </section>
     `;
   };
@@ -633,53 +1270,35 @@
     }, 260);
   };
 
-  const openSupportModal = (orderId) => {
-    const order = state.orders.find((item) => item.id === orderId);
-    if (!order || !supportModal || !supportOverlay) return;
-    const ref = shortRef(order.id);
-    state.activeSupportRef = ref;
-    if (supportModalRef) supportModalRef.textContent = `Pedido ${ref}`;
-    if (supportModalWhatsapp) {
-      supportModalWhatsapp.href = getWhatsappHref(`Hola, quiero ayuda con el pedido ${ref} de Destroyer Reviews.`);
-    }
-    if (supportModalStatus) supportModalStatus.textContent = "";
-    supportOverlay.hidden = false;
-    supportModal.hidden = false;
-    supportModal.setAttribute("aria-hidden", "false");
-    lockPanelPage();
-    requestAnimationFrame(() => {
-      supportOverlay.classList.add("is-visible");
-      supportModal.classList.add("is-open");
-      supportModal.querySelector("[data-panel-support-close]")?.focus({ preventScroll: true });
-    });
-  };
-
-  const closeSupportModal = () => {
-    if (!supportModal || supportModal.hidden) return;
-    supportOverlay?.classList.remove("is-visible");
-    supportModal.classList.remove("is-open");
-    supportModal.setAttribute("aria-hidden", "true");
-    unlockPanelPage();
-    window.setTimeout(() => {
-      if (!supportModal.classList.contains("is-open")) {
-        if (supportOverlay) supportOverlay.hidden = true;
-        supportModal.hidden = true;
-      }
-    }, 220);
-  };
-
   const renderPanel = () => {
     renderSummary();
     renderPendingAction();
     renderTrialCard();
     renderOrders();
+    renderSupport();
     updateWhatsappLinks();
   };
 
   const fetchPanelData = async () => {
     const session = await auth()?.getSession?.();
+    const nextUser = session?.user || null;
+    if (state.user?.id !== nextUser?.id) {
+      state.supportThreads = [];
+      state.supportMessages = [];
+      state.supportLoaded = false;
+      state.supportLoading = false;
+      state.supportError = "";
+      state.activeSupportThreadId = "";
+      state.supportDetailLoading = false;
+      state.supportDetailError = "";
+      state.supportDetailRequest += 1;
+      state.supportAction = "";
+      state.supportDraft = "";
+      state.supportMessageRequestId = "";
+      state.supportCreateRequestId = "";
+    }
     state.session = session || null;
-    state.user = session?.user || null;
+    state.user = nextUser;
 
     if (!state.user) {
       setVisibleState("auth");
@@ -718,6 +1337,7 @@
       state.media = [];
       renderPanel();
       setVisibleState("shell");
+      activatePanelTab(window.location.hash.toLowerCase() === "#panel-support" ? "support" : state.activePanelTab);
       return;
     }
 
@@ -751,6 +1371,7 @@
 
     renderPanel();
     setVisibleState("shell");
+    activatePanelTab(window.location.hash.toLowerCase() === "#panel-support" ? "support" : state.activePanelTab);
   };
 
   const init = async () => {
@@ -771,7 +1392,8 @@
 
     const supportButton = event.target.closest("[data-order-support]");
     if (supportButton) {
-      openSupportModal(supportButton.dataset.orderSupport);
+      activatePanelTab("support", { syncHash: true });
+      openSupportComposer(supportButton.dataset.orderSupport);
       return;
     }
   });
@@ -783,27 +1405,70 @@
 
   drawerOverlay?.addEventListener("click", closeDrawer);
   drawerCloseButtons.forEach((button) => button.addEventListener("click", closeDrawer));
-  supportOverlay?.addEventListener("click", closeSupportModal);
-  supportModalCloseButtons.forEach((button) => button.addEventListener("click", closeSupportModal));
-  supportModalCopy?.addEventListener("click", async () => {
-    try {
-      await copyText(state.activeSupportRef || "");
-      if (supportModalStatus) supportModalStatus.textContent = "Referencia copiada.";
-    } catch {
-      if (supportModalStatus) supportModalStatus.textContent = "No se pudo copiar automáticamente.";
+  drawerBody?.addEventListener("click", (event) => {
+    const supportButton = event.target.closest("[data-order-support]");
+    if (!supportButton) return;
+    const orderId = supportButton.dataset.orderSupport;
+    closeDrawer();
+    activatePanelTab("support", { syncHash: true });
+    openSupportComposer(orderId);
+  });
+  supportOverlay?.addEventListener("click", () => closeSupportComposer());
+  supportModalCloseButtons.forEach((button) => button.addEventListener("click", () => closeSupportComposer()));
+  supportNewButtons.forEach((button) => button.addEventListener("click", () => openSupportComposer()));
+  supportForm?.addEventListener("submit", submitSupportThread);
+  supportForm?.addEventListener("input", (event) => {
+    if (event.target.matches("input, textarea, select")) state.supportCreateRequestId = "";
+    updateSupportComposeCounts();
+    setSupportComposeStatus();
+    event.target.removeAttribute?.("aria-invalid");
+  });
+
+  supportListNode?.addEventListener("click", (event) => {
+    const threadButton = event.target.closest("[data-support-thread-id]");
+    if (threadButton) {
+      void openSupportThread(threadButton.dataset.supportThreadId);
+      return;
     }
+    if (event.target.closest("[data-support-retry]")) {
+      void loadSupportThreads();
+      return;
+    }
+    if (event.target.closest("[data-support-new-inline]")) openSupportComposer();
+  });
+
+  supportDetailNode?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-support-refresh-thread]")) {
+      void refreshSupportThread();
+      return;
+    }
+    if (event.target.closest("[data-support-close-thread]")) void closeCurrentSupportThread();
+  });
+  supportDetailNode?.addEventListener("submit", submitSupportMessage);
+  supportDetailNode?.addEventListener("input", (event) => {
+    if (!event.target.matches("[data-support-reply-form] textarea")) return;
+    state.supportDraft = event.target.value;
+    state.supportMessageRequestId = "";
+    event.target.removeAttribute("aria-invalid");
+    const count = event.target.closest("[data-support-reply-form]")?.querySelector("[data-support-reply-count]");
+    if (count) count.textContent = `${textLength(state.supportDraft)} / 4000`;
+    setSupportFeedback();
   });
   retryButton?.addEventListener("click", init);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeDrawer();
-      closeSupportModal();
+      closeSupportComposer();
     }
   });
 
   tabButtons.forEach((button) => {
-    button.addEventListener("click", () => activatePanelTab(button.dataset.panelTab));
+    button.addEventListener("click", () => activatePanelTab(button.dataset.panelTab, { syncHash: true }));
+  });
+
+  window.addEventListener("hashchange", () => {
+    if (window.location.hash.toLowerCase() === "#panel-support") activatePanelTab("support");
   });
 
   auth()?.onSessionChange?.((session) => {

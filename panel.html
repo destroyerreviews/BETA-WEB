@@ -7,7 +7,7 @@
     <title>Panel | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/styles.css?v=client-panel-flow-20260711" />
+    <link rel="stylesheet" href="css/styles.css?v=support-chat-client-20260907" />
   </head>
   <body class="panel-page trial-promo-hidden">
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
@@ -146,6 +146,7 @@
             </button>
             <button class="panel-tab" type="button" role="tab" aria-selected="false" data-panel-tab="support">
               <span>Soporte</span>
+              <small data-panel-support-count hidden>0</small>
             </button>
           </aside>
 
@@ -199,15 +200,49 @@
             </section>
 
             <section class="panel-tab-panel" data-panel-panel="support" hidden>
-              <section class="panel-side-card panel-support-card" id="panel-support" data-panel-support-card>
-                <span>Soporte básico</span>
-                <h2>¿Necesitas ayuda con un pedido?</h2>
-                <p>Puedes contactar con nosotros indicando la referencia de tu pedido.</p>
-                <a class="panel-action panel-action--primary panel-action--with-icon" href="https://wa.me/34603826428?text=Hola%2C%20quiero%20ayuda%20con%20un%20pedido%20de%20Destroyer%20Reviews." target="_blank" rel="noopener noreferrer" data-panel-whatsapp>
-                  <svg class="panel-action__icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 4a12 12 0 0 0-10.2 18.3L4.3 28l5.8-1.5A12 12 0 1 0 16 4Zm0 21.8c-1.8 0-3.5-.5-5-1.3l-.4-.2-3.4.9.9-3.3-.2-.4A9.8 9.8 0 1 1 16 25.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-1.7-.7-3.2-2-4.1-3.6-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.3Z"/></svg>
-                  <span>Contactar por WhatsApp</span>
-                </a>
-                <button class="panel-action panel-action--ghost" type="button" disabled>Centro de soporte · Próximamente</button>
+              <section class="panel-support-module" id="panel-support" aria-labelledby="panel-support-title" data-panel-support>
+                <header class="panel-support-head">
+                  <div>
+                    <p class="panel-kicker">Soporte</p>
+                    <h2 id="panel-support-title">Soporte</h2>
+                    <p>Gestiona tus conversaciones con soporte desde tu panel.</p>
+                  </div>
+                  <div class="panel-support-head__actions">
+                    <button class="panel-action panel-action--primary" type="button" data-support-new>Nueva conversación</button>
+                    <a class="panel-action panel-action--secondary panel-action--with-icon" href="https://wa.me/34603826428?text=Hola%2C%20necesito%20ayuda%20con%20mi%20cuenta%20de%20Destroyer%20Reviews." target="_blank" rel="noopener noreferrer" data-panel-whatsapp data-whatsapp-message="Hola, necesito ayuda con mi cuenta de Destroyer Reviews.">
+                      <svg class="panel-action__icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 4a12 12 0 0 0-10.2 18.3L4.3 28l5.8-1.5A12 12 0 1 0 16 4Zm0 21.8c-1.8 0-3.5-.5-5-1.3l-.4-.2-3.4.9.9-3.3-.2-.4A9.8 9.8 0 1 1 16 25.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-1.7-.7-3.2-2-4.1-3.6-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.5 1.1 2.9 1.2 3.1.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.1-1.4-.1-.1-.3-.2-.6-.3Z"/></svg>
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                </header>
+
+                <p class="panel-support-feedback" role="status" aria-live="polite" data-support-feedback hidden></p>
+
+                <div class="panel-support-workspace">
+                  <section class="panel-support-inbox" aria-labelledby="panel-support-inbox-title">
+                    <header class="panel-support-inbox__head">
+                      <div>
+                        <h3 id="panel-support-inbox-title">Conversaciones</h3>
+                        <p>Historial y actividad reciente</p>
+                      </div>
+                    </header>
+                    <div class="panel-support-thread-list" aria-live="polite" aria-busy="true" data-support-list>
+                      <div class="panel-support-skeleton" aria-label="Cargando conversaciones">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="panel-support-detail" aria-live="polite" data-support-detail>
+                    <div class="panel-support-state">
+                      <span class="panel-support-state__icon" aria-hidden="true">?</span>
+                      <h3>Selecciona una conversación</h3>
+                      <p>Abre un hilo para consultar los mensajes o crea una conversación nueva.</p>
+                    </div>
+                  </section>
+                </div>
               </section>
             </section>
           </div>
@@ -237,23 +272,42 @@
       <div class="panel-order-drawer__body" data-panel-drawer-body data-lenis-prevent></div>
     </aside>
 
-    <div class="panel-support-overlay" data-panel-support-overlay hidden></div>
-    <section class="panel-support-modal" role="dialog" aria-modal="true" aria-labelledby="panel-support-modal-title" aria-hidden="true" data-panel-support-modal hidden>
+    <div class="panel-support-overlay" data-support-compose-overlay hidden></div>
+    <section class="panel-support-modal panel-support-compose" role="dialog" aria-modal="true" aria-labelledby="panel-support-compose-title" aria-hidden="true" data-support-compose-modal hidden>
       <header class="panel-support-modal__header">
         <div>
-          <span>Soporte</span>
-          <h2 id="panel-support-modal-title">Soporte del pedido</h2>
-          <p data-panel-support-modal-ref></p>
+          <span>Nueva conversación</span>
+          <h2 id="panel-support-compose-title">Contacta con soporte</h2>
+          <p>Describe tu consulta y te responderemos desde este panel.</p>
         </div>
-        <button class="panel-icon-button" type="button" aria-label="Cerrar soporte" data-panel-support-close>
+        <button class="panel-icon-button" type="button" aria-label="Cerrar nueva conversación" data-support-compose-close>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       </header>
-      <div class="panel-support-modal__body">
-        <a class="panel-action panel-action--primary" href="#" target="_blank" rel="noopener noreferrer" data-panel-support-whatsapp>Contactar por WhatsApp</a>
-        <button class="panel-action panel-action--secondary" type="button" data-panel-support-copy>Copiar referencia</button>
-        <p class="panel-copy-status" role="status" aria-live="polite" data-panel-support-status></p>
-      </div>
+      <form class="panel-support-modal__body panel-support-form" novalidate data-support-compose-form>
+        <label class="panel-support-field">
+          <span>Asunto</span>
+          <input type="text" name="subject" minlength="3" maxlength="120" autocomplete="off" placeholder="¿En qué podemos ayudarte?" required />
+          <small data-support-subject-count>0 / 120</small>
+        </label>
+        <label class="panel-support-field">
+          <span>Pedido relacionado</span>
+          <select name="orderId" data-support-order-select>
+            <option value="">Soporte general</option>
+          </select>
+          <small>Opcional. Solo aparecen pedidos asociados a tu cuenta.</small>
+        </label>
+        <label class="panel-support-field">
+          <span>Mensaje inicial</span>
+          <textarea name="message" rows="6" maxlength="4000" placeholder="Cuéntanos qué ha ocurrido y qué necesitas." required></textarea>
+          <small data-support-message-count>0 / 4000</small>
+        </label>
+        <p class="panel-support-form__status" role="status" aria-live="polite" data-support-compose-status></p>
+        <div class="panel-support-form__actions">
+          <button class="panel-action panel-action--secondary" type="button" data-support-compose-cancel>Cancelar</button>
+          <button class="panel-action panel-action--primary" type="submit" data-support-compose-submit>Crear conversación</button>
+        </div>
+      </form>
     </section>
 
     <a
@@ -284,6 +338,6 @@
     <script defer src="js/auth.js"></script>
     <script defer src="js/profile-data.js"></script>
     <script defer src="js/main.js?v=client-panel-flow-20260711"></script>
-    <script defer src="js/panel.js?v=client-panel-flow-20260711"></script>
+    <script defer src="js/panel.js?v=support-chat-client-20260907"></script>
   </body>
 </html>
