@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#040712" />
     <title>Admin Panel | Destroyer Reviews</title>
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/admin.css?v=admin-free-trial-review-text-20260829" />
+    <link rel="stylesheet" href="css/admin.css?v=support-chat-admin-20260909" />
   </head>
   <body class="admin-page">
     <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
@@ -184,6 +184,13 @@
               </span>
               Pruebas gratuitas
             </button>
+            <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-support" data-admin-view-target="support">
+              <span class="admin-nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z" /><path d="M8 9h8M8 12h5" /></svg>
+              </span>
+              Soporte
+              <span class="admin-nav-count" data-admin-support-nav-count aria-label="Conversaciones esperando soporte" hidden>0</span>
+            </button>
             <button class="admin-nav-item" type="button" role="tab" aria-selected="false" aria-controls="admin-view-clients" data-admin-view-target="clients">
               <span class="admin-nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM17 11h4M19 9v4" /></svg>
@@ -206,7 +213,7 @@
             <div>
               <p>Destroyer Reviews</p>
               <h1>Gestión interna</h1>
-              <span>Pedidos, reseñas y solicitudes en un único espacio.</span>
+              <span>Pedidos, reseñas, soporte y solicitudes en un único espacio.</span>
             </div>
             <div class="admin-identity" aria-label="Estado de la sesión administrativa">
               <div class="admin-identity__status">
@@ -425,6 +432,59 @@
                   </div>
 
                   <div class="admin-free-trials-list" data-free-trials-list></div>
+                </section>
+              </section>
+
+              <section class="admin-view" id="admin-view-support" role="tabpanel" data-admin-view="support" hidden>
+                <section class="admin-support-section" aria-labelledby="admin-support-title">
+                  <div class="admin-section-heading admin-section-heading--support">
+                    <div>
+                      <h3 id="admin-support-title">Soporte</h3>
+                      <p>Conversaciones abiertas por clientes desde su panel.</p>
+                    </div>
+                    <button class="admin-row-button admin-support-refresh" type="button" data-admin-support-refresh>Actualizar soporte</button>
+                  </div>
+
+                  <div class="admin-support-overview" data-admin-support-overview aria-live="polite" aria-busy="true"></div>
+
+                  <form class="admin-support-toolbar" data-admin-support-filters role="search">
+                    <label class="admin-search-field admin-support-search">
+                      <span class="admin-filter-label">Buscar conversación</span>
+                      <span class="admin-search-control">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" /></svg>
+                        <input type="search" name="support-search" maxlength="120" placeholder="Referencia, cliente, email, asunto o pedido" autocomplete="off" data-admin-support-search />
+                      </span>
+                    </label>
+                    <fieldset class="admin-support-status-filters" data-admin-support-status-filters>
+                      <legend>Estado</legend>
+                      <button type="button" class="is-active" aria-pressed="true" data-admin-support-status="">Todos</button>
+                      <button type="button" aria-pressed="false" data-admin-support-status="waiting_support">En espera de soporte</button>
+                      <button type="button" aria-pressed="false" data-admin-support-status="waiting_customer">Esperando cliente</button>
+                      <button type="button" aria-pressed="false" data-admin-support-status="closed">Cerradas</button>
+                    </fieldset>
+                  </form>
+
+                  <p class="admin-support-feedback" role="status" aria-live="polite" data-admin-support-feedback hidden></p>
+
+                  <div class="admin-support-workspace">
+                    <section class="admin-support-list-panel" aria-labelledby="admin-support-list-title">
+                      <header>
+                        <div>
+                          <h4 id="admin-support-list-title">Conversaciones</h4>
+                          <span data-admin-support-list-count>Sin cargar</span>
+                        </div>
+                      </header>
+                      <div class="admin-support-list" data-admin-support-list aria-live="polite" aria-busy="true"></div>
+                    </section>
+
+                    <section class="admin-support-detail" data-admin-support-detail aria-live="polite">
+                      <div class="admin-support-state">
+                        <span class="admin-support-state__icon" aria-hidden="true">?</span>
+                        <h4>Selecciona una conversación</h4>
+                        <p>Abre un hilo para consultar sus mensajes y responder al cliente.</p>
+                      </div>
+                    </section>
+                  </div>
                 </section>
               </section>
 
@@ -889,6 +949,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=admin-free-trial-review-text-20260829"></script>
+    <script defer src="js/admin.js?v=support-chat-admin-20260909"></script>
   </body>
 </html>
