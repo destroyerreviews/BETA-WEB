@@ -4514,6 +4514,31 @@ a:focus-visible {
   flex: 0 0 auto;
 }
 
+.admin-support-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 11px;
+}
+
+.admin-support-update-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--admin-muted);
+  font-size: 0.69rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.admin-support-update-mode i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #8fa3c8;
+  box-shadow: 0 0 0 3px rgba(143, 163, 200, 0.12);
+}
+
 .admin-support-overview {
   min-width: 0;
   display: grid;
@@ -4550,6 +4575,18 @@ a:focus-visible {
 .admin-support-metric[data-tone="warning"] strong { color: #f6d99f; }
 .admin-support-metric[data-tone="info"] strong { color: #a8c5ff; }
 .admin-support-metric[data-tone="closed"] strong { color: #a7ebc4; }
+
+.admin-support-metric.is-priority {
+  background:
+    radial-gradient(circle at 92% 12%, rgba(244, 197, 107, 0.14), transparent 42%),
+    rgba(244, 197, 107, 0.075);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 107, 0.25);
+}
+
+.admin-support-metric.is-priority span {
+  color: #f7dfa9;
+  font-weight: 820;
+}
 
 .admin-support-overview-skeleton {
   grid-column: 1 / -1;
@@ -4778,6 +4815,15 @@ a:focus-visible {
 
 .admin-support-thread.is-active {
   background: rgba(47, 107, 255, 0.1);
+}
+
+.admin-support-thread.is-waiting-support:not(.is-active) {
+  background: rgba(244, 197, 107, 0.055);
+  box-shadow: inset 0 0 0 1px rgba(244, 197, 107, 0.22);
+}
+
+.admin-support-thread.is-waiting-support .admin-support-thread__subject {
+  color: #fff5df;
 }
 
 .admin-support-thread__top,
@@ -6036,6 +6082,17 @@ body.admin-dialog-open {
   .admin-support-refresh {
     width: 100%;
     min-height: 44px;
+  }
+
+  .admin-support-heading-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .admin-support-update-mode {
+    justify-content: flex-start;
   }
 
   .admin-support-overview,

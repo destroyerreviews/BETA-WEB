@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#040712" />
     <title>Admin Panel | Destroyer Reviews</title>
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/admin.css?v=support-chat-admin-20260909" />
+    <link rel="stylesheet" href="css/admin.css?v=support-chat-notifications-20260912" />
   </head>
   <body class="admin-page">
     <a class="admin-skip-link" href="#admin-content">Ir al contenido</a>
@@ -442,7 +442,10 @@
                       <h3 id="admin-support-title">Soporte</h3>
                       <p>Conversaciones abiertas por clientes desde su panel.</p>
                     </div>
-                    <button class="admin-row-button admin-support-refresh" type="button" data-admin-support-refresh>Actualizar soporte</button>
+                    <div class="admin-support-heading-actions">
+                      <span class="admin-support-update-mode"><i aria-hidden="true"></i>Actualización manual</span>
+                      <button class="admin-row-button admin-support-refresh" type="button" data-admin-support-refresh>Actualizar soporte</button>
+                    </div>
                   </div>
 
                   <div class="admin-support-overview" data-admin-support-overview aria-live="polite" aria-busy="true"></div>
@@ -949,6 +952,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="js/supabase-config.js"></script>
-    <script defer src="js/admin.js?v=support-chat-admin-20260909"></script>
+    <script defer src="js/admin.js?v=support-chat-notifications-20260912"></script>
   </body>
 </html>

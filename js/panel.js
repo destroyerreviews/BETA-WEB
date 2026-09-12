@@ -28,6 +28,9 @@
   const supportDetailNode = root.querySelector("[data-support-detail]");
   const supportFeedback = root.querySelector("[data-support-feedback]");
   const supportUnreadCount = root.querySelector("[data-panel-support-count]");
+  const supportNotice = root.querySelector("[data-panel-support-notice]");
+  const supportNoticeText = root.querySelector("[data-panel-support-notice-text]");
+  const supportNoticeButton = root.querySelector("[data-panel-support-notice-open]");
   const supportNewButtons = [...document.querySelectorAll("[data-support-new]")];
   const supportOverlay = document.querySelector("[data-support-compose-overlay]");
   const supportModal = document.querySelector("[data-support-compose-modal]");
@@ -555,6 +558,29 @@
     supportUnreadCount.setAttribute("aria-label", `${count} ${count === 1 ? "conversación sin leer" : "conversaciones sin leer"}`);
   };
 
+  const getSupportAttentionThreads = () => state.supportThreads.filter((thread) => (
+    thread?.has_unread === true || thread?.status === "waiting_customer"
+  ));
+
+  const getSupportActivityTime = (thread) => {
+    const value = Date.parse(thread?.last_message_at || thread?.updated_at || thread?.created_at || "");
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  const getMostRecentSupportAttentionThread = () => [...getSupportAttentionThreads()]
+    .sort((left, right) => getSupportActivityTime(right) - getSupportActivityTime(left))[0] || null;
+
+  const renderSupportNotice = () => {
+    if (!supportNotice) return;
+    const count = state.supportLoaded ? getSupportAttentionThreads().length : 0;
+    supportNotice.hidden = count === 0;
+    if (supportNoticeText) {
+      supportNoticeText.textContent = count === 1
+        ? "Tienes 1 conversación con respuesta de soporte."
+        : `Tienes ${count} conversaciones con respuesta de soporte.`;
+    }
+  };
+
   const appendSupportState = (container, { icon, title, body, actionLabel = "", action = "" }) => {
     const empty = createNode("div", "panel-support-state");
     empty.appendChild(createNode("span", "panel-support-state__icon", icon));
@@ -610,13 +636,16 @@
       button.type = "button";
       button.dataset.supportThreadId = thread.id;
       const isActive = thread.id === state.activeSupportThreadId;
+      const hasUnread = thread.has_unread === true;
       button.classList.toggle("is-active", isActive);
+      button.classList.toggle("is-unread", hasUnread);
       if (isActive) button.setAttribute("aria-current", "true");
+      button.setAttribute("aria-label", `${thread.reference_code || "Conversación de soporte"}: ${thread.subject || "Sin asunto"}${hasUnread ? ", respuesta nueva" : ""}`);
 
       const top = createNode("span", "panel-support-thread__top");
       top.appendChild(createNode("strong", "", thread.reference_code || "Soporte"));
-      if (thread.has_unread === true) {
-        const unread = createNode("span", "panel-support-thread__unread", "Nuevo");
+      if (hasUnread) {
+        const unread = createNode("span", "panel-support-thread__unread", "Respuesta nueva");
         unread.setAttribute("aria-label", "Respuesta nueva de soporte");
         top.appendChild(unread);
       }
@@ -768,6 +797,7 @@
 
   const renderSupport = () => {
     updateSupportUnreadCount();
+    renderSupportNotice();
     renderSupportList();
     renderSupportDetail();
   };
@@ -818,6 +848,7 @@
       const currentThread = state.supportThreads.find((item) => item.id === thread.id);
       if (currentThread) currentThread.has_unread = false;
       updateSupportUnreadCount();
+      renderSupportNotice();
       renderSupportList();
     } catch {
       // Reading messages remains available even if the non-critical read marker fails.
@@ -1338,6 +1369,7 @@
       renderPanel();
       setVisibleState("shell");
       activatePanelTab(window.location.hash.toLowerCase() === "#panel-support" ? "support" : state.activePanelTab);
+      void loadSupportThreads();
       return;
     }
 
@@ -1372,6 +1404,7 @@
     renderPanel();
     setVisibleState("shell");
     activatePanelTab(window.location.hash.toLowerCase() === "#panel-support" ? "support" : state.activePanelTab);
+    void loadSupportThreads();
   };
 
   const init = async () => {
@@ -1416,6 +1449,14 @@
   supportOverlay?.addEventListener("click", () => closeSupportComposer());
   supportModalCloseButtons.forEach((button) => button.addEventListener("click", () => closeSupportComposer()));
   supportNewButtons.forEach((button) => button.addEventListener("click", () => openSupportComposer()));
+  supportNoticeButton?.addEventListener("click", () => {
+    const thread = getMostRecentSupportAttentionThread();
+    activatePanelTab("support", { syncHash: true });
+    if (thread?.id) void openSupportThread(thread.id);
+    window.requestAnimationFrame(() => {
+      root.querySelector("[data-panel-support]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
   supportForm?.addEventListener("submit", submitSupportThread);
   supportForm?.addEventListener("input", (event) => {
     if (event.target.matches("input, textarea, select")) state.supportCreateRequestId = "";

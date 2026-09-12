@@ -1769,6 +1769,7 @@
     renderClientsView();
     setDataState("ready");
     activateAdminView(adminState.activeView);
+    if (adminState.activeView !== "support") void loadSupportOverview();
   };
 
   const loadAdminData = async () => {
@@ -3426,7 +3427,7 @@
 
     const overview = adminState.supportOverview || {};
     const metrics = [
-      { label: "En espera de soporte", value: Number(overview.waiting_support_count) || 0, tone: "warning" },
+      { label: "En espera de soporte", value: Number(overview.waiting_support_count) || 0, tone: "warning", isPriority: Number(overview.waiting_support_count) > 0 },
       { label: "Esperando cliente", value: Number(overview.waiting_customer_count) || 0, tone: "info" },
       { label: "Cerradas", value: Number(overview.closed_count) || 0, tone: "closed" },
       { label: "Total", value: Number(overview.total_count) || 0, tone: "neutral" },
@@ -3435,6 +3436,7 @@
     metrics.forEach((metric) => {
       const card = createNode("article", "admin-support-metric");
       card.dataset.tone = metric.tone;
+      card.classList.toggle("is-priority", metric.isPriority === true);
       card.append(createNode("span", "", metric.label), createNode("strong", "", metric.value));
       supportOverview.appendChild(card);
     });
@@ -3498,7 +3500,9 @@
       button.type = "button";
       button.dataset.adminSupportThread = thread.id;
       const isActive = thread.id === adminState.activeSupportThreadId;
+      const isWaitingSupport = thread.status === "waiting_support";
       button.classList.toggle("is-active", isActive);
+      button.classList.toggle("is-waiting-support", isWaitingSupport);
       if (isActive) button.setAttribute("aria-current", "true");
       button.setAttribute("aria-label", `Ver conversación ${thread.reference_code || "de soporte"}: ${thread.subject || "Sin asunto"}`);
 

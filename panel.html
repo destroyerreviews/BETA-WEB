@@ -7,7 +7,7 @@
     <title>Panel | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/styles.css?v=support-chat-client-20260907" />
+    <link rel="stylesheet" href="css/styles.css?v=support-chat-notifications-20260912" />
   </head>
   <body class="panel-page trial-promo-hidden">
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
@@ -130,7 +130,21 @@
           <a class="panel-profile-link" href="perfil.html">Ir al perfil</a>
         </section>
 
-        <section class="panel-pending-card" data-panel-pending></section>
+        <section class="panel-notice-stack" aria-label="Avisos de la cuenta">
+          <section class="panel-pending-card" data-panel-pending></section>
+          <section class="panel-support-notice" role="status" aria-live="polite" data-panel-support-notice hidden>
+            <div class="panel-support-notice__content">
+              <span class="panel-support-notice__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M5 5h14v10H9l-4 4V5Z" /><path d="M8 9h8M8 12h5" /></svg>
+              </span>
+              <div>
+                <strong>Soporte ha respondido</strong>
+                <p data-panel-support-notice-text>Tienes conversaciones con respuesta de soporte.</p>
+              </div>
+            </div>
+            <button class="panel-action panel-action--secondary" type="button" data-panel-support-notice-open>Ver soporte</button>
+          </section>
+        </section>
 
         <div class="panel-workspace">
           <aside class="panel-tabs" aria-label="Secciones del panel" role="tablist">
@@ -338,6 +352,6 @@
     <script defer src="js/auth.js"></script>
     <script defer src="js/profile-data.js"></script>
     <script defer src="js/main.js?v=client-panel-flow-20260711"></script>
-    <script defer src="js/panel.js?v=support-chat-client-20260907"></script>
+    <script defer src="js/panel.js?v=support-chat-notifications-20260912"></script>
   </body>
 </html>
