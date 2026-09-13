@@ -496,46 +496,28 @@
                   <div class="admin-section-heading admin-section-heading--clients">
                     <div>
                       <h3 id="admin-clients-title">Clientes</h3>
-                      <p>Clientes detectados a partir de pedidos reales</p>
+                      <p>Actividad unificada por cuenta, pedidos, prueba gratuita y soporte.</p>
                     </div>
-                    <span class="admin-section-count" data-admin-clients-count>0 clientes</span>
+                    <span class="admin-section-count" data-admin-clients-count aria-live="polite">Cargando clientes…</span>
                   </div>
 
-                  <div class="admin-clients-metrics" data-admin-clients-metrics></div>
+                  <div class="admin-clients-metrics" data-admin-clients-metrics aria-live="polite" aria-busy="true"></div>
 
                   <form class="admin-filters admin-clients-filters" data-admin-clients-filters role="search">
                     <label class="admin-search-field">
                       <span class="admin-filter-label">Buscar cliente</span>
                       <span class="admin-search-control">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16 16 4 4" /></svg>
-                        <input type="search" name="client-search" placeholder="Nombre, email o WhatsApp" autocomplete="off" data-admin-clients-search />
+                        <input type="search" name="client-search" maxlength="120" placeholder="Nombre, email, WhatsApp o referencia" autocomplete="off" data-admin-clients-search />
                       </span>
-                    </label>
-                    <label>
-                      <span class="admin-filter-label">WhatsApp</span>
-                      <select name="client-whatsapp" data-admin-clients-filter="whatsapp">
-                        <option value="">Todos</option>
-                        <option value="with">Con WhatsApp</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span class="admin-filter-label">Frecuencia</span>
-                      <select name="client-frequency" data-admin-clients-filter="recurrent">
-                        <option value="">Todos</option>
-                        <option value="yes">Recurrentes</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span class="admin-filter-label">Gestión predominante</span>
-                      <select name="client-mode" data-admin-clients-filter="mode">
-                        <option value="">Todas</option>
-                        <option value="manual">Cliente</option>
-                        <option value="team">Equipo</option>
-                      </select>
                     </label>
                   </form>
 
-                  <div class="admin-clients-list" data-admin-clients-list></div>
+                  <p class="admin-clients-feedback" role="status" aria-live="polite" data-admin-clients-feedback hidden></p>
+                  <div class="admin-clients-list" data-admin-clients-list aria-live="polite" aria-busy="true"></div>
+                  <div class="admin-clients-pagination">
+                    <button class="admin-row-button admin-clients-load-more" type="button" data-admin-clients-load-more hidden>Cargar más</button>
+                  </div>
                 </section>
               </section>
             </div>
@@ -927,7 +909,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </header>
-        <div class="admin-order-dialog__body" data-admin-client-dialog-body></div>
+        <div class="admin-order-dialog__body admin-client-dialog__body" data-admin-client-dialog-body aria-live="polite" aria-busy="false"></div>
         <p class="admin-copy-feedback" role="status" aria-live="polite" data-admin-client-copy-feedback></p>
       </dialog>
 

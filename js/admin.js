@@ -122,8 +122,9 @@
   const clientsMetrics = root.querySelector("[data-admin-clients-metrics]");
   const clientsFiltersForm = root.querySelector("[data-admin-clients-filters]");
   const clientsSearchInput = root.querySelector("[data-admin-clients-search]");
-  const clientsFilterInputs = [...root.querySelectorAll("[data-admin-clients-filter]")];
+  const clientsFeedback = root.querySelector("[data-admin-clients-feedback]");
   const clientsList = root.querySelector("[data-admin-clients-list]");
+  const clientsLoadMore = root.querySelector("[data-admin-clients-load-more]");
   const clientDialog = root.querySelector("[data-admin-client-dialog]");
   const clientDialogTitle = root.querySelector("[data-admin-client-dialog-title]");
   const clientDialogStatus = root.querySelector("[data-admin-client-dialog-status]");
@@ -155,7 +156,23 @@
     viewReviews: [],
     freeTrialRequests: [],
     viewFreeTrialRequests: [],
+    clientsOverview: null,
     clients: [],
+    clientsInitialized: false,
+    clientsOverviewLoading: false,
+    clientsListLoading: false,
+    clientsDetailLoading: false,
+    clientsOverviewError: "",
+    clientsListError: "",
+    clientsDetailError: "",
+    clientSearch: "",
+    clientsCursorActivityAt: null,
+    clientsCursorUserId: null,
+    clientsHasMore: false,
+    clientsSearchTimer: null,
+    clientsOverviewRequest: 0,
+    clientsListRequest: 0,
+    clientsDetailRequest: 0,
     partialErrors: {},
     filters: {
       search: "",
@@ -174,12 +191,6 @@
       search: "",
       status: "",
     },
-    clientFilters: {
-      search: "",
-      whatsapp: "",
-      recurrent: "",
-      mode: "",
-    },
     activeView: "summary",
     activeOrderId: "",
     activeReviewId: "",
@@ -197,7 +208,8 @@
     freeTrialStatusOrigin: "",
     freeTrialStatusSaving: false,
     freeTrialStatusToastTimer: null,
-    activeClientKey: "",
+    activeClientUserId: "",
+    activeClientDetail: null,
     supportOverview: null,
     supportThreads: [],
     supportMessages: [],
@@ -256,8 +268,8 @@
     },
     clients: {
       title: "Clientes",
-      description: "Clientes detectados a partir de pedidos reales.",
-      meta: "Último pedido primero",
+      description: "Consulta clientes y su actividad con identidad unificada por cuenta.",
+      meta: "Última actividad primero",
     },
   };
 
@@ -318,6 +330,31 @@
   };
 
   const validSupportStatuses = new Set(Object.keys(supportStatusLabels));
+
+  const customerOrderStatusLabels = {
+    pending: "Pendiente",
+    review: "En revisión",
+    in_progress: "En proceso",
+    completed: "Completado",
+    cancelled: "Cancelado",
+  };
+
+  const customerPaymentStatusLabels = {
+    unpaid: "Sin pagar",
+    pending: "Pendiente según registro",
+    paid: "Pagado según registro",
+    failed: "Fallido",
+    refunded: "Reembolsado",
+  };
+
+  const customerActivityLabels = {
+    profile: "Perfil",
+    order: "Pedido",
+    review: "Reseña",
+    free_trial: "Prueba gratuita",
+    support: "Soporte",
+    unknown: "Registro",
+  };
 
   const getSupabaseClient = () => window.DestroyerSupabase?.client || null;
 
@@ -566,6 +603,9 @@
     if (nextView === "support" && !adminState.supportInitialized && !adminState.supportListLoading) {
       void loadSupportWorkspace();
     }
+    if (nextView === "clients" && !adminState.clientsInitialized && !adminState.clientsListLoading) {
+      void loadCustomersWorkspace();
+    }
   };
 
   const clearAdminData = () => {
@@ -580,7 +620,24 @@
     adminState.viewReviews = [];
     adminState.freeTrialRequests = [];
     adminState.viewFreeTrialRequests = [];
+    window.clearTimeout(adminState.clientsSearchTimer);
+    adminState.clientsOverview = null;
     adminState.clients = [];
+    adminState.clientsInitialized = false;
+    adminState.clientsOverviewLoading = false;
+    adminState.clientsListLoading = false;
+    adminState.clientsDetailLoading = false;
+    adminState.clientsOverviewError = "";
+    adminState.clientsListError = "";
+    adminState.clientsDetailError = "";
+    adminState.clientSearch = "";
+    adminState.clientsCursorActivityAt = null;
+    adminState.clientsCursorUserId = null;
+    adminState.clientsHasMore = false;
+    adminState.clientsSearchTimer = null;
+    adminState.clientsOverviewRequest += 1;
+    adminState.clientsListRequest += 1;
+    adminState.clientsDetailRequest += 1;
     adminState.partialErrors = {};
     adminState.dataReady = false;
     adminState.activeOrderId = "";
@@ -595,7 +652,8 @@
     adminState.activeFreeTrialStatusId = "";
     adminState.freeTrialStatusOrigin = "";
     adminState.freeTrialStatusSaving = false;
-    adminState.activeClientKey = "";
+    adminState.activeClientUserId = "";
+    adminState.activeClientDetail = null;
     window.clearTimeout(adminState.supportSearchTimer);
     window.clearTimeout(adminState.supportFeedbackTimer);
     adminState.supportOverview = null;
@@ -812,122 +870,152 @@
     return adminState.viewOrders;
   };
 
-  const getClientKey = (order) => {
-    const email = `${order?.customer_email || ""}`.trim().toLowerCase();
-    if (email) return `email:${email}`;
+  const CUSTOMER_PAGE_SIZE = 50;
 
-    const userId = `${order?.user_id || ""}`.trim();
-    if (userId) return `user:${userId}`;
-
-    const name = normalizeSearch(order?.customer_name);
-    const whatsapp = `${order?.whatsapp || ""}`.replace(/\D/g, "");
-    if (name || whatsapp) return `contact:${name}|${whatsapp}`;
-
-    return `order:${order?.id || ""}`;
-  };
-
-  const getClientOrders = (clientKey) => (
-    adminState.clients.find((client) => client.key === clientKey)?.orders || []
+  const getCustomerDisplayName = (customer) => (
+    `${customer?.full_name || ""}`.trim()
+    || `${customer?.email || ""}`.trim()
+    || "Cliente sin nombre"
   );
 
-  const getClientStats = (orders) => {
-    const activeStatuses = new Set(["pending", "review", "in_progress"]);
-    return {
-      orders: orders.length,
-      active: orders.filter((order) => activeStatuses.has(order.status)).length,
-      completed: orders.filter((order) => order.status === "completed").length,
-      cancelled: orders.filter((order) => order.status === "cancelled").length,
+  const getCustomerInitials = (customer) => getCustomerDisplayName(customer)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "CL";
+
+  const formatCustomerActivityType = (type) => customerActivityLabels[type] || customerActivityLabels.unknown;
+  const formatCustomerOrderStatus = (status) => customerOrderStatusLabels[status] || `${status || ""}`.trim() || "Sin estado";
+  const formatCustomerPaymentStatus = (status) => customerPaymentStatusLabels[status] || `${status || ""}`.trim() || "Sin estado registrado";
+
+  const getCustomerErrorMessage = (error, fallback) => {
+    const source = [error?.message, error?.details, error?.hint, error?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (source.includes("authentication_required")) return "La sesión ha caducado. Vuelve a iniciar sesión.";
+    if (source.includes("admin_required")) return "Tu sesión ya no tiene permisos de administración.";
+    if (source.includes("search_too_long")) return "La búsqueda no puede superar 120 caracteres.";
+    if (source.includes("invalid_limit") || source.includes("invalid_customer_cursor")) return "No se pudo continuar la lista de clientes. Recarga la sección.";
+    if (source.includes("customer_id_required") || source.includes("customer_not_available")) return "El cliente ya no está disponible.";
+    return fallback;
+  };
+
+  const fetchCustomersOverview = async () => {
+    assertAdminAccess();
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error("Supabase no está disponible");
+    const { data, error } = await supabase.rpc("admin_get_customers_overview");
+    if (error) throw error;
+    return firstRpcRow(data) || {
+      total_customers: 0,
+      customers_with_orders: 0,
+      customers_with_open_trial: 0,
+      customers_with_open_support: 0,
     };
   };
 
-  const formatClientManagementMode = (orders) => {
-    const modes = orders
-      .map((order) => order.management_mode)
-      .filter((mode) => mode === "manual" || mode === "team");
-    if (!modes.length) return { value: "", label: "" };
-
-    const counts = modes.reduce((result, mode) => {
-      result[mode] = (result[mode] || 0) + 1;
-      return result;
-    }, {});
-    const manualCount = counts.manual || 0;
-    const teamCount = counts.team || 0;
-    const firstKnownMode = orders.find((order) => order.management_mode === "manual" || order.management_mode === "team")?.management_mode;
-    const value = manualCount === teamCount
-      ? firstKnownMode
-      : manualCount > teamCount ? "manual" : "team";
-    return { value, label: managementLabel(value) };
-  };
-
-  const buildClientsViewModel = () => {
+  const fetchCustomersPage = async ({ search, beforeActivityAt, beforeUserId }) => {
     assertAdminAccess();
-    const groupedClients = new Map();
-
-    adminState.viewOrders.forEach((order) => {
-      const key = getClientKey(order);
-      const current = groupedClients.get(key) || [];
-      current.push(order);
-      groupedClients.set(key, current);
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error("Supabase no está disponible");
+    const normalizedSearch = `${search || ""}`.trim().slice(0, 120);
+    const { data, error } = await supabase.rpc("admin_list_customers", {
+      p_search: normalizedSearch || null,
+      p_limit: CUSTOMER_PAGE_SIZE,
+      p_before_activity_at: beforeActivityAt || null,
+      p_before_user_id: beforeUserId || null,
     });
-
-    adminState.clients = [...groupedClients.entries()].map(([key, groupedOrders]) => {
-      const orders = [...groupedOrders].sort((a, b) => (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ));
-      const latestValue = (field) => orders.find((order) => `${order[field] || ""}`.trim())?.[field] || "";
-      const currencyTotals = new Map();
-      orders.forEach((order) => {
-        const currency = `${order.currency || "EUR"}`.trim().toUpperCase() || "EUR";
-        currencyTotals.set(currency, (currencyTotals.get(currency) || 0) + (Number(order.total_cents) || 0));
-      });
-
-      return {
-        key,
-        name: latestValue("customer_name"),
-        email: latestValue("customer_email"),
-        whatsapp: latestValue("whatsapp"),
-        userId: latestValue("user_id"),
-        orders,
-        stats: getClientStats(orders),
-        management: formatClientManagementMode(orders),
-        currencyTotals: [...currencyTotals.entries()].map(([currency, totalCents]) => ({ currency, totalCents })),
-        firstOrder: orders.at(-1) || null,
-        lastOrder: orders[0] || null,
-        mapsUrl: orders.map((order) => getValidGoogleMapsUrl(order.google_maps_url)).find(Boolean) || "",
-      };
-    }).sort((a, b) => (
-      new Date(b.lastOrder?.created_at || 0).getTime() - new Date(a.lastOrder?.created_at || 0).getTime()
-    ));
-
-    return adminState.clients;
+    if (error) throw error;
+    return Array.isArray(data) ? data.filter((customer) => customer?.user_id) : [];
   };
 
-  const formatClientSpend = (client) => client.currencyTotals
-    .map(({ currency, totalCents }) => formatMoney(totalCents, currency))
-    .join(" · ");
-
-  const getClientSearchText = (client) => normalizeSearch([
-    client.name,
-    client.email,
-    client.whatsapp,
-  ].filter(Boolean).join(" "));
-
-  const filterClients = () => {
-    const search = normalizeSearch(adminState.clientFilters.search);
-    return adminState.clients.filter((client) => (
-      (!search || getClientSearchText(client).includes(search))
-      && (!adminState.clientFilters.whatsapp || Boolean(client.whatsapp))
-      && (!adminState.clientFilters.recurrent || client.stats.orders > 1)
-      && (!adminState.clientFilters.mode || client.management.value === adminState.clientFilters.mode)
-    ));
+  const fetchCustomerDetail = async (userId) => {
+    assertAdminAccess();
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error("Supabase no está disponible");
+    const { data, error } = await supabase.rpc("admin_get_customer_detail", {
+      p_user_id: userId,
+    });
+    if (error) throw error;
+    return firstRpcRow(data);
   };
 
-  const formatClientStatusSummary = (client) => {
-    const labels = [];
-    if (client.stats.active) labels.push(pluralize(client.stats.active, "activo", "activos"));
-    if (client.stats.completed) labels.push(pluralize(client.stats.completed, "completado", "completados"));
-    if (client.stats.cancelled) labels.push(pluralize(client.stats.cancelled, "cancelado", "cancelados"));
-    return labels.join(" · ") || "Sin estado";
+  const loadCustomersOverview = async () => {
+    const request = adminState.clientsOverviewRequest + 1;
+    adminState.clientsOverviewRequest = request;
+    adminState.clientsOverviewLoading = true;
+    adminState.clientsOverviewError = "";
+    renderClientsMetrics();
+
+    try {
+      const overview = await fetchCustomersOverview();
+      if (request !== adminState.clientsOverviewRequest) return;
+      adminState.clientsOverview = overview;
+    } catch (error) {
+      if (request !== adminState.clientsOverviewRequest) return;
+      adminState.clientsOverview = null;
+      adminState.clientsOverviewError = getCustomerErrorMessage(error, "No se pudo cargar el resumen de clientes.");
+      console.error("No se pudo cargar el resumen de clientes.", error);
+    } finally {
+      if (request === adminState.clientsOverviewRequest) {
+        adminState.clientsOverviewLoading = false;
+        renderClientsMetrics();
+        if (adminState.dataReady) renderAdminSummary();
+      }
+    }
+  };
+
+  const loadCustomersPage = async ({ reset = false } = {}) => {
+    const request = adminState.clientsListRequest + 1;
+    adminState.clientsListRequest = request;
+    const search = adminState.clientSearch.trim().slice(0, 120);
+
+    if (reset) {
+      adminState.clients = [];
+      adminState.clientsCursorActivityAt = null;
+      adminState.clientsCursorUserId = null;
+      adminState.clientsHasMore = false;
+    }
+
+    const beforeActivityAt = reset ? null : adminState.clientsCursorActivityAt;
+    const beforeUserId = reset ? null : adminState.clientsCursorUserId;
+    adminState.clientsListLoading = true;
+    adminState.clientsListError = "";
+    renderClientsView();
+
+    try {
+      const customers = await fetchCustomersPage({ search, beforeActivityAt, beforeUserId });
+      if (request !== adminState.clientsListRequest || search !== adminState.clientSearch.trim().slice(0, 120)) return;
+
+      const knownUserIds = new Set(reset ? [] : adminState.clients.map((customer) => customer.user_id));
+      const newCustomers = customers.filter((customer) => !knownUserIds.has(customer.user_id));
+      adminState.clients = reset ? newCustomers : [...adminState.clients, ...newCustomers];
+
+      const lastCustomer = customers.at(-1);
+      const hasCompleteCursor = Boolean(lastCustomer?.last_activity_at && lastCustomer?.user_id);
+      adminState.clientsHasMore = customers.length === CUSTOMER_PAGE_SIZE && hasCompleteCursor;
+      adminState.clientsCursorActivityAt = adminState.clientsHasMore ? lastCustomer.last_activity_at : null;
+      adminState.clientsCursorUserId = adminState.clientsHasMore ? lastCustomer.user_id : null;
+    } catch (error) {
+      if (request !== adminState.clientsListRequest) return;
+      adminState.clientsListError = getCustomerErrorMessage(error, "No se pudo cargar la lista de clientes.");
+      console.error("No se pudo cargar la lista de clientes.", error);
+    } finally {
+      if (request === adminState.clientsListRequest) {
+        adminState.clientsListLoading = false;
+        renderClientsView();
+      }
+    }
+  };
+
+  const loadCustomersWorkspace = async () => {
+    if (!adminState.accessGranted || !adminState.session?.user) return;
+    adminState.clientsInitialized = true;
+    await Promise.all([loadCustomersOverview(), loadCustomersPage({ reset: true })]);
   };
 
   const getReviewMediaCounts = (review) => {
@@ -1356,17 +1444,14 @@
   };
 
   const renderClientCard = (client) => {
-    const displayName = client.name || client.email || client.whatsapp || "Cliente sin nombre";
-    const initials = displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "CL";
+    const displayName = getCustomerDisplayName(client);
+    const initials = getCustomerInitials(client);
     const mailtoHref = getMailtoHref(client.email);
     const whatsappHref = getWhatsappHref(client.whatsapp);
+    const currency = `${client.currency || "EUR"}`.trim().toUpperCase() || "EUR";
+    const supportTotal = Number(client.support_thread_count) || 0;
+    const supportOpen = Number(client.open_support_thread_count) || 0;
+    const trialStatus = `${client.free_trial_status || ""}`.trim();
 
     return `
       <article class="admin-client-row">
@@ -1389,178 +1474,296 @@
           </div>
         </div>
         <div class="admin-client-row__metrics">
-          <div><span>Pedidos</span><strong>${client.stats.orders}</strong></div>
-          <div><span>Importe total</span><strong>${escapeHtml(formatClientSpend(client))}</strong></div>
-          <div><span>Último pedido</span><strong>${escapeHtml(formatDate(client.lastOrder?.created_at))}</strong></div>
+          <div><span>Pedidos</span><strong>${Number(client.order_count) || 0}</strong></div>
+          <div><span>Valor de pedidos</span><strong>${escapeHtml(formatMoney(client.order_value_cents, currency))}</strong></div>
+          <div><span>Pagado según registro</span><strong>${escapeHtml(formatMoney(client.recorded_paid_total_cents, currency))}</strong></div>
+          <div><span>Pendiente según registro</span><strong>${escapeHtml(formatMoney(client.recorded_pending_total_cents, currency))}</strong></div>
         </div>
         <div class="admin-client-row__status">
-          <span>${escapeHtml(formatClientStatusSummary(client))}</span>
-          ${client.stats.orders > 1 ? `<strong class="admin-client-recurrent-chip">Recurrente</strong>` : ""}
-          ${client.management.value ? `<strong class="admin-management-chip" data-mode="${escapeHtml(client.management.value)}">${escapeHtml(client.management.label)}</strong>` : ""}
+          <div class="admin-client-row__chips">
+            ${trialStatus ? `<strong class="admin-state-chip" data-tone="${getFreeTrialBadgeType(trialStatus)}">Prueba: ${escapeHtml(formatFreeTrialStatus(trialStatus))}</strong>` : ""}
+            <strong class="admin-state-chip" data-tone="${supportOpen ? "warning" : "neutral"}">Soporte: ${supportTotal} · ${supportOpen} abiertas</strong>
+          </div>
+          <span class="admin-client-activity"><strong>${escapeHtml(formatCustomerActivityType(client.last_activity_type))}</strong> · ${escapeHtml(formatDate(client.last_activity_at, true))}</span>
         </div>
         <div class="admin-client-row__actions">
           ${mailtoHref ? `<a class="admin-client-quick-action" href="${escapeHtml(mailtoHref)}" aria-label="Enviar email a ${escapeHtml(client.email)}">Email</a>` : ""}
           ${whatsappHref ? `<a class="admin-client-quick-action" href="${escapeHtml(whatsappHref)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de ${escapeHtml(client.whatsapp)}">WhatsApp</a>` : ""}
-          <button class="admin-row-button" type="button" data-client-open="${escapeHtml(client.key)}">Ver detalle</button>
+          <button class="admin-row-button" type="button" data-client-open="${escapeHtml(client.user_id)}">Ver cliente</button>
         </div>
       </article>
     `;
   };
 
-  const renderClientsView = () => {
-    if (!clientsList) return;
-    const filteredClients = filterClients();
-    const clients = adminState.clients;
+  const renderClientsMetrics = () => {
+    if (!clientsMetrics) return;
+    clientsMetrics.setAttribute("aria-busy", String(adminState.clientsOverviewLoading));
+
+    if (adminState.clientsOverviewLoading && !adminState.clientsOverview) {
+      clientsMetrics.innerHTML = Array.from({ length: 4 }, () => `
+        <article class="admin-metric admin-client-metric-skeleton" aria-hidden="true"><span>Cargando</span><strong>—</strong></article>
+      `).join("");
+      return;
+    }
+
+    const overview = adminState.clientsOverview || {};
     const metrics = [
-      { label: "Clientes totales", value: clients.length, tone: "neutral" },
-      { label: "Con pedidos activos", value: clients.filter((client) => client.stats.active > 0).length, tone: "info" },
-      { label: "Con pedidos completados", value: clients.filter((client) => client.stats.completed > 0).length, tone: "success" },
-      { label: "Con WhatsApp", value: clients.filter((client) => Boolean(client.whatsapp)).length, tone: "info" },
-      { label: "Recurrentes", value: clients.filter((client) => client.stats.orders > 1).length, tone: "warning" },
+      { label: "Total clientes", value: Number(overview.total_customers) || 0, tone: "neutral" },
+      { label: "Con pedidos", value: Number(overview.customers_with_orders) || 0, tone: "info" },
+      { label: "Prueba abierta", value: Number(overview.customers_with_open_trial) || 0, tone: "warning" },
+      { label: "Soporte abierto", value: Number(overview.customers_with_open_support) || 0, tone: "warning" },
     ];
 
-    if (clientsMetrics) {
-      clientsMetrics.innerHTML = metrics.map((metric) => `
-        <article class="admin-metric" data-tone="${metric.tone}">
-          <span>${escapeHtml(metric.label)}</span>
-          <strong>${metric.value}</strong>
-        </article>
-      `).join("");
+    clientsMetrics.innerHTML = metrics.map((metric) => `
+      <article class="admin-metric" data-tone="${metric.tone}">
+        <span>${escapeHtml(metric.label)}</span>
+        <strong>${metric.value}</strong>
+      </article>
+    `).join("");
+  };
+
+  const renderClientsView = () => {
+    if (!clientsList) return;
+    const clients = adminState.clients;
+    const totalCustomers = Number(adminState.clientsOverview?.total_customers) || 0;
+    const feedbackMessage = [adminState.clientsOverviewError, adminState.clientsListError].filter(Boolean).join(" ");
+
+    renderClientsMetrics();
+    clientsList.setAttribute("aria-busy", String(adminState.clientsListLoading));
+
+    if (clientsFeedback) {
+      clientsFeedback.hidden = !feedbackMessage;
+      clientsFeedback.textContent = feedbackMessage;
     }
 
     if (clientsCount) {
-      clientsCount.textContent = filteredClients.length === clients.length
-        ? pluralize(clients.length, "cliente", "clientes")
-        : `${filteredClients.length} de ${clients.length} clientes`;
+      clientsCount.textContent = totalCustomers && clients.length < totalCustomers
+        ? `${clients.length} de ${totalCustomers} clientes`
+        : pluralize(clients.length, "cliente", "clientes");
     }
 
-    if (clientsSearchInput && clientsSearchInput.value !== adminState.clientFilters.search) {
-      clientsSearchInput.value = adminState.clientFilters.search;
+    if (clientsSearchInput && clientsSearchInput.value !== adminState.clientSearch) {
+      clientsSearchInput.value = adminState.clientSearch;
     }
-    clientsFilterInputs.forEach((input) => {
-      const filterName = input.dataset.adminClientsFilter;
-      if (filterName && input.value !== adminState.clientFilters[filterName]) {
-        input.value = adminState.clientFilters[filterName];
-      }
-    });
+
+    if (clientsLoadMore) {
+      clientsLoadMore.hidden = !adminState.clientsHasMore;
+      clientsLoadMore.disabled = adminState.clientsListLoading;
+      clientsLoadMore.textContent = adminState.clientsListLoading ? "Cargando…" : "Cargar más";
+    }
+
+    if (adminState.clientsListLoading && !clients.length) {
+      clientsList.innerHTML = `
+        <div class="admin-clients-empty admin-clients-loading" role="status">
+          <span class="admin-client-loader" aria-hidden="true"></span>
+          <h4>Cargando clientes</h4>
+          <p>Consultando cuentas y actividad reciente.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (adminState.clientsListError && !clients.length) {
+      clientsList.innerHTML = `
+        <div class="admin-clients-empty">
+          <span class="admin-client-avatar" aria-hidden="true">!</span>
+          <h4>No se pudo cargar Clientes</h4>
+          <p>${escapeHtml(adminState.clientsListError)}</p>
+          <button class="admin-row-button" type="button" data-admin-clients-retry>Reintentar</button>
+        </div>
+      `;
+      return;
+    }
 
     if (!clients.length) {
+      const hasSearch = Boolean(adminState.clientSearch.trim());
       clientsList.innerHTML = `
         <div class="admin-clients-empty">
           <span class="admin-client-avatar" aria-hidden="true">CL</span>
-          <h4>No hay clientes detectados</h4>
-          <p>Los clientes aparecerán aquí cuando existan pedidos reales autorizados.</p>
+          <h4>${hasSearch ? "No hay clientes con esa búsqueda" : "Todavía no hay clientes"}</h4>
+          <p>${hasSearch ? "Prueba con otro nombre, email, WhatsApp o referencia." : "Las cuentas con perfil, pedidos, prueba gratuita o soporte aparecerán aquí."}</p>
+          ${hasSearch ? `<button class="admin-row-button" type="button" data-admin-clients-clear>Limpiar búsqueda</button>` : ""}
         </div>
       `;
       return;
     }
 
-    if (!filteredClients.length) {
-      clientsList.innerHTML = `
-        <div class="admin-clients-empty">
-          <h4>No hay clientes con estos filtros</h4>
-          <p>Prueba otra búsqueda o combinación de filtros.</p>
-          <button class="admin-row-button" type="button" data-admin-clients-clear>Limpiar filtros</button>
-        </div>
-      `;
-      return;
-    }
-
-    clientsList.innerHTML = filteredClients.map(renderClientCard).join("");
+    clientsList.innerHTML = clients.map(renderClientCard).join("");
   };
 
-  const renderClientDetail = (clientKey) => {
-    const client = adminState.clients.find((item) => item.key === clientKey);
-    if (!client || !clientDialog || !clientDialogBody) return;
-    adminState.activeClientKey = clientKey;
+  const customerCollectionItems = (collection) => Array.isArray(collection?.items) ? collection.items : [];
 
-    const displayName = client.name || client.email || client.whatsapp || "Cliente sin nombre";
-    const mailtoHref = getMailtoHref(client.email);
-    const whatsappHref = getWhatsappHref(client.whatsapp);
-    const clientOrders = getClientOrders(clientKey);
-    const internalId = client.userId ? `${client.userId}`.slice(0, 8).toUpperCase() : "";
+  const renderCustomerText = (label, value, emptyText = "No disponible") => {
+    const text = `${value || ""}`.trim();
+    if (!text) return `<div class="admin-customer-text"><span>${escapeHtml(label)}</span><p>${escapeHtml(emptyText)}</p></div>`;
+    if (text.length <= 220) return `<div class="admin-customer-text"><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></div>`;
+    return `
+      <details class="admin-customer-text admin-customer-text--expandable">
+        <summary>${escapeHtml(label)} · Ver texto completo</summary>
+        <p>${escapeHtml(text)}</p>
+      </details>
+    `;
+  };
+
+  const formatTimelineLabel = (event) => {
+    const label = `${event?.label || formatCustomerActivityType(event?.type)}`;
+    const [prefix, rawStatus] = label.split(/\s·\s(?=[^·]+$)/);
+    if (!rawStatus) return label;
+    const translatedStatus = event.type === "order"
+      ? formatCustomerOrderStatus(rawStatus)
+      : event.type === "review"
+        ? formatReviewStatus(rawStatus)
+        : event.type === "free_trial"
+          ? formatFreeTrialStatus(rawStatus)
+          : event.type === "support"
+            ? formatSupportStatus(rawStatus)
+            : rawStatus;
+    return `${prefix} · ${translatedStatus}`;
+  };
+
+  const renderCustomerDetail = (detail) => {
+    if (!clientDialogBody) return;
+    const customer = detail?.customer || {};
+    const summary = detail?.summary || {};
+    const orders = customerCollectionItems(detail?.orders);
+    const reviews = customerCollectionItems(detail?.reviews);
+    const supportThreads = customerCollectionItems(detail?.support_threads);
+    const timeline = customerCollectionItems(detail?.timeline);
+    const freeTrial = detail?.free_trial || null;
+    const displayName = getCustomerDisplayName(customer);
+    const mailtoHref = getMailtoHref(customer.email);
+    const whatsappHref = getWhatsappHref(customer.whatsapp);
+    const currency = `${summary.currency || "EUR"}`.trim().toUpperCase() || "EUR";
 
     if (clientDialogTitle) clientDialogTitle.textContent = displayName;
     if (clientDialogStatus) {
-      clientDialogStatus.textContent = `${pluralize(client.stats.orders, "pedido", "pedidos")} · ${formatClientStatusSummary(client)}`;
+      clientDialogStatus.textContent = `${pluralize(Number(summary.order_count) || 0, "pedido", "pedidos")} · ${formatCustomerActivityType(summary.last_activity_type)} ${formatDate(summary.last_activity_at, true)}`;
     }
-
+    clientDialogBody.setAttribute("aria-busy", "false");
     clientDialogBody.innerHTML = `
       <section class="admin-detail-section admin-client-detail-hero">
         <div class="admin-detail-section__head">
-          <h3>Contacto</h3>
-          ${client.stats.orders > 1 ? `<span class="admin-client-recurrent-chip">Cliente recurrente</span>` : ""}
+          <h3>Datos básicos</h3>
+          <span class="admin-client-id">ID ${escapeHtml(customer.id_short || "—")}</span>
         </div>
-        <div class="admin-detail-customer">
-          ${client.name ? `<div><span>Nombre</span><strong>${escapeHtml(client.name)}</strong></div>` : ""}
-          ${client.email ? `
-            <button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(client.email)}" aria-label="Copiar email ${escapeHtml(client.email)}">
-              <span>Email</span><strong>${escapeHtml(client.email)}</strong>${copyIconMarkup}
-            </button>
-          ` : ""}
-          ${client.whatsapp ? `
-            <button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(client.whatsapp)}" aria-label="Copiar WhatsApp ${escapeHtml(client.whatsapp)}">
-              <span>WhatsApp</span><strong>${escapeHtml(client.whatsapp)}</strong>${copyIconMarkup}
-            </button>
-          ` : ""}
-          ${internalId ? `<div><span>ID interno</span><strong>${escapeHtml(internalId)}</strong></div>` : ""}
+        <div class="admin-detail-customer admin-customer-basics">
+          <div><span>Nombre</span><strong>${escapeHtml(customer.full_name || "No disponible")}</strong></div>
+          ${customer.email ? `<button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(customer.email)}" aria-label="Copiar email ${escapeHtml(customer.email)}"><span>Email</span><strong>${escapeHtml(customer.email)}</strong>${copyIconMarkup}</button>` : `<div><span>Email</span><strong>No disponible</strong></div>`}
+          ${customer.whatsapp ? `<button class="admin-copy-value" type="button" data-copy-value="${escapeHtml(customer.whatsapp)}" aria-label="Copiar WhatsApp ${escapeHtml(customer.whatsapp)}"><span>WhatsApp</span><strong>${escapeHtml(customer.whatsapp)}</strong>${copyIconMarkup}</button>` : `<div><span>WhatsApp</span><strong>No disponible</strong></div>`}
+          <div><span>Fecha de alta</span><strong>${escapeHtml(formatDate(customer.registered_at, true))}</strong></div>
         </div>
-        ${(mailtoHref || whatsappHref || client.mapsUrl) ? `
-          <div class="admin-detail-actions">
-            ${mailtoHref ? `<a href="${escapeHtml(mailtoHref)}">Enviar email</a>` : ""}
-            ${whatsappHref ? `<a href="${escapeHtml(whatsappHref)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ""}
-            ${client.mapsUrl ? `<a href="${escapeHtml(client.mapsUrl)}" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a>` : ""}
-          </div>
-        ` : ""}
+        ${(mailtoHref || whatsappHref) ? `<div class="admin-detail-actions">${mailtoHref ? `<a href="${escapeHtml(mailtoHref)}">Enviar email</a>` : ""}${whatsappHref ? `<a href="${escapeHtml(whatsappHref)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ""}</div>` : ""}
       </section>
 
       <section class="admin-detail-section">
-        <div class="admin-detail-section__head"><h3>Resumen real</h3></div>
-        <dl class="admin-detail-grid">
-          <div><dt>Pedidos totales</dt><dd>${client.stats.orders}</dd></div>
-          <div><dt>Importe total</dt><dd>${escapeHtml(formatClientSpend(client))}</dd></div>
-          <div><dt>Primer pedido</dt><dd>${escapeHtml(formatDate(client.firstOrder?.created_at, true))}</dd></div>
-          <div><dt>Último pedido</dt><dd>${escapeHtml(formatDate(client.lastOrder?.created_at, true))}</dd></div>
-          ${client.stats.active ? `<div><dt>Pedidos activos</dt><dd>${client.stats.active}</dd></div>` : ""}
-          ${client.stats.completed ? `<div><dt>Completados</dt><dd>${client.stats.completed}</dd></div>` : ""}
-          ${client.stats.cancelled ? `<div><dt>Cancelados</dt><dd>${client.stats.cancelled}</dd></div>` : ""}
-          ${client.management.value ? `<div><dt>Gestión predominante</dt><dd><span class="admin-management-chip" data-mode="${escapeHtml(client.management.value)}">${escapeHtml(client.management.label)}</span></dd></div>` : ""}
+        <div class="admin-detail-section__head"><h3>Resumen</h3></div>
+        <dl class="admin-detail-grid admin-customer-summary-grid">
+          <div><dt>Pedidos</dt><dd>${Number(summary.order_count) || 0}</dd></div>
+          <div><dt>Pedidos activos</dt><dd>${Number(summary.active_order_count) || 0}</dd></div>
+          <div><dt>Pedidos completados</dt><dd>${Number(summary.completed_order_count) || 0}</dd></div>
+          <div><dt>Valor de pedidos</dt><dd>${escapeHtml(formatMoney(summary.order_value_cents, currency))}</dd></div>
+          <div><dt>Pagado según registro</dt><dd>${escapeHtml(formatMoney(summary.recorded_paid_total_cents, currency))}</dd></div>
+          <div><dt>Pendiente según registro</dt><dd>${escapeHtml(formatMoney(summary.recorded_pending_total_cents, currency))}</dd></div>
+          <div><dt>Prueba gratuita</dt><dd>${escapeHtml(summary.free_trial_status ? formatFreeTrialStatus(summary.free_trial_status) : "No solicitada")}</dd></div>
+          <div><dt>Soporte</dt><dd>${Number(summary.open_support_thread_count) || 0} abiertas de ${Number(summary.support_thread_count) || 0}</dd></div>
+          <div><dt>Última actividad</dt><dd>${escapeHtml(formatCustomerActivityType(summary.last_activity_type))} · ${escapeHtml(formatDate(summary.last_activity_at, true))}</dd></div>
         </dl>
       </section>
 
       <section class="admin-detail-section">
-        <div class="admin-detail-section__head">
-          <h3>Pedidos asociados</h3>
-          <span>${clientOrders.length}</span>
-        </div>
+        <div class="admin-detail-section__head"><h3>Pedidos</h3><span>${orders.length} de ${Number(detail?.orders?.total_count) || 0}${detail?.orders?.has_more ? " · últimos 25" : ""}</span></div>
         <div class="admin-client-orders">
-          ${clientOrders.map((order) => `
-            <article class="admin-client-order">
-              <div class="admin-client-order__ref">
-                <button type="button" data-copy-value="${escapeHtml(order.ref)}" aria-label="Copiar referencia ${escapeHtml(order.ref)}">
-                  ${escapeHtml(order.ref)}${copyIconMarkup}
-                </button>
-                <span>${escapeHtml(formatDate(order.created_at))}</span>
-              </div>
-              <div class="admin-client-order__total">
-                <span>Total</span>
-                <strong>${escapeHtml(formatMoney(order.total_cents, order.currency))}</strong>
-              </div>
-              <div class="admin-client-order__chips">
-                <span class="admin-state-chip" data-tone="${orderTone(order.status)}">${escapeHtml(orderStatusLabels[order.status] || "Sin estado")}</span>
-                <span class="admin-state-chip" data-tone="${paymentTone(order.payment_status)}">${escapeHtml(paymentStatusLabels[order.payment_status] || "Pago sin estado")}</span>
-                ${order.management_mode ? `<span class="admin-management-chip" data-mode="${escapeHtml(order.management_mode)}">${escapeHtml(managementLabel(order.management_mode))}</span>` : ""}
-              </div>
-              <button class="admin-row-button" type="button" data-client-order-open="${escapeHtml(order.id)}">Abrir pedido</button>
-            </article>
-          `).join("")}
+          ${orders.length ? orders.map((order) => {
+            const mapsUrl = getValidGoogleMapsUrl(order.google_maps_url);
+            const canOpenOrder = adminState.viewOrders.some((item) => item.id === order.id);
+            return `
+              <article class="admin-client-order admin-customer-detail-card">
+                <div class="admin-client-order__ref"><button type="button" data-copy-value="${escapeHtml(order.reference || shortRef(order.id))}" aria-label="Copiar referencia ${escapeHtml(order.reference || shortRef(order.id))}">${escapeHtml(order.reference || shortRef(order.id))}${copyIconMarkup}</button><span>${escapeHtml(formatDate(order.created_at, true))}</span></div>
+                <div class="admin-client-order__total"><span>Importe</span><strong>${escapeHtml(formatMoney(order.total_cents, order.currency || currency))}</strong></div>
+                <div class="admin-client-order__chips"><span class="admin-state-chip" data-tone="${orderTone(order.status)}">${escapeHtml(formatCustomerOrderStatus(order.status))}</span><span class="admin-state-chip" data-tone="${paymentTone(order.payment_status)}">Estado registrado: ${escapeHtml(formatCustomerPaymentStatus(order.payment_status))}</span>${order.management_mode ? `<span class="admin-management-chip" data-mode="${escapeHtml(order.management_mode)}">${escapeHtml(managementLabel(order.management_mode))}</span>` : ""}</div>
+                <div class="admin-customer-card-actions">${mapsUrl ? `<a class="admin-client-quick-action" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer">Google Maps</a>` : ""}${canOpenOrder ? `<button class="admin-row-button" type="button" data-client-order-open="${escapeHtml(order.id)}">Abrir pedido</button>` : ""}</div>
+                ${`${order.notes || ""}`.trim() ? renderCustomerText("Nota del cliente", order.notes) : ""}
+              </article>
+            `;
+          }).join("") : `<p class="admin-customer-section-empty">No hay pedidos asociados.</p>`}
         </div>
       </section>
-    `;
 
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head"><h3>Reseñas y personalizaciones</h3><span>${reviews.length} de ${Number(detail?.reviews?.total_count) || 0}${detail?.reviews?.has_more ? " · últimas 25" : ""}</span></div>
+        <div class="admin-customer-review-list">
+          ${reviews.length ? reviews.map((review) => `
+            <article class="admin-customer-review admin-customer-detail-card">
+              <div class="admin-customer-card-head"><div><strong>${escapeHtml(shortRef(review.order_id))} · Reseña ${Number(review.review_index) || "—"}</strong><span>${escapeHtml(formatDate(review.updated_at || review.created_at, true))}</span></div><div class="admin-client-order__chips"><span class="admin-state-chip" data-tone="${getReviewBadgeType(review.status)}">${escapeHtml(formatReviewStatus(review.status))}</span><span class="admin-management-chip">${escapeHtml(formatReviewSource(review.source))}</span></div></div>
+              <dl class="admin-customer-review-meta"><div><dt>Valoración</dt><dd>${Number(review.rating) ? `${Number(review.rating)}/5` : "Sin valoración"}</dd></div><div><dt>Archivos</dt><dd>${pluralize(Number(review.image_count) || 0, "imagen", "imágenes")} · ${pluralize(Number(review.video_count) || 0, "vídeo", "vídeos")}</dd></div></dl>
+              ${renderCustomerText("Texto de la reseña", review.review_text, "Sin texto disponible")}
+              ${`${review.review_notes || ""}`.trim() ? renderCustomerText("Notas asociadas", review.review_notes) : ""}
+            </article>
+          `).join("") : `<p class="admin-customer-section-empty">No hay reseñas asociadas.</p>`}
+        </div>
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head"><h3>Prueba gratuita</h3>${freeTrial ? `<span class="admin-state-chip" data-tone="${getFreeTrialBadgeType(freeTrial.status)}">${escapeHtml(formatFreeTrialStatus(freeTrial.status))}</span>` : ""}</div>
+        ${freeTrial ? `
+          <dl class="admin-detail-grid admin-customer-trial-grid"><div><dt>Creada</dt><dd>${escapeHtml(formatDate(freeTrial.created_at, true))}</dd></div><div><dt>Actualizada</dt><dd>${escapeHtml(formatDate(freeTrial.updated_at, true))}</dd></div>${getValidGoogleMapsUrl(freeTrial.google_maps_url) ? `<div><dt>Ficha</dt><dd><a href="${escapeHtml(getValidGoogleMapsUrl(freeTrial.google_maps_url))}" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a></dd></div>` : ""}</dl>
+          <div class="admin-customer-text-grid">${renderCustomerText("Nota del cliente", freeTrial.note, "Sin nota del cliente")}${renderCustomerText("Texto preparado", freeTrial.review_text, "Sin texto preparado")}</div>
+        ` : `<p class="admin-customer-section-empty">Este cliente no tiene una prueba gratuita asociada.</p>`}
+      </section>
+
+      <section class="admin-detail-section">
+        <div class="admin-detail-section__head"><h3>Soporte</h3><span>${supportThreads.length} de ${Number(detail?.support_threads?.total_count) || 0}${detail?.support_threads?.has_more ? " · últimos 25" : ""}</span></div>
+        <div class="admin-customer-support-list">
+          ${supportThreads.length ? supportThreads.map((thread) => `
+            <article class="admin-customer-support admin-customer-detail-card"><div class="admin-customer-card-head"><div><strong>${escapeHtml(thread.reference_code || "Soporte")}</strong><span>${escapeHtml(thread.subject || "Sin asunto")}</span></div><span class="admin-state-chip" data-tone="${getSupportStatusTone(thread.status)}">${escapeHtml(formatSupportStatus(thread.status))}</span></div><dl class="admin-customer-review-meta"><div><dt>Pedido asociado</dt><dd>${thread.order_id ? escapeHtml(shortRef(thread.order_id)) : "Soporte general"}</dd></div><div><dt>Última actividad</dt><dd>${escapeHtml(formatDate(thread.last_message_at || thread.updated_at, true))}</dd></div></dl><button class="admin-row-button" type="button" data-customer-support-open="${escapeHtml(thread.id)}">Abrir en Soporte</button></article>
+          `).join("") : `<p class="admin-customer-section-empty">No hay conversaciones de soporte asociadas.</p>`}
+        </div>
+      </section>
+
+      <section class="admin-detail-section admin-customer-timeline-section">
+        <div class="admin-detail-section__head"><h3>Actividad reciente</h3><span>${timeline.length} de ${Number(detail?.timeline?.total_count) || 0}</span></div>
+        ${detail?.timeline?.is_audit === false ? `<p class="admin-customer-timeline-note">Resumen reconstruido desde los datos actuales, no auditoría completa.</p>` : ""}
+        <ol class="admin-customer-timeline">
+          ${timeline.length ? timeline.map((event) => `<li data-type="${escapeHtml(event.type || "unknown")}"><span class="admin-customer-timeline__dot" aria-hidden="true"></span><div><strong>${escapeHtml(formatTimelineLabel(event))}</strong><span>${escapeHtml(formatCustomerActivityType(event.type))} · ${escapeHtml(formatDate(event.date, true))}</span></div></li>`).join("") : `<li class="admin-customer-timeline__empty">No hay actividad reciente disponible.</li>`}
+        </ol>
+      </section>
+    `;
+  };
+
+  const openCustomerDetail = async (userId) => {
+    const listCustomer = adminState.clients.find((customer) => customer.user_id === userId);
+    if (!userId || !clientDialog || !clientDialogBody) return;
+    const request = adminState.clientsDetailRequest + 1;
+    adminState.clientsDetailRequest = request;
+    adminState.activeClientUserId = userId;
+    adminState.activeClientDetail = null;
+    adminState.clientsDetailLoading = true;
+    adminState.clientsDetailError = "";
+
+    if (clientDialogTitle) clientDialogTitle.textContent = getCustomerDisplayName(listCustomer);
+    if (clientDialogStatus) clientDialogStatus.textContent = "Cargando actividad del cliente…";
     if (clientCopyFeedback) clientCopyFeedback.textContent = "";
-    clientDialog.showModal();
+    clientDialogBody.setAttribute("aria-busy", "true");
+    clientDialogBody.innerHTML = `<div class="admin-client-detail-state"><span class="admin-client-loader" aria-hidden="true"></span><h3>Cargando cliente</h3><p>Consultando pedidos, reseñas, prueba gratuita y soporte.</p></div>`;
+    if (!clientDialog.open) clientDialog.showModal();
     document.body.classList.add("admin-dialog-open");
+
+    try {
+      const detail = await fetchCustomerDetail(userId);
+      if (request !== adminState.clientsDetailRequest || userId !== adminState.activeClientUserId) return;
+      if (!detail?.customer?.user_id) throw new Error("customer_not_available");
+      adminState.activeClientDetail = detail;
+      renderCustomerDetail(detail);
+    } catch (error) {
+      if (request !== adminState.clientsDetailRequest || userId !== adminState.activeClientUserId) return;
+      adminState.clientsDetailError = getCustomerErrorMessage(error, "No se pudo cargar el detalle del cliente.");
+      clientDialogBody.setAttribute("aria-busy", "false");
+      clientDialogBody.innerHTML = `<div class="admin-client-detail-state"><span class="admin-client-avatar" aria-hidden="true">!</span><h3>Detalle no disponible</h3><p>${escapeHtml(adminState.clientsDetailError)}</p><button class="admin-row-button" type="button" data-admin-client-detail-retry>Reintentar</button></div>`;
+      if (clientDialogStatus) clientDialogStatus.textContent = "No se pudo completar la consulta.";
+      console.error("No se pudo cargar el detalle del cliente.", error);
+    } finally {
+      if (request === adminState.clientsDetailRequest) adminState.clientsDetailLoading = false;
+    }
   };
 
   const renderAdminSummary = () => {
@@ -1574,7 +1777,7 @@
       { label: "Reseñas por preparar", value: reviews.filter((review) => review.status === "awaiting_team").length, tone: "warning" },
       { label: "Pedidos completados", value: orders.filter((order) => order.status === "completed").length, tone: "success" },
       { label: "Pedidos cancelados", value: orders.filter((order) => order.status === "cancelled").length, tone: "danger" },
-      { label: "Clientes", value: adminState.clients.length, tone: "info" },
+      { label: "Clientes", value: adminState.clientsOverview ? Number(adminState.clientsOverview.total_customers) || 0 : "—", tone: "info" },
       { label: "Pruebas gratuitas", value: adminState.partialErrors.freeTrials ? "—" : adminState.viewFreeTrialRequests.length, tone: "info" },
     ];
 
@@ -1755,7 +1958,6 @@
 
   const renderAdminData = () => {
     buildAdminViewModel();
-    buildClientsViewModel();
     buildReviewsViewModel();
     buildFreeTrialsViewModel();
     adminState.dataReady = true;
@@ -1769,6 +1971,7 @@
     renderClientsView();
     setDataState("ready");
     activateAdminView(adminState.activeView);
+    if (!adminState.clientsOverview && !adminState.clientsOverviewLoading) void loadCustomersOverview();
     if (adminState.activeView !== "support") void loadSupportOverview();
   };
 
@@ -3290,9 +3493,13 @@
 
   const closeClientDialog = () => {
     if (!clientDialog?.open) return;
+    adminState.clientsDetailRequest += 1;
     clientDialog.close();
     syncDialogOpenClass();
-    adminState.activeClientKey = "";
+    adminState.activeClientUserId = "";
+    adminState.activeClientDetail = null;
+    adminState.clientsDetailLoading = false;
+    adminState.clientsDetailError = "";
   };
 
   const copyText = async (value) => {
@@ -3343,8 +3550,10 @@
   };
 
   const clearClientFilters = () => {
-    adminState.clientFilters = { search: "", whatsapp: "", recurrent: "", mode: "" };
-    renderClientsView();
+    window.clearTimeout(adminState.clientsSearchTimer);
+    adminState.clientSearch = "";
+    if (clientsSearchInput) clientsSearchInput.value = "";
+    void loadCustomersPage({ reset: true });
   };
 
   const formatSupportStatus = (status) => supportStatusLabels[status] || "Estado desconocido";
@@ -3817,6 +4026,26 @@
     await loadSupportMessages(thread.id);
   };
 
+  const openCustomerSupportThread = async (threadId) => {
+    const detailThread = customerCollectionItems(adminState.activeClientDetail?.support_threads)
+      .find((thread) => thread.id === threadId);
+    if (!detailThread) return;
+
+    const reference = `${detailThread.reference_code || ""}`.trim().slice(0, 120);
+    closeClientDialog();
+    adminState.supportFilters = { status: "", search: reference };
+    adminState.supportInitialized = true;
+    activateAdminView("support");
+    renderSupportFilters();
+    await Promise.all([loadSupportOverview(), loadSupportThreads()]);
+
+    if (!adminState.supportThreads.some((thread) => thread.id === threadId)) {
+      setSupportFeedback("La conversación ya no está disponible en la lista de soporte.", "error");
+      return;
+    }
+    await openSupportThread(threadId);
+  };
+
   const refreshSupportWorkspace = async () => {
     if (adminState.supportAction) return;
     adminState.supportAction = "refresh-workspace";
@@ -4024,14 +4253,11 @@
   });
   clientsFiltersForm?.addEventListener("submit", (event) => event.preventDefault());
   clientsSearchInput?.addEventListener("input", () => {
-    adminState.clientFilters.search = clientsSearchInput.value;
-    renderClientsView();
-  });
-  clientsFilterInputs.forEach((input) => {
-    input.addEventListener("change", () => {
-      adminState.clientFilters[input.dataset.adminClientsFilter] = input.value;
-      renderClientsView();
-    });
+    adminState.clientSearch = clientsSearchInput.value.slice(0, 120);
+    window.clearTimeout(adminState.clientsSearchTimer);
+    adminState.clientsSearchTimer = window.setTimeout(() => {
+      void loadCustomersPage({ reset: true });
+    }, 320);
   });
 
   supportFiltersForm?.addEventListener("submit", (event) => {
@@ -4163,7 +4389,31 @@
 
     const clientOpenButton = event.target.closest("[data-client-open]");
     if (clientOpenButton) {
-      renderClientDetail(clientOpenButton.dataset.clientOpen);
+      void openCustomerDetail(clientOpenButton.dataset.clientOpen);
+      return;
+    }
+
+    const clientsLoadMoreButton = event.target.closest("[data-admin-clients-load-more]");
+    if (clientsLoadMoreButton) {
+      await loadCustomersPage();
+      return;
+    }
+
+    const clientsRetryButton = event.target.closest("[data-admin-clients-retry]");
+    if (clientsRetryButton) {
+      await Promise.all([loadCustomersOverview(), loadCustomersPage({ reset: true })]);
+      return;
+    }
+
+    const clientDetailRetryButton = event.target.closest("[data-admin-client-detail-retry]");
+    if (clientDetailRetryButton) {
+      void openCustomerDetail(adminState.activeClientUserId);
+      return;
+    }
+
+    const customerSupportButton = event.target.closest("[data-customer-support-open]");
+    if (customerSupportButton) {
+      await openCustomerSupportThread(customerSupportButton.dataset.customerSupportOpen);
       return;
     }
 
@@ -4375,7 +4625,16 @@
     if (!inside) closeFreeTrialStatusDialog();
   });
   clientDialogClose?.addEventListener("click", closeClientDialog);
-  clientDialog?.addEventListener("close", syncDialogOpenClass);
+  clientDialog?.addEventListener("close", () => {
+    if (adminState.activeClientUserId || adminState.activeClientDetail || adminState.clientsDetailLoading) {
+      adminState.clientsDetailRequest += 1;
+      adminState.activeClientUserId = "";
+      adminState.activeClientDetail = null;
+      adminState.clientsDetailLoading = false;
+      adminState.clientsDetailError = "";
+    }
+    syncDialogOpenClass();
+  });
   clientDialog?.addEventListener("click", (event) => {
     if (event.target !== clientDialog) return;
     const rect = clientDialog.getBoundingClientRect();
@@ -4421,7 +4680,6 @@
     isImageMedia,
     isVideoMedia,
     buildAdminViewModel,
-    buildClientsViewModel,
     buildReviewsViewModel,
     buildFreeTrialsViewModel,
     renderLoading,
@@ -4435,14 +4693,16 @@
     renderOrdersList,
     renderOrderDetail,
     renderClientsView,
+    renderClientsMetrics,
     renderClientCard,
-    renderClientDetail,
-    filterClients,
-    getClientSearchText,
-    getClientKey,
-    getClientOrders,
-    getClientStats,
-    formatClientManagementMode,
+    renderCustomerDetail,
+    openCustomerDetail,
+    loadCustomersWorkspace,
+    loadCustomersOverview,
+    loadCustomersPage,
+    fetchCustomersOverview,
+    fetchCustomersPage,
+    fetchCustomerDetail,
     renderReviewsView,
     renderReviewCard,
     renderReviewDetailModal,
