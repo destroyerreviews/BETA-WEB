@@ -7,21 +7,22 @@
       name="description"
       content="Confirmacion del pedido de Destroyer Reviews."
     />
-    <title>Pedido confirmado | Destroyer Reviews</title>
+    <title>Comprobando pedido | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
     <link rel="icon" type="image/png" href="../../assets/brand/favicon.png" />
     <link rel="stylesheet" href="../../css/styles.css?v=checkout-20260612" />
   </head>
   <body class="checkout-page">
-    <main class="checkout-shell">
+    <main class="checkout-shell" data-order-confirmation-page hidden>
       <section class="checkout-empty-state">
         <div class="cart-empty__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false"><path d="M5 12.5l4.2 4.2L19.5 6.5" /></svg>
         </div>
-        <h2>Pedido confirmado</h2>
-        <p>Hemos recibido tus datos y prepararemos las reseñas de forma natural y variada según tu negocio.</p>
-        <a class="button button-primary" href="../../index.html">Volver al inicio</a>
+        <h2 data-order-confirmation-title>Comprobando pedido</h2>
+        <p data-order-confirmation-message>Estamos verificando el pedido asociado a tu cuenta.</p>
+        <a class="button button-primary" href="../../panel.html" data-order-confirmation-action>Ir al panel</a>
       </section>
     </main>
+    <script defer src="../../js/main.js?v=checkout-catalog-20260917"></script>
   </body>
 </html>

@@ -1907,20 +1907,78 @@ const initProcessTimeline = () => {
 };
 
 const cartStorageKey = "destroyerReviewsCart";
+const checkoutAttemptStorageKey = "destroyerCheckoutOrderAttemptV2";
 const formatCartPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
 const mainScriptSrc = [...document.scripts].find((script) => script.getAttribute("src")?.includes("js/main.js"))?.getAttribute("src") || "";
 const relativeRoot = mainScriptSrc.match(/^(?:\.\.\/)+/)?.[0] || "";
 const sitePath = (path) => `${relativeRoot}${path}`;
 const checkoutPath = () => `${relativeRoot}checkout/`;
 
-const readStoredCart = () => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(cartStorageKey) || "[]");
-    return Array.isArray(stored) ? stored.filter((item) => item && item.name) : [];
-  } catch {
-    return [];
+const cartPackFallbackCatalog = new Map([
+  ["ambar", { slug: "ambar", kind: "pack", display_name: "Ámbar", reviews_per_unit: 1, unit_price_cents: 400, currency: "EUR", max_quantity_per_order: 4 }],
+  ["amatista", { slug: "amatista", kind: "pack", display_name: "Amatista", reviews_per_unit: 10, unit_price_cents: 3700, currency: "EUR", max_quantity_per_order: 4 }],
+  ["diamante", { slug: "diamante", kind: "pack", display_name: "Diamante", reviews_per_unit: 25, unit_price_cents: 8700, currency: "EUR", max_quantity_per_order: 4 }],
+  ["rubi", { slug: "rubi", kind: "pack", display_name: "Rubí", reviews_per_unit: 50, unit_price_cents: 16600, currency: "EUR", max_quantity_per_order: 4 }],
+]);
+let checkoutCatalogBySlug = null;
+
+const normalizeCartLookup = (value) => `${value || ""}`
+  .trim()
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "");
+
+const resolveCartSlug = (item = {}) => {
+  const candidates = [item.slug, item.pack_slug, item.id, item.name];
+  for (const candidate of candidates) {
+    const normalized = normalizeCartLookup(candidate).replace(/^pack-/, "");
+    if (cartPackFallbackCatalog.has(normalized)) return normalized;
   }
+  return "";
 };
+
+const readStoredCartState = () => {
+  let stored;
+  try {
+    stored = JSON.parse(localStorage.getItem(cartStorageKey) || "[]");
+  } catch {
+    return { items: [], hasInvalidItems: true };
+  }
+
+  if (!Array.isArray(stored)) return { items: [], hasInvalidItems: true };
+
+  const quantitiesBySlug = new Map();
+  let hasInvalidItems = false;
+
+  stored.forEach((item) => {
+    const slug = item && typeof item === "object" ? resolveCartSlug(item) : "";
+    const quantity = Number(item?.quantity ?? 1);
+    if (!slug || !Number.isInteger(quantity) || quantity < 1) {
+      hasInvalidItems = true;
+      return;
+    }
+    quantitiesBySlug.set(slug, (quantitiesBySlug.get(slug) || 0) + quantity);
+  });
+
+  const items = [...quantitiesBySlug.entries()].map(([slug, quantity]) => ({ slug, quantity }));
+  if (!hasInvalidItems) {
+    try {
+      const canonicalCart = JSON.stringify(items);
+      if (localStorage.getItem(cartStorageKey) !== canonicalCart) {
+        localStorage.setItem(cartStorageKey, canonicalCart);
+      }
+    } catch {
+      // The in-memory canonical cart can still be used when storage is unavailable.
+    }
+  }
+
+  return { items, hasInvalidItems };
+};
+
+const readStoredCart = () => readStoredCartState().items;
+const getCartCatalogItem = (slug) => checkoutCatalogBySlug?.get(slug) || cartPackFallbackCatalog.get(slug) || null;
 
 const initCart = () => {
   const drawer = document.querySelector("[data-cart-drawer]");
@@ -1942,6 +2000,7 @@ const initCart = () => {
   const whatsappNumber = "34603826428";
   const removeAnimationMs = 320;
   let cart = [];
+  let hasInvalidCartItems = false;
   let toastTimer = null;
   let noticeTimer = null;
 
@@ -2045,17 +2104,24 @@ const initCart = () => {
   };
 
   const readCart = () => {
-    cart = readStoredCart();
+    const storedCart = readStoredCartState();
+    cart = storedCart.items;
+    hasInvalidCartItems = storedCart.hasInvalidItems;
   };
 
   const saveCart = () => {
+    cart = cart.map((item) => ({ slug: item.slug, quantity: Math.max(1, Number(item.quantity) || 1) }));
+    hasInvalidCartItems = false;
     localStorage.setItem(cartStorageKey, JSON.stringify(cart));
     window.dispatchEvent(new CustomEvent("destroyer:cart-updated", { detail: { cart } }));
   };
 
-  const formatPrice = (value) => `${Number(value || 0).toLocaleString("es-ES")} €`;
+  const formatPrice = (cents) => formatCartPrice((Number(cents) || 0) / 100);
   const cartCount = () => cart.reduce((total, item) => total + (item.quantity || 1), 0);
-  const cartTotal = () => cart.reduce((total, item) => total + (Number(item.price) || 0) * (item.quantity || 1), 0);
+  const cartTotal = () => cart.reduce((total, item) => {
+    const catalogItem = getCartCatalogItem(item.slug);
+    return total + (Number(catalogItem?.unit_price_cents) || 0) * (item.quantity || 1);
+  }, 0);
   const packVisuals = {
     ambar: { image: "assets/icons/packs/ambar.webp", color: "#f59e0b", label: "Ámbar" },
     amatista: { image: "assets/icons/packs/amatista.webp", color: "#a855f7", label: "Amatista" },
@@ -2072,10 +2138,11 @@ const initCart = () => {
   })[char]);
 
   const getPackVisual = (item) => {
-    const visual = packVisuals[item.id] || {
+    const catalogItem = getCartCatalogItem(item.slug);
+    const visual = packVisuals[item.slug] || {
       image: "assets/icons/packs/diamante.webp",
       color: "#58a6ff",
-      label: item.name || "Pack",
+      label: catalogItem?.display_name || "Pack",
     };
     return {
       ...visual,
@@ -2085,15 +2152,13 @@ const initCart = () => {
 
   const updateCheckout = () => {
     if (!checkoutNode) return;
-    const detail = cart.map((item) => `${item.quantity || 1}x ${item.name} (${item.reviews}) - ${formatPrice((Number(item.price) || 0) * (item.quantity || 1))}`).join("; ");
-    const message = `Hola, quiero contratar estos packs: ${detail}. ¿Me podéis ayudar?`;
     checkoutNode.href = checkoutPath();
     checkoutNode.removeAttribute("target");
     checkoutNode.removeAttribute("rel");
   };
 
   const renderCart = () => {
-    const count = cartCount();
+    const count = hasInvalidCartItems ? 0 : cartCount();
     countNodes.forEach((node) => {
       node.textContent = String(count);
       node.hidden = count === 0;
@@ -2101,16 +2166,32 @@ const initCart = () => {
 
     toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", drawer.classList.contains("is-open") ? "true" : "false"));
 
-    const hasItems = cart.length > 0;
-    if (emptyNode) emptyNode.hidden = hasItems;
+    const hasItems = !hasInvalidCartItems && cart.length > 0;
+    if (emptyNode) emptyNode.hidden = hasItems || hasInvalidCartItems;
     if (summaryNode) summaryNode.hidden = !hasItems;
     if (totalNode) totalNode.textContent = formatPrice(cartTotal());
 
     if (itemsNode) {
+      if (hasInvalidCartItems) {
+        itemsNode.innerHTML = `
+          <div class="cart-empty">
+            <h3>No podemos leer este carrito</h3>
+            <p>Contiene un pack antiguo o desconocido. Vacíalo y vuelve a elegir los packs.</p>
+            <button class="button button-secondary cart-empty__button" type="button" data-clear-invalid-cart>Vaciar carrito</button>
+          </div>
+        `;
+        updateCheckout();
+        return;
+      }
+
       itemsNode.innerHTML = cart.map((item) => {
         const quantity = Math.max(1, Number(item.quantity) || 1);
-        const escapedId = escapeHtml(item.id);
-        const escapedName = escapeHtml(item.name);
+        const catalogItem = getCartCatalogItem(item.slug);
+        const escapedId = escapeHtml(item.slug);
+        const escapedName = escapeHtml(catalogItem?.display_name || "Pack");
+        const reviewCount = Math.max(0, Number(catalogItem?.reviews_per_unit) || 0);
+        const reviewLabel = `${reviewCount} ${reviewCount === 1 ? "reseña" : "reseñas"}`;
+        const maxQuantity = Math.max(1, Number(catalogItem?.max_quantity_per_order) || 1);
         const visual = getPackVisual(item);
         return `
         <article class="cart-item" style="--pack-accent: ${visual.color};" data-cart-item="${escapedId}">
@@ -2118,16 +2199,16 @@ const initCart = () => {
             <img src="${visual.image}" alt="" loading="lazy" decoding="async" />
           </div>
           <div class="cart-item__meta">
-            <span class="cart-item__badge">${escapeHtml(item.reviews)}</span>
+            <span class="cart-item__badge">${escapeHtml(reviewLabel)}</span>
             <h3>${escapedName}</h3>
             <div class="cart-quantity" aria-label="Cantidad de ${escapedName}">
               <button class="cart-quantity__button" type="button" aria-label="Reducir cantidad de ${escapedName}" data-cart-quantity="decrease" data-cart-id="${escapedId}" ${quantity === 1 ? "disabled" : ""}>&minus;</button>
               <span class="cart-quantity__value" aria-live="polite">${quantity}</span>
-              <button class="cart-quantity__button" type="button" aria-label="Aumentar cantidad de ${escapedName}" data-cart-quantity="increase" data-cart-id="${escapedId}">+</button>
+              <button class="cart-quantity__button" type="button" aria-label="Aumentar cantidad de ${escapedName}" data-cart-quantity="increase" data-cart-id="${escapedId}" ${quantity >= maxQuantity ? "disabled" : ""}>+</button>
             </div>
           </div>
           <div class="cart-item__side">
-            <strong>${formatPrice((Number(item.price) || 0) * quantity)}</strong>
+            <strong>${formatPrice((Number(catalogItem?.unit_price_cents) || 0) * quantity)}</strong>
             <button class="cart-item__remove" type="button" aria-label="Eliminar ${escapedName}" data-remove-cart="${escapedId}">
               <svg class="cart-trash" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <g class="cart-trash__lid">
@@ -2244,21 +2325,28 @@ const initCart = () => {
       event.preventDefault();
       event.stopPropagation();
       const currentScroll = window.scrollY;
+      if (hasInvalidCartItems) {
+        openCart();
+        return;
+      }
+      const slug = resolveCartSlug({ slug: button.dataset.packSlug, name: button.dataset.packName });
+      if (!slug) {
+        openCart();
+        return;
+      }
       const item = {
-        id: (button.dataset.packName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"),
-        name: button.dataset.packName || "Pack",
-        reviews: button.dataset.packReviews || "Reseñas",
-        price: Number(button.dataset.packPrice || 0),
+        slug,
         quantity: 1,
       };
-      const existing = cart.find((cartItem) => cartItem.id === item.id);
-      if (existing) existing.quantity = (existing.quantity || 1) + 1;
+      const existing = cart.find((cartItem) => cartItem.slug === item.slug);
+      const maxQuantity = Math.max(1, Number(getCartCatalogItem(slug)?.max_quantity_per_order) || 1);
+      if (existing) existing.quantity = Math.min(maxQuantity, (existing.quantity || 1) + 1);
       else cart.push(item);
       saveCart();
       button.classList.add("is-added");
       window.setTimeout(() => button.classList.remove("is-added"), 620);
       openCart();
-      showToast(`${item.name} añadido al carrito`);
+      showToast(`${getCartCatalogItem(slug)?.display_name || "Pack"} añadido al carrito`);
       requestAnimationFrame(() => {
         if (Math.abs(window.scrollY - currentScroll) > 2) {
           window.scrollTo(0, currentScroll);
@@ -2268,14 +2356,24 @@ const initCart = () => {
   });
 
   itemsNode?.addEventListener("click", (event) => {
+    const clearInvalidButton = event.target.closest("[data-clear-invalid-cart]");
+    if (clearInvalidButton) {
+      localStorage.removeItem(cartStorageKey);
+      readCart();
+      renderCart();
+      window.dispatchEvent(new CustomEvent("destroyer:cart-updated", { detail: { cart: [] } }));
+      return;
+    }
+
     const quantityButton = event.target.closest("[data-cart-quantity]");
     if (quantityButton) {
-      const targetItem = cart.find((item) => item.id === quantityButton.dataset.cartId);
+      const targetItem = cart.find((item) => item.slug === quantityButton.dataset.cartId);
       if (!targetItem) return;
 
       const currentQuantity = Math.max(1, Number(targetItem.quantity) || 1);
       if (quantityButton.dataset.cartQuantity === "increase") {
-        targetItem.quantity = currentQuantity + 1;
+        const maxQuantity = Math.max(1, Number(getCartCatalogItem(targetItem.slug)?.max_quantity_per_order) || 1);
+        targetItem.quantity = Math.min(maxQuantity, currentQuantity + 1);
       } else if (currentQuantity > 1) {
         targetItem.quantity = currentQuantity - 1;
       } else {
@@ -2294,7 +2392,7 @@ const initCart = () => {
     itemNode.style.setProperty("--cart-item-height", `${itemNode.offsetHeight}px`);
     itemNode.classList.add("is-removing");
     window.setTimeout(() => {
-      cart = cart.filter((item) => item.id !== removeButton.dataset.removeCart);
+      cart = cart.filter((item) => item.slug !== removeButton.dataset.removeCart);
       saveCart();
       renderCart();
     }, removeAnimationMs);
@@ -2335,6 +2433,7 @@ const initCart = () => {
     readCart();
     renderCart();
   });
+  window.addEventListener("destroyer:checkout-catalog-loaded", renderCart);
 
   if (new URLSearchParams(window.location.search).get("accountRequired") === "checkout") {
     const cleanUrl = `${window.location.pathname}${window.location.hash}`;
@@ -2369,6 +2468,10 @@ const initCheckout = () => {
   const finalTotalNode = root.querySelector("[data-checkout-final-total]");
   let reviewMode = "team";
   let submittedOrder = null;
+  let catalogReady = false;
+  let catalogLoadError = "";
+  let isSubmitting = false;
+  let memoryCheckoutAttempt = null;
 
   const resultNode = document.createElement("div");
   resultNode.className = "checkout-order-result";
@@ -2440,14 +2543,9 @@ const initCheckout = () => {
     "'": "&#039;",
   })[char]);
 
-  const itemQuantity = (item) => Math.max(1, Number(item.quantity) || 1);
-  const itemUnitReviews = (item) => Math.max(1, Number(String(item.reviews || item.name || "1").match(/\d+/)?.[0]) || 1);
-  const cartItems = () => readStoredCart();
-  const cartTotal = (items) => items.reduce((total, item) => total + (Number(item.price) || 0) * itemQuantity(item), 0);
-  const cartReviewTotal = (items) => items.reduce((total, item) => total + itemUnitReviews(item) * itemQuantity(item), 0);
+  const formatCents = (cents) => formatCartPrice((Number(cents) || 0) / 100);
   const packIcon = (item) => {
-    const id = item.id || "";
-    const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(id) ? id : "diamante";
+    const safeId = ["ambar", "amatista", "diamante", "rubi"].includes(item.slug) ? item.slug : "diamante";
     return sitePath(`assets/icons/packs/${safeId}.webp`);
   };
 
@@ -2461,13 +2559,50 @@ const initCheckout = () => {
     }
   };
 
+  const resolveCheckoutCart = () => {
+    const storedCart = readStoredCartState();
+    if (storedCart.hasInvalidItems) {
+      return { items: [], error: "El carrito contiene un pack antiguo o desconocido. Vacíalo y vuelve a elegir los packs." };
+    }
+    if (!storedCart.items.length) return { items: [], error: "" };
+    if (!catalogReady || !checkoutCatalogBySlug) {
+      return { items: [], error: catalogLoadError || "No se pudo cargar el catálogo. Recarga la página antes de enviar el pedido." };
+    }
+    if (storedCart.items.length > 4) {
+      return { items: [], error: "El carrito supera el número máximo de packs distintos." };
+    }
+
+    const items = [];
+    let totalUnits = 0;
+    let totalReviews = 0;
+    let packTotalCents = 0;
+
+    for (const item of storedCart.items) {
+      const catalogItem = checkoutCatalogBySlug.get(item.slug);
+      const quantity = Number(item.quantity);
+      const maxQuantity = Number(catalogItem?.max_quantity_per_order);
+      if (!catalogItem || catalogItem.kind !== "pack" || catalogItem.currency !== "EUR") {
+        return { items: [], error: "Uno de los packs del carrito ya no está disponible. Vacía el carrito y vuelve a elegirlo." };
+      }
+      if (!Number.isInteger(quantity) || quantity < 1 || !Number.isInteger(maxQuantity) || quantity > maxQuantity) {
+        return { items: [], error: `Revisa la cantidad seleccionada para ${catalogItem.display_name}.` };
+      }
+
+      totalUnits += quantity;
+      totalReviews += Number(catalogItem.reviews_per_unit) * quantity;
+      packTotalCents += Number(catalogItem.unit_price_cents) * quantity;
+      items.push({ slug: item.slug, quantity, catalogItem });
+    }
+
+    if (totalUnits > 8) return { items: [], error: "El carrito supera el máximo de 8 unidades de pack por pedido." };
+    if (totalReviews < 1 || totalReviews > 200) return { items: [], error: "El pedido debe contener entre 1 y 200 reseñas." };
+
+    return { items, totalUnits, totalReviews, packTotalCents, error: "" };
+  };
+
   const renderSummary = () => {
-    const items = cartItems();
-    const hasItems = items.length > 0;
-    const packTotal = cartTotal(items);
-    const reviewTotal = cartReviewTotal(items);
-    const extraCost = reviewMode === "manual" ? reviewTotal : 0;
-    const finalTotal = packTotal + extraCost;
+    const storedCart = readStoredCartState();
+    const hasItems = storedCart.hasInvalidItems || storedCart.items.length > 0;
 
     if (submittedOrder) {
       if (shell) shell.hidden = false;
@@ -2478,37 +2613,116 @@ const initCheckout = () => {
 
     if (shell) shell.hidden = !hasItems;
     if (empty) empty.hidden = hasItems;
-    if (submitButton) submitButton.disabled = !hasItems;
+    if (!hasItems) {
+      if (submitButton) submitButton.disabled = true;
+      return;
+    }
+
+    const resolvedCart = resolveCheckoutCart();
+    if (resolvedCart.error) {
+      if (summaryItems) summaryItems.innerHTML = `<p>${escapeCheckoutHtml(resolvedCart.error)}</p>`;
+      if (totalNode) totalNode.textContent = "—";
+      if (totalInlineNode) totalInlineNode.textContent = "—";
+      if (finalTotalNode) finalTotalNode.textContent = "—";
+      if (extraRow) extraRow.hidden = true;
+      if (submitButton) submitButton.disabled = true;
+      setStatus("error", resolvedCart.error);
+      return;
+    }
+
+    const addonItem = reviewMode === "manual" ? checkoutCatalogBySlug.get("personalizacion-resenas") : null;
+    if (reviewMode === "manual" && (!addonItem || addonItem.kind !== "addon" || addonItem.currency !== "EUR")) {
+      const message = "No se pudo cargar la personalización de reseñas. Recarga la página antes de enviar el pedido.";
+      if (submitButton) submitButton.disabled = true;
+      setStatus("error", message);
+      return;
+    }
+
+    const extraCostCents = reviewMode === "manual"
+      ? resolvedCart.totalReviews * Number(addonItem.unit_price_cents)
+      : 0;
+    const finalTotalCents = resolvedCart.packTotalCents + extraCostCents;
+    if (submitButton) submitButton.disabled = isSubmitting;
 
     if (summaryItems) {
-      summaryItems.innerHTML = items.map((item) => {
-        const quantity = itemQuantity(item);
-        const price = Number(item.price) || 0;
-        const subtotal = price * quantity;
+      summaryItems.innerHTML = resolvedCart.items.map((item) => {
+        const catalogItem = item.catalogItem;
+        const reviewCount = Number(catalogItem.reviews_per_unit);
+        const reviewLabel = `${reviewCount} ${reviewCount === 1 ? "reseña" : "reseñas"}`;
+        const subtotalCents = Number(catalogItem.unit_price_cents) * item.quantity;
         return `
           <article class="checkout-summary-item">
             <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
             <div>
-              <strong>${escapeCheckoutHtml(item.name)}</strong>
-              <span>${escapeCheckoutHtml(item.reviews)} &middot; Cantidad ${quantity}</span>
+              <strong>${escapeCheckoutHtml(catalogItem.display_name)}</strong>
+              <span>${escapeCheckoutHtml(reviewLabel)} &middot; Cantidad ${item.quantity}</span>
             </div>
             <dl>
-              <div><dt>Precio del pack</dt><dd>${formatCartPrice(price)}</dd></div>
-              <div><dt>Subtotal</dt><dd>${formatCartPrice(subtotal)}</dd></div>
+              <div><dt>Precio del pack</dt><dd>${formatCents(catalogItem.unit_price_cents)}</dd></div>
+              <div><dt>Subtotal</dt><dd>${formatCents(subtotalCents)}</dd></div>
             </dl>
           </article>
         `;
       }).join("");
     }
 
-    if (totalNode) totalNode.textContent = formatCartPrice(finalTotal);
-    if (totalInlineNode) totalInlineNode.textContent = formatCartPrice(packTotal);
+    if (totalNode) totalNode.textContent = formatCents(finalTotalCents);
+    if (totalInlineNode) totalInlineNode.textContent = formatCents(resolvedCart.packTotalCents);
     if (optionLabel) optionLabel.textContent = reviewMode === "manual" ? "Personalización de reseñas" : "Reseñas preparadas por el equipo";
     if (optionValue) optionValue.textContent = reviewMode === "manual" ? "Añadida" : "Incluido";
     if (extraRow) extraRow.hidden = reviewMode !== "manual";
-    if (extraBreakdownNode) extraBreakdownNode.textContent = `${reviewTotal} ${reviewTotal === 1 ? "reseña" : "reseñas"} x 1 €`;
-    if (extraTotalNode) extraTotalNode.textContent = `+${formatCartPrice(extraCost)}`;
-    if (finalTotalNode) finalTotalNode.textContent = formatCartPrice(finalTotal);
+    if (extraBreakdownNode && addonItem) {
+      extraBreakdownNode.textContent = `${resolvedCart.totalReviews} ${resolvedCart.totalReviews === 1 ? "reseña" : "reseñas"} x ${formatCents(addonItem.unit_price_cents)}`;
+    }
+    if (extraTotalNode) extraTotalNode.textContent = `+${formatCents(extraCostCents)}`;
+    if (finalTotalNode) finalTotalNode.textContent = formatCents(finalTotalCents);
+  };
+
+  const loadCheckoutCatalog = async () => {
+    const client = window.DestroyerSupabase?.client;
+    if (!client) throw new Error("Supabase is not available");
+
+    const { data, error } = await client.rpc("get_checkout_catalog");
+    if (error) throw error;
+    if (!Array.isArray(data) || !data.length) throw new Error("Checkout catalog is empty");
+
+    const catalog = new Map();
+    data.forEach((row) => {
+      const slug = `${row?.slug || ""}`.trim();
+      const reviewsPerUnit = Number(row?.reviews_per_unit);
+      const unitPriceCents = Number(row?.unit_price_cents);
+      const maxQuantity = Number(row?.max_quantity_per_order);
+      const isValid = slug
+        && ["pack", "addon"].includes(row?.kind)
+        && `${row?.display_name || ""}`.trim()
+        && Number.isInteger(reviewsPerUnit)
+        && reviewsPerUnit >= 0
+        && Number.isInteger(unitPriceCents)
+        && unitPriceCents > 0
+        && row?.currency === "EUR"
+        && Number.isInteger(maxQuantity)
+        && maxQuantity > 0;
+      if (!isValid || catalog.has(slug)) throw new Error("Checkout catalog is invalid");
+      catalog.set(slug, {
+        slug,
+        kind: row.kind,
+        display_name: `${row.display_name}`.trim(),
+        reviews_per_unit: reviewsPerUnit,
+        unit_price_cents: unitPriceCents,
+        currency: row.currency,
+        max_quantity_per_order: maxQuantity,
+        display_order: Number(row.display_order) || 0,
+      });
+    });
+
+    if (![...catalog.values()].some((item) => item.kind === "pack")) {
+      throw new Error("Checkout catalog has no packs");
+    }
+
+    checkoutCatalogBySlug = catalog;
+    catalogReady = true;
+    catalogLoadError = "";
+    window.dispatchEvent(new CustomEvent("destroyer:checkout-catalog-loaded"));
   };
 
   const setFieldError = (field, message) => {
@@ -2546,82 +2760,155 @@ const initCheckout = () => {
 
   const collectCheckoutData = () => {
     const formData = new FormData(form);
-    const cart = cartItems();
-    const reviewTotal = cartReviewTotal(cart);
-    const extraCost = reviewMode === "manual" ? reviewTotal : 0;
-    const baseTotal = cartTotal(cart);
+    const resolvedCart = resolveCheckoutCart();
+    if (resolvedCart.error) throw new Error(resolvedCart.error);
     return {
       customer: Object.fromEntries(formData.entries()),
-      cart,
+      cart: resolvedCart.items.map((item) => ({ slug: item.slug, quantity: item.quantity })),
       reviewMode,
-      reviewTotal,
-      extraCost,
-      baseTotal,
-      total: baseTotal + extraCost,
     };
   };
 
-  const toCents = (value) => Math.max(0, Math.round((Number(value) || 0) * 100));
+  const normalizedCartSignature = (items) => JSON.stringify(
+    [...items]
+      .map((item) => ({ slug: item.slug, quantity: Number(item.quantity) }))
+      .sort((left, right) => left.slug.localeCompare(right.slug))
+  );
 
-  const buildOrderItemsPayload = (checkoutData) => {
-    const items = checkoutData.cart.map((item) => {
-      const quantity = itemQuantity(item);
-      const unitPrice = Number(item.price) || 0;
-      return {
-        pack_slug: item.id || null,
-        pack_name: `${item.name || "Pack"}`.trim(),
-        reviews_count: itemUnitReviews(item),
-        quantity,
-        unit_price_cents: toCents(unitPrice),
-        subtotal_cents: toCents(unitPrice * quantity),
-      };
-    });
-
-    if (checkoutData.reviewMode === "manual" && checkoutData.reviewTotal > 0 && checkoutData.extraCost > 0) {
-      items.push({
-        pack_slug: "personalizacion-resenas",
-        pack_name: "Personalización de reseñas",
-        reviews_count: checkoutData.reviewTotal,
-        quantity: checkoutData.reviewTotal,
-        unit_price_cents: 100,
-        subtotal_cents: toCents(checkoutData.extraCost),
-      });
-    }
-
-    return items;
-  };
-
-  const clearCheckoutCart = () => {
+  const clearCheckoutCart = (submittedItems) => {
+    const currentCart = readStoredCartState();
+    if (currentCart.hasInvalidItems) return;
+    if (normalizedCartSignature(currentCart.items) !== normalizedCartSignature(submittedItems)) return;
     localStorage.removeItem(cartStorageKey);
     window.dispatchEvent(new CustomEvent("destroyer:cart-updated", { detail: { cart: [] } }));
   };
 
+  const createCheckoutUuid = () => {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    if (!window.crypto?.getRandomValues) throw new Error("Secure UUID generation is not available");
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  };
+
+  const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(`${value || ""}`);
+
+  const hashCheckoutAttempt = async (request, userId = "") => {
+    const normalizedRequest = JSON.stringify({
+      userId,
+      customerName: request.p_customer_name,
+      whatsapp: request.p_whatsapp,
+      googleMapsUrl: request.p_google_maps_url,
+      notes: request.p_notes,
+      managementMode: request.p_management_mode,
+      items: [...request.p_items].sort((left, right) => left.slug.localeCompare(right.slug)),
+    });
+
+    if (window.crypto?.subtle) {
+      const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalizedRequest));
+      return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    let hashA = 2166136261;
+    let hashB = 2246822519;
+    for (let index = 0; index < normalizedRequest.length; index += 1) {
+      const code = normalizedRequest.charCodeAt(index);
+      hashA = Math.imul(hashA ^ code, 16777619);
+      hashB = Math.imul(hashB ^ code, 3266489917);
+    }
+    return `${(hashA >>> 0).toString(16).padStart(8, "0")}${(hashB >>> 0).toString(16).padStart(8, "0")}`;
+  };
+
+  const readCheckoutAttempt = () => {
+    if (memoryCheckoutAttempt) return memoryCheckoutAttempt;
+    try {
+      const stored = JSON.parse(localStorage.getItem(checkoutAttemptStorageKey) || "null");
+      if (!stored || !isUuid(stored.key) || typeof stored.fingerprint !== "string" || !Number.isFinite(Number(stored.createdAt))) return null;
+      memoryCheckoutAttempt = stored;
+      return stored;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCheckoutAttempt = (attempt) => {
+    memoryCheckoutAttempt = attempt;
+    try {
+      localStorage.setItem(checkoutAttemptStorageKey, JSON.stringify(attempt));
+    } catch {
+      // The current page can still reuse the in-memory key if persistent storage is unavailable.
+    }
+  };
+
+  const clearCheckoutAttempt = (attemptKey = "") => {
+    if (!attemptKey || memoryCheckoutAttempt?.key === attemptKey) memoryCheckoutAttempt = null;
+    try {
+      const stored = JSON.parse(localStorage.getItem(checkoutAttemptStorageKey) || "null");
+      if (!attemptKey || stored?.key === attemptKey) localStorage.removeItem(checkoutAttemptStorageKey);
+    } catch {
+      localStorage.removeItem(checkoutAttemptStorageKey);
+    }
+  };
+
+  const getOrCreateCheckoutAttempt = async (request, userId = "") => {
+    const fingerprint = await hashCheckoutAttempt(request, userId);
+    const existing = readCheckoutAttempt();
+    const isRecent = existing && Date.now() - Number(existing.createdAt) <= 24 * 60 * 60 * 1000;
+    if (isRecent && existing.fingerprint === fingerprint) return existing.key;
+
+    const attempt = { key: createCheckoutUuid(), fingerprint, createdAt: Date.now() };
+    saveCheckoutAttempt(attempt);
+    return attempt.key;
+  };
+
+  const isRetryableOrderError = (error) => {
+    if (error?.retryable === true) return true;
+    const message = `${error?.message || ""}`.toLowerCase();
+    return message.includes("failed to fetch")
+      || message.includes("network")
+      || message.includes("timeout")
+      || message.includes("load failed");
+  };
+
   const formatOrderError = (error) => {
     const message = `${error?.message || ""}`.toLowerCase();
+    if (isRetryableOrderError(error)) {
+      return "No se pudo confirmar la respuesta. Vuelve a intentarlo; reutilizaremos el mismo intento de pedido.";
+    }
     if (message.includes("authentication") || message.includes("jwt")) {
       return "Tu sesión no está activa. Inicia sesión de nuevo para crear el pedido.";
     }
     if (message.includes("google maps")) {
       return "Revisa el enlace de Google Maps e inténtalo de nuevo.";
     }
+    if (message.includes("idempotency_conflict")) {
+      return "Los datos del intento de pedido han cambiado. Revisa el carrito y vuelve a enviarlo.";
+    }
+    if (message.includes("rate_limit")) {
+      return "Has enviado varios pedidos recientemente. Espera antes de volver a intentarlo.";
+    }
     return "No se pudo crear el pedido. Revisa los datos e inténtalo de nuevo.";
   };
 
-  const showOrderSuccess = (order, checkoutData, canPersonalize = false) => {
+  const showOrderSuccess = (order, canPersonalize = false) => {
     submittedOrder = order;
     root.classList.add("has-order-success");
-    setStatus("success", "Pedido recibido. Estado: pendiente.");
+    const isPendingOrder = order?.status === "pending" && order?.payment_status === "unpaid";
+    setStatus("success", isPendingOrder ? "Pedido recibido. Estado: pendiente." : "Pedido recibido. Consulta su estado actual desde el panel.");
     const personalizeUrl = order?.id
       ? `${sitePath("checkout/personalizacion/")}?order=${encodeURIComponent(order.id)}`
       : sitePath("checkout/personalizacion/");
 
     resultNode.hidden = false;
     resultNode.innerHTML = `
-      <span class="checkout-order-result__eyebrow">Estado: pendiente</span>
+      <span class="checkout-order-result__eyebrow">${isPendingOrder ? "Estado: pendiente" : "Pedido registrado"}</span>
       <strong>Pedido recibido</strong>
-      <p>Hemos guardado tu pedido correctamente. Lo revisaremos y te contactaremos para continuar con el proceso.</p>
+      <p>${isPendingOrder ? "Hemos guardado tu pedido correctamente. Lo revisaremos y te contactaremos para continuar con el proceso." : "El pedido ya estaba registrado. Consulta su estado actual desde tu panel."}</p>
       <small>Referencia del pedido ${escapeCheckoutHtml(order?.short_id ? `#${order.short_id}` : order?.id || "")}</small>
-      ${canPersonalize ? `<a class="checkout-order-result__action" href="${personalizeUrl}">Personalizar reseñas</a>` : ""}
+      ${canPersonalize && isPendingOrder ? `<a class="checkout-order-result__action" href="${personalizeUrl}">Personalizar reseñas</a>` : ""}
     `;
 
     form?.querySelectorAll("input, textarea, button").forEach((field) => {
@@ -2649,27 +2936,42 @@ const initCheckout = () => {
     const googleMapsUrl = `${checkoutData.customer.googleMaps || ""}`.trim();
     const notes = `${checkoutData.customer.notes || ""}`.trim();
     const customerName = account.name || formCustomerName;
-
-    const { data, error } = await client.rpc("create_order_with_items", {
+    const request = {
       p_customer_name: customerName,
       p_whatsapp: account.whatsapp || formWhatsapp || null,
       p_google_maps_url: googleMapsUrl,
       p_notes: notes || null,
       p_management_mode: checkoutData.reviewMode,
-      p_currency: "EUR",
-      p_total_cents: toCents(checkoutData.total),
-      p_items: buildOrderItemsPayload(checkoutData),
+      p_items: checkoutData.cart.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+    };
+    const attemptKey = await getOrCreateCheckoutAttempt(request, user.id);
+    const { data, error } = await client.rpc("create_order_from_catalog", {
+      ...request,
+      p_idempotency_key: attemptKey,
     });
 
-    if (error) throw error;
+    if (error) {
+      const orderError = new Error(error.message || "Order RPC failed");
+      orderError.code = error.code;
+      orderError.details = error.details;
+      orderError.attemptKey = attemptKey;
+      orderError.retryable = isRetryableOrderError(error);
+      throw orderError;
+    }
 
     const order = Array.isArray(data) ? data[0] : data;
-    if (!order?.id) throw new Error("Order was not returned");
-    return order;
+    if (!order?.id || order.currency !== "EUR") {
+      const responseError = new Error("Order was not returned with the expected currency");
+      responseError.attemptKey = attemptKey;
+      responseError.retryable = true;
+      throw responseError;
+    }
+    return { order, attemptKey };
   };
 
   reviewModeButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      if (isSubmitting) return;
       reviewMode = button.dataset.checkoutReviewMode || "team";
       reviewModeButtons.forEach((modeButton) => {
         const isActive = modeButton.dataset.checkoutReviewMode === reviewMode;
@@ -2683,15 +2985,26 @@ const initCheckout = () => {
 
   form?.addEventListener("input", (event) => {
     const field = event.target.closest("input, textarea");
-    if (field) setFieldError(field, "");
+    if (field) {
+      setFieldError(field, "");
+    }
   });
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setStatus("", "");
 
-    if (!cartItems().length) {
+    const storedCart = readStoredCartState();
+    if (!storedCart.hasInvalidItems && !storedCart.items.length) {
       setStatus("error", "Tu carrito está vacío. Elige un pack antes de continuar.");
+      renderSummary();
+      return;
+    }
+
+    const resolvedCart = resolveCheckoutCart();
+    if (resolvedCart.error) {
+      setStatus("error", resolvedCart.error);
       renderSummary();
       return;
     }
@@ -2701,49 +3014,149 @@ const initCheckout = () => {
       return;
     }
 
+    isSubmitting = true;
     submitButton?.classList.add("is-loading");
     if (submitButton) submitButton.disabled = true;
+    reviewModeButtons.forEach((button) => {
+      button.disabled = true;
+    });
     setStatus("", "Creando pedido...");
 
     try {
       const checkoutData = collectCheckoutData();
-      const order = await createPendingOrder(checkoutData);
+      const { order, attemptKey } = await createPendingOrder(checkoutData);
       const canPersonalize = checkoutData.reviewMode === "manual";
-      showOrderSuccess(order, checkoutData, canPersonalize);
+      clearCheckoutAttempt(attemptKey);
+      showOrderSuccess(order, canPersonalize);
       try {
-        clearCheckoutCart();
+        clearCheckoutCart(checkoutData.cart);
       } catch {
         // The order is already stored; a local cart cleanup issue should not turn success into failure.
       }
     } catch (error) {
+      if (error?.attemptKey && !isRetryableOrderError(error)) clearCheckoutAttempt(error.attemptKey);
+      isSubmitting = false;
       setStatus("error", formatOrderError(error));
       submitButton?.classList.remove("is-loading");
-      if (submitButton) submitButton.disabled = false;
+      reviewModeButtons.forEach((button) => {
+        button.disabled = false;
+      });
+      if (submitButton) submitButton.disabled = Boolean(resolveCheckoutCart().error);
     }
   });
 
-  window.addEventListener("destroyer:cart-updated", renderSummary);
+  window.addEventListener("destroyer:cart-updated", () => {
+    setStatus("", "");
+    renderSummary();
+  });
   window.addEventListener("storage", (event) => {
-    if (event.key === cartStorageKey) renderSummary();
+    if (event.key === cartStorageKey) {
+      setStatus("", "");
+      renderSummary();
+    }
   });
 
-  getCurrentAuthSession()
-    .then((session) => {
-      if (!session) {
-        window.location.replace(sitePath("index.html?accountRequired=checkout"));
-        return;
-      }
-      return applyCheckoutAccountData(session);
-    })
-    .then(() => {
-      root.hidden = false;
-      renderSummary();
-    })
-    .catch(() => {
+  const initializeCheckout = async () => {
+    let session;
+    try {
+      session = await getCurrentAuthSession();
+    } catch {
       window.location.replace(sitePath("index.html?accountRequired=checkout"));
-    });
+      return;
+    }
 
-  renderSummary();
+    if (!session) {
+      window.location.replace(sitePath("index.html?accountRequired=checkout"));
+      return;
+    }
+
+    await applyCheckoutAccountData(session);
+    try {
+      await loadCheckoutCatalog();
+    } catch {
+      catalogReady = false;
+      catalogLoadError = "No se pudo cargar el catálogo. Recarga la página antes de enviar el pedido.";
+    }
+
+    root.hidden = false;
+    renderSummary();
+  };
+
+  initializeCheckout();
+};
+
+const initOrderConfirmation = () => {
+  const root = document.querySelector("[data-order-confirmation-page]");
+  if (!root) return;
+
+  const titleNode = root.querySelector("[data-order-confirmation-title]");
+  const messageNode = root.querySelector("[data-order-confirmation-message]");
+  const actionNode = root.querySelector("[data-order-confirmation-action]");
+  const iconNode = root.querySelector(".cart-empty__icon");
+  const orderId = `${new URLSearchParams(window.location.search).get("order") || ""}`.trim();
+  const validOrderId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
+
+  const showState = (title, message, { isError = false } = {}) => {
+    if (titleNode) titleNode.textContent = title;
+    if (messageNode) messageNode.textContent = message;
+    if (iconNode) iconNode.hidden = isError;
+    root.dataset.state = isError ? "error" : "success";
+    root.hidden = false;
+  };
+
+  const verifyOrder = async () => {
+    if (!validOrderId) {
+      document.title = "Pedido no verificado | Destroyer Reviews";
+      showState("No se pudo verificar el pedido", "Falta una referencia de pedido válida. Consulta tus pedidos desde el panel.", { isError: true });
+      return;
+    }
+
+    let session;
+    try {
+      session = await getCurrentAuthSession({ forceRefresh: true });
+    } catch {
+      session = null;
+    }
+    if (!session?.user) {
+      window.location.replace(sitePath("index.html?accountRequired=checkout"));
+      return;
+    }
+
+    const client = window.DestroyerSupabase?.client;
+    if (!client) {
+      document.title = "Pedido no verificado | Destroyer Reviews";
+      showState("No se pudo verificar el pedido", "No se pudo comprobar el pedido ahora. Inténtalo de nuevo desde el panel.", { isError: true });
+      return;
+    }
+
+    const { data: order, error } = await client
+      .from("orders")
+      .select("id,status,payment_status,currency,created_at")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (error || !order) {
+      document.title = "Pedido no encontrado | Destroyer Reviews";
+      showState("Pedido no encontrado", "No existe un pedido accesible con esa referencia. Consulta tus pedidos desde el panel.", { isError: true });
+      return;
+    }
+
+    const shortId = order.id.replaceAll("-", "").slice(0, 8).toUpperCase();
+    if (order.status === "pending" && order.payment_status === "unpaid" && order.currency === "EUR") {
+      document.title = "Pedido recibido | Destroyer Reviews";
+      showState("Pedido recibido", `Estado: pendiente. Referencia del pedido #${shortId}.`);
+      return;
+    }
+
+    document.title = "Pedido verificado | Destroyer Reviews";
+    showState("Pedido verificado", `Referencia #${shortId}. Consulta su estado actual desde el panel.`);
+  };
+
+  if (actionNode) actionNode.href = sitePath("panel.html");
+  verifyOrder().catch(() => {
+    document.title = "Pedido no verificado | Destroyer Reviews";
+    showState("No se pudo verificar el pedido", "No se pudo comprobar el pedido ahora. Inténtalo de nuevo desde el panel.", { isError: true });
+  });
 };
 
 const initPersonalizacion = () => {
@@ -3126,7 +3539,8 @@ const initPersonalizacionPersisted = () => {
   const isManualMode = () => currentOrder?.management_mode === "manual";
   const isTeamMode = () => currentOrder?.management_mode === "team";
   const reviewTotal = () => reviews.length;
-  const packItems = () => orderItems.filter((item) => item.pack_slug !== "personalizacion-resenas");
+  const orderPackSlugs = new Set(["ambar", "amatista", "diamante", "rubi"]);
+  const packItems = () => orderItems.filter((item) => orderPackSlugs.has(item.pack_slug));
   const personalizationItems = () => orderItems.filter((item) => item.pack_slug === "personalizacion-resenas");
   const packSubtotalCents = () => packItems().reduce((total, item) => total + (Number(item.subtotal_cents) || 0), 0);
   const personalizationSubtotalCents = () => personalizationItems().reduce((total, item) => total + (Number(item.subtotal_cents) || 0), 0);
@@ -3284,15 +3698,15 @@ const initPersonalizacionPersisted = () => {
     }
 
     if (summaryItems) {
-      summaryItems.innerHTML = orderItems.length ? orderItems.map((item) => {
+      const visiblePackItems = packItems();
+      summaryItems.innerHTML = visiblePackItems.length ? visiblePackItems.map((item) => {
         const quantity = Math.max(1, Number(item.quantity) || 1);
-        const isExtra = item.pack_slug === "personalizacion-resenas";
         return `
           <article class="checkout-summary-item">
             <img src="${packIcon(item)}" alt="" loading="lazy" decoding="async" />
             <div>
               <strong>${escapePersonalizationHtml(item.pack_name)}</strong>
-              <span>${isExtra ? "Extra de personalización" : `${Number(item.reviews_count) || 0} reseñas`} &middot; Cantidad ${quantity}</span>
+              <span>${Number(item.reviews_count) || 0} reseñas &middot; Cantidad ${quantity}</span>
             </div>
             <dl>
               <div><dt>Precio unitario</dt><dd>${formatCents(item.unit_price_cents)}</dd></div>
@@ -4600,6 +5014,7 @@ const init = () => {
   initFreeTrialModal();
   initCart();
   initCheckout();
+  initOrderConfirmation();
   initPersonalizacionPersisted();
   if (hasHomeContent) {
     initHeroRotatingWord();
