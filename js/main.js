@@ -4290,6 +4290,50 @@ const initWhatsappFloat = () => {
   let sequence = 0;
   let openTimer = null;
   let closeTimer = null;
+  let clearanceFrame = null;
+  const clearanceTargets = [...document.querySelectorAll([
+    ".price-row",
+    ".price-card .card-button",
+    ".lead-form",
+    ".site-footer",
+  ].join(","))];
+
+  const rectanglesOverlap = (first, second, gap = 8) => (
+    first.left < second.right + gap
+    && first.right > second.left - gap
+    && first.top < second.bottom + gap
+    && first.bottom > second.top - gap
+  );
+
+  const updateContentClearance = () => {
+    clearanceFrame = null;
+    const buttonRect = button.getBoundingClientRect();
+    const clearanceRect = canHover && window.innerWidth > 768 && !button.classList.contains("whatsapp-float--compact-help")
+      ? {
+          left: buttonRect.right - 242,
+          right: buttonRect.right,
+          top: buttonRect.top,
+          bottom: buttonRect.bottom,
+        }
+      : buttonRect;
+    const isObscuringContent = clearanceTargets.some((target) => {
+      if (target.hidden || target.getClientRects().length === 0) return false;
+      return rectanglesOverlap(clearanceRect, target.getBoundingClientRect());
+    });
+
+    button.classList.toggle("whatsapp-float--avoiding-content", isObscuringContent);
+    if (isObscuringContent) {
+      button.setAttribute("aria-hidden", "true");
+      if (document.activeElement === button) button.blur();
+    } else {
+      button.removeAttribute("aria-hidden");
+    }
+  };
+
+  const requestContentClearance = () => {
+    if (clearanceFrame !== null) return;
+    clearanceFrame = window.requestAnimationFrame(updateContentClearance);
+  };
 
   const clearTimers = () => {
     if (openTimer) window.clearTimeout(openTimer);
@@ -4451,12 +4495,15 @@ const initWhatsappFloat = () => {
   });
 
   window.addEventListener("blur", resetWhatsappButton);
+  window.addEventListener("scroll", requestContentClearance, { passive: true });
+  window.addEventListener("resize", requestContentClearance);
   document.addEventListener("visibilitychange", () => {
     resetWhatsappButton();
     closeHelpCard();
   });
   window.addEventListener("pageshow", resetWhatsappButton);
   window.addEventListener("pagehide", resetWhatsappButton);
+  requestContentClearance();
 
   getCurrentAuthSession()
     .then((session) => {
