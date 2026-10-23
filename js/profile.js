@@ -143,41 +143,6 @@
     });
   };
 
-  const loadMfaState = async () => {
-    const stateNode = document.querySelector("[data-profile-mfa-state]");
-    const noteNode = document.querySelector("[data-profile-mfa-note]");
-    const recoveryNode = document.querySelector("[data-profile-recovery-codes-note]");
-    const authClient = client();
-
-    if (!authClient?.auth?.mfa?.listFactors) {
-      if (stateNode) stateNode.textContent = "Próximamente";
-      if (noteNode) noteNode.textContent = "Verificación en dos pasos preparada para una siguiente fase.";
-      if (recoveryNode) recoveryNode.textContent = "Los códigos de recuperación se añadirán en una fase posterior.";
-      return;
-    }
-
-    try {
-      const { data, error } = await authClient.auth.mfa.listFactors();
-      if (error) throw error;
-      const verifiedTotp = (data?.totp || []).some((factor) => factor?.status === "verified");
-      if (stateNode) stateNode.textContent = verifiedTotp ? "Activada" : "Desactivada";
-      if (noteNode) {
-        noteNode.textContent = verifiedTotp
-          ? "La verificación con app autenticadora está activa."
-          : "Preparada para activar en una siguiente fase.";
-      }
-      if (recoveryNode) {
-        recoveryNode.textContent = verifiedTotp
-          ? "Los códigos de recuperación se añadirán en una fase posterior."
-          : "Los códigos de recuperación estarán disponibles después de activar la verificación en dos pasos.";
-      }
-    } catch {
-      if (stateNode) stateNode.textContent = "Próximamente";
-      if (noteNode) noteNode.textContent = "No se ha podido leer el estado MFA ahora mismo.";
-      if (recoveryNode) recoveryNode.textContent = "Los códigos de recuperación se añadirán en una fase posterior.";
-    }
-  };
-
   accountForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submit = event.submitter;
@@ -306,7 +271,6 @@
       currentUser = (await getCurrentAuthUser()) || session.user;
       currentProfile = await profiles()?.ensureUserProfile?.(currentUser);
       renderProfile();
-      await loadMfaState();
       showProfile();
     } catch {
       showBlockingError();

@@ -16,6 +16,7 @@
   const ordersCountNodes = [...root.querySelectorAll("[data-panel-orders-count]")];
   const ordersCountLabel = root.querySelector("[data-panel-orders-count-label]");
   const trialCard = root.querySelector("[data-panel-trial-card]");
+  const tabList = root.querySelector(".panel-tabs");
   const tabButtons = [...root.querySelectorAll("[data-panel-tab]")];
   const tabPanels = [...root.querySelectorAll("[data-panel-panel]")];
   const drawer = document.querySelector("[data-panel-order-drawer]");
@@ -121,8 +122,29 @@
   const teamHiddenTextStatuses = new Set(["awaiting_team", "draft"]);
   const teamPreparedStatuses = new Set(["prepared", "approved", "completed"]);
 
+  const keepPanelTabVisible = (button) => {
+    if (!button || !tabList || tabList.scrollWidth <= tabList.clientWidth) return;
+    const listRect = tabList.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    const edgePadding = 10;
+    let offset = 0;
+
+    if (buttonRect.left < listRect.left + edgePadding) {
+      offset = buttonRect.left - listRect.left - edgePadding;
+    } else if (buttonRect.right > listRect.right - edgePadding) {
+      offset = buttonRect.right - listRect.right + edgePadding;
+    }
+
+    if (!offset) return;
+    tabList.scrollTo({
+      left: tabList.scrollLeft + offset,
+      behavior: "auto",
+    });
+  };
+
   const activatePanelTab = (tabName, { syncHash = false } = {}) => {
-    if (!tabButtons.some((button) => button.dataset.panelTab === tabName)) return;
+    const activeButton = tabButtons.find((button) => button.dataset.panelTab === tabName);
+    if (!activeButton) return;
     state.activePanelTab = tabName;
     tabButtons.forEach((button) => {
       const isActive = button.dataset.panelTab === tabName;
@@ -134,6 +156,8 @@
       panel.classList.toggle("is-active", isActive);
       panel.hidden = !isActive;
     });
+
+    window.requestAnimationFrame(() => keepPanelTabVisible(activeButton));
 
     if (syncHash) {
       const nextUrl = tabName === "support"
@@ -1506,6 +1530,7 @@
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => activatePanelTab(button.dataset.panelTab, { syncHash: true }));
+    button.addEventListener("focus", () => keepPanelTabVisible(button));
   });
 
   window.addEventListener("hashchange", () => {

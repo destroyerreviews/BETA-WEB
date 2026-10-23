@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
     <meta name="description" content="Panel privado de cliente de Destroyer Reviews." />
     <title>Panel | Destroyer Reviews</title>
     <meta name="theme-color" content="#030303" />
     <link rel="icon" type="image/png" href="assets/brand/favicon.png" />
-    <link rel="stylesheet" href="css/styles.css?v=support-chat-notifications-20260912" />
+    <link rel="stylesheet" href="css/styles.css?v=panel-mobile-ux-20261021" />
   </head>
   <body class="panel-page trial-promo-hidden">
     <div class="cursor-aura" aria-hidden="true" data-cursor-aura></div>
@@ -147,7 +148,7 @@
         </section>
 
         <div class="panel-workspace">
-          <aside class="panel-tabs" aria-label="Secciones del panel" role="tablist">
+          <aside class="panel-tabs" aria-label="Secciones del panel" role="tablist" data-lenis-prevent>
             <button class="panel-tab" type="button" role="tab" aria-selected="false" data-panel-tab="summary">
               <span>Resumen</span>
             </button>
@@ -272,7 +273,7 @@
     </main>
 
     <div class="panel-order-overlay" data-panel-order-overlay hidden></div>
-    <aside class="panel-order-drawer" role="dialog" aria-modal="true" aria-label="Detalle del pedido" aria-hidden="true" data-panel-order-drawer>
+    <aside class="panel-order-drawer" role="dialog" aria-modal="true" aria-label="Detalle del pedido" aria-hidden="true" data-panel-order-drawer hidden>
       <header class="panel-order-drawer__header">
         <div>
           <span data-panel-drawer-eyebrow>Pedido</span>
@@ -352,6 +353,6 @@
     <script defer src="js/auth.js"></script>
     <script defer src="js/profile-data.js"></script>
     <script defer src="js/main.js?v=client-panel-flow-20260711"></script>
-    <script defer src="js/panel.js?v=support-chat-notifications-20260912"></script>
+    <script defer src="js/panel.js?v=panel-mobile-ux-20261021"></script>
   </body>
 </html>

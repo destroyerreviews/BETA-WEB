@@ -1328,6 +1328,11 @@ const initReveals = () => {
     requestAnimationFrame(() => element.classList.add("is-visible"));
   });
 
+  if (typeof IntersectionObserver === "undefined") {
+    document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
+    return;
+  }
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -1363,6 +1368,14 @@ const animateCounter = (element) => {
 };
 
 const initCounters = () => {
+  if (typeof IntersectionObserver === "undefined") {
+    document.querySelectorAll("[data-counter]").forEach((counter) => {
+      const target = Number(counter.dataset.counter);
+      counter.textContent = counter.dataset.decimal === "true" ? target.toFixed(1) : Math.round(target).toString();
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -1480,6 +1493,11 @@ const initSocialMetrics = () => {
       }
     });
   };
+
+  if (typeof IntersectionObserver === "undefined") {
+    revealMetrics();
+    return;
+  }
 
   const observer = new IntersectionObserver(
     ([entry]) => {
@@ -1782,7 +1800,7 @@ const initPricingReveal = () => {
   const pricingSection = document.querySelector(".pricing-section");
   if (!pricingSection) return;
 
-  if (prefersReducedMotion) {
+  if (prefersReducedMotion || typeof IntersectionObserver === "undefined") {
     pricingSection.classList.add("is-visible");
     return;
   }
@@ -2003,13 +2021,38 @@ const initCart = () => {
   let hasInvalidCartItems = false;
   let toastTimer = null;
   let noticeTimer = null;
+  let lastFocusedBeforeCart = null;
 
   if (!drawer || !overlay) return;
+
+  const drawerTitle = drawer.querySelector(".cart-drawer__header h2");
+  if (drawerTitle) {
+    drawerTitle.id ||= "cart-drawer-title";
+    drawer.setAttribute("aria-labelledby", drawerTitle.id);
+    drawer.removeAttribute("aria-label");
+  }
+  drawer.setAttribute("role", "dialog");
+  drawer.setAttribute("aria-modal", "true");
 
   let accountModal = null;
   let accountModalOverlay = null;
   let accountModalLogin = null;
   let lastFocusedBeforeAccountModal = null;
+
+  const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const isVisibleFocusTarget = (element) => {
+    if (!(element instanceof HTMLElement) || !element.isConnected || element.hidden || element.getAttribute("aria-hidden") === "true") return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+  };
+  const getFocusableElements = (container) =>
+    container ? [...container.querySelectorAll(focusableSelector)].filter(isVisibleFocusTarget) : [];
+  const focusFirstAvailable = (...candidates) => {
+    const target = candidates.flat().find(isVisibleFocusTarget);
+    if (!target) return false;
+    target.focus({ preventScroll: true });
+    return document.activeElement === target;
+  };
 
   const getAuthHref = (fileName) => sitePath(fileName);
 
@@ -2056,7 +2099,9 @@ const initCart = () => {
 
   const openAccountModal = () => {
     createAccountModal();
-    lastFocusedBeforeAccountModal = document.activeElement;
+    lastFocusedBeforeAccountModal = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
     accountModalOverlay.hidden = false;
     accountModal.hidden = false;
     document.body.classList.add("cart-account-modal-is-open");
@@ -2078,7 +2123,9 @@ const initCart = () => {
         accountModal.hidden = true;
       }
     }, prefersReducedMotion ? 0 : 220);
-    lastFocusedBeforeAccountModal?.focus?.({ preventScroll: true });
+    const drawerFallback = drawer.classList.contains("is-open") ? getFocusableElements(drawer)[0] : null;
+    focusFirstAvailable(lastFocusedBeforeAccountModal, drawerFallback, toggles, navToggle);
+    lastFocusedBeforeAccountModal = null;
   };
 
   const requireSessionForCheckout = async (event) => {
@@ -2231,12 +2278,17 @@ const initCart = () => {
   };
 
   const openCart = () => {
+    lastFocusedBeforeCart = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     renderCart();
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
     overlay.hidden = false;
-    requestAnimationFrame(() => overlay.classList.add("is-visible"));
+    requestAnimationFrame(() => {
+      overlay.classList.add("is-visible");
+      drawer.querySelector("[data-cart-close]")?.focus({ preventScroll: true });
+    });
     document.body.classList.add("cart-is-open");
+    toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", "true"));
     closeMobileNav();
   };
 
@@ -2253,6 +2305,8 @@ const initCart = () => {
     }
     document.body.classList.remove("cart-is-open");
     toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", "false"));
+    focusFirstAvailable(lastFocusedBeforeCart, toggles, navToggle);
+    lastFocusedBeforeCart = null;
     window.setTimeout(() => {
       if (!drawer.classList.contains("is-open")) overlay.hidden = true;
     }, 260);
@@ -2261,7 +2315,7 @@ const initCart = () => {
   const scrollToPricing = () => {
     const pricingGrid = document.querySelector(".pricing-grid-wrap") || document.querySelector(".pricing-grid");
     const pricingSection = document.querySelector("#precios") || document.querySelector("#planes") || document.querySelector(".pricing-section");
-    const target = pricingGrid || pricingSection;
+    const target = pricingSection || pricingGrid;
     if (!target) return false;
 
     const headerHeight = header?.offsetHeight || 76;
@@ -2418,12 +2472,47 @@ const initCart = () => {
     window.setTimeout(scrollToPricing, 260);
   }
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    if (accountModal && !accountModal.hidden) {
-      closeAccountModal();
+    if (event.key === "Escape") {
+      if (accountModal?.classList.contains("is-open")) {
+        closeAccountModal();
+        return;
+      }
+      if (drawer.classList.contains("is-open")) closeCart();
       return;
     }
-    if (drawer.classList.contains("is-open")) closeCart();
+
+    if (event.key !== "Tab") return;
+
+    if (accountModal?.classList.contains("is-open")) {
+      const focusable = getFocusableElements(accountModal);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!accountModal.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus({ preventScroll: true });
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    if (!drawer.classList.contains("is-open")) return;
+    const focusable = getFocusableElements(drawer);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
   });
 
   readCart();
@@ -2897,16 +2986,16 @@ const initCheckout = () => {
     submittedOrder = order;
     root.classList.add("has-order-success");
     const isPendingOrder = order?.status === "pending" && order?.payment_status === "unpaid";
-    setStatus("success", isPendingOrder ? "Pedido recibido. Estado: pendiente." : "Pedido recibido. Consulta su estado actual desde el panel.");
+    setStatus("success", isPendingOrder ? "Pedido registrado. Estado: pendiente y sin pagar." : "Pedido registrado. Consulta su estado actual desde el panel.");
     const personalizeUrl = order?.id
       ? `${sitePath("checkout/personalizacion/")}?order=${encodeURIComponent(order.id)}`
       : sitePath("checkout/personalizacion/");
 
     resultNode.hidden = false;
     resultNode.innerHTML = `
-      <span class="checkout-order-result__eyebrow">${isPendingOrder ? "Estado: pendiente" : "Pedido registrado"}</span>
-      <strong>Pedido recibido</strong>
-      <p>${isPendingOrder ? "Hemos guardado tu pedido correctamente. Lo revisaremos y te contactaremos para continuar con el proceso." : "El pedido ya estaba registrado. Consulta su estado actual desde tu panel."}</p>
+      <span class="checkout-order-result__eyebrow">${isPendingOrder ? "Pendiente · Sin pagar" : "Pedido registrado"}</span>
+      <strong>Pedido registrado</strong>
+      <p>${isPendingOrder ? "Hemos guardado tu pedido correctamente. No se ha realizado ningún cargo. Lo revisaremos y te contactaremos para continuar con el proceso." : "El pedido ya estaba registrado. Consulta su estado actual desde tu panel."}</p>
       <small>Referencia del pedido ${escapeCheckoutHtml(order?.short_id ? `#${order.short_id}` : order?.id || "")}</small>
       ${canPersonalize && isPendingOrder ? `<a class="checkout-order-result__action" href="${personalizeUrl}">Personalizar reseñas</a>` : ""}
     `;
@@ -2919,7 +3008,7 @@ const initCheckout = () => {
     });
     submitButton?.classList.remove("is-loading");
     if (submitButton) submitButton.disabled = true;
-    submitButton?.querySelector("span")?.replaceChildren(document.createTextNode("Pedido enviado"));
+    submitButton?.querySelector("span")?.replaceChildren(document.createTextNode("Pedido registrado"));
   };
 
   const createPendingOrder = async (checkoutData) => {
@@ -3143,8 +3232,8 @@ const initOrderConfirmation = () => {
 
     const shortId = order.id.replaceAll("-", "").slice(0, 8).toUpperCase();
     if (order.status === "pending" && order.payment_status === "unpaid" && order.currency === "EUR") {
-      document.title = "Pedido recibido | Destroyer Reviews";
-      showState("Pedido recibido", `Estado: pendiente. Referencia del pedido #${shortId}.`);
+      document.title = "Pedido pendiente | Destroyer Reviews";
+      showState("Pedido registrado", `Estado: pendiente y sin pagar. Referencia del pedido #${shortId}.`);
       return;
     }
 
@@ -3738,7 +3827,7 @@ const initPersonalizacionPersisted = () => {
       <article class="personalization-team-state">
         <span>Modo equipo</span>
         <h3>El equipo preparará los textos de tus reseñas</h3>
-        <p>Tu pedido está guardado como pendiente. En esta fase no hay formulario editable ni subida de archivos para clientes.</p>
+        <p>Tu pedido usa preparación por el equipo. No necesitas completar textos ni subir archivos.</p>
         <strong>${reviewTotal()} ${reviewTotal() === 1 ? "reseña" : "reseñas"} del pedido</strong>
       </article>
     `;
@@ -4382,21 +4471,6 @@ const initAuthForms = () => {
       document.body.classList.add("auth-ready");
     }, prefersReducedMotion ? 0 : 820);
   }
-
-  document.querySelectorAll("[data-auth-provider]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      const provider = button.dataset.authProvider || "este proveedor";
-      const card = button.closest(".auth-card, .trial-modal");
-      const status = card?.querySelector("[data-auth-social-status]") || card?.querySelector("[data-auth-status]");
-      button.classList.add("is-pending");
-      window.setTimeout(() => button.classList.remove("is-pending"), 520);
-      if (status) {
-        status.textContent = `Inicio con ${provider} próximamente.`;
-        status.className = "auth-status";
-      }
-    });
-  });
 
   document.querySelectorAll(".auth-switch a").forEach((link) => {
     link.addEventListener("click", (event) => {
