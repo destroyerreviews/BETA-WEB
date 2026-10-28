@@ -1,6 +1,7 @@
 const header = document.querySelector("[data-header]");
 const navToggle = document.querySelector("[data-nav-toggle]");
 const nav = document.querySelector("[data-nav]");
+const mobileMenu = document.querySelector("[data-mobile-menu]");
 const scrollMeter = document.querySelector(".scroll-meter");
 const loader = document.querySelector("[data-loader]");
 const loaderCount = document.querySelector("[data-loader-count]");
@@ -272,12 +273,13 @@ const requestProcessTimeline = () => {
   });
 };
 
-const closeMobileNav = () => {
+const closeMobileNav = ({ returnFocus = false } = {}) => {
   header?.classList.remove("is-open");
   navToggle?.classList.remove("is-open");
   navToggle?.setAttribute("aria-expanded", "false");
-  navToggle?.classList.remove("is-open");
   navToggle?.setAttribute("aria-label", "Abrir menú");
+  mobileMenu?.setAttribute("aria-hidden", "true");
+  if (returnFocus && navToggle instanceof HTMLElement) navToggle.focus({ preventScroll: true });
 };
 
 const scrollToTarget = (target) => {
@@ -294,11 +296,46 @@ const scrollToTarget = (target) => {
 };
 
 const initNavigation = () => {
+  const mobileNavigationQuery = window.matchMedia("(max-width: 980px)");
+
+  if (mobileMenu) {
+    if (!mobileMenu.id) mobileMenu.id = "mobile-navigation";
+    mobileMenu.setAttribute("aria-hidden", "true");
+    navToggle?.setAttribute("aria-controls", mobileMenu.id);
+  }
+
   navToggle?.addEventListener("click", () => {
+    if (!header) return;
     const isOpen = header.classList.toggle("is-open");
     navToggle.classList.toggle("is-open", isOpen);
     navToggle.setAttribute("aria-expanded", String(isOpen));
     navToggle.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
+    mobileMenu?.setAttribute("aria-hidden", String(!isOpen));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!header?.classList.contains("is-open")) return;
+    if (event.target instanceof Element && event.target.closest(".liquid-nav")) return;
+    closeMobileNav();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && header?.classList.contains("is-open")) {
+      closeMobileNav({ returnFocus: true });
+    }
+  });
+
+  const handleMobileNavigationChange = (event) => {
+    if (!event.matches) closeMobileNav();
+  };
+  if (typeof mobileNavigationQuery.addEventListener === "function") {
+    mobileNavigationQuery.addEventListener("change", handleMobileNavigationChange);
+  } else {
+    mobileNavigationQuery.addListener(handleMobileNavigationChange);
+  }
+
+  document.querySelectorAll("[data-cart-toggle]").forEach((button) => {
+    button.addEventListener("click", () => closeMobileNav());
   });
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
@@ -1276,8 +1313,16 @@ const initHeroRotatingWord = () => {
   if (!word) return;
 
   const wordShell = word.closest(".rotating-word-shell");
+  const wordMask = word.closest(".rotating-word-mask");
   const words = ["clientes", "confianza", "visibilidad", "autoridad"];
+  const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const exitDuration = 260;
+  const enterDuration = 460;
+  const holdDuration = 2300;
   let index = 0;
+  let rotationTimer = null;
+  let phaseTimer = null;
+  let measurementFrame = null;
 
   const updateUnderline = () => {
     if (!wordShell || !word) return;
@@ -1290,31 +1335,105 @@ const initHeroRotatingWord = () => {
     wordShell.style.setProperty("--underline-x", `${wordRect.left - shellRect.left + paddingLeft}px`);
   };
 
-  word.textContent = words[index];
-  requestAnimationFrame(updateUnderline);
+  const measureWordWidth = () => {
+    if (!wordShell || !wordMask) return;
+    const probe = word.cloneNode(false);
+    probe.removeAttribute("data-rotating-word");
+    probe.className = "rotating-word";
+    Object.assign(probe.style, {
+      position: "absolute",
+      inset: "auto",
+      width: "max-content",
+      maxWidth: "none",
+      visibility: "hidden",
+      animation: "none",
+      transition: "none",
+      transform: "none",
+      opacity: "1",
+      pointerEvents: "none",
+      whiteSpace: "nowrap",
+    });
+    wordMask.appendChild(probe);
+    const widestWord = words.reduce((maximum, value) => {
+      probe.textContent = value;
+      return Math.max(maximum, probe.getBoundingClientRect().width);
+    }, 0);
+    probe.remove();
+    wordShell.style.setProperty("--rotating-word-width", `${Math.ceil(widestWord + 2)}px`);
+    requestAnimationFrame(updateUnderline);
+  };
 
-  const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateUnderline) : null;
-  if (resizeObserver) {
-    resizeObserver.observe(word);
-  }
-  window.addEventListener("resize", updateUnderline, { passive: true });
+  const requestMeasurement = () => {
+    if (measurementFrame) cancelAnimationFrame(measurementFrame);
+    measurementFrame = requestAnimationFrame(() => {
+      measurementFrame = null;
+      measureWordWidth();
+    });
+  };
 
-  if (prefersReducedMotion) return;
+  const clearRotation = () => {
+    window.clearTimeout(rotationTimer);
+    window.clearTimeout(phaseTimer);
+    rotationTimer = null;
+    phaseTimer = null;
+    word.classList.remove("is-entering", "is-exiting");
+  };
 
-  window.setInterval(() => {
-    if (document.hidden) return;
+  const scheduleRotation = () => {
+    window.clearTimeout(rotationTimer);
+    if (reducedMotionQuery.matches || document.hidden) return;
+    rotationTimer = window.setTimeout(rotateWord, holdDuration);
+  };
+
+  function rotateWord() {
+    if (reducedMotionQuery.matches || document.hidden) {
+      clearRotation();
+      return;
+    }
+
     word.classList.remove("is-entering");
     word.classList.add("is-exiting");
-
-    window.setTimeout(() => {
+    phaseTimer = window.setTimeout(() => {
       index = (index + 1) % words.length;
       word.textContent = words[index];
       word.classList.remove("is-exiting");
       word.classList.add("is-entering");
       requestAnimationFrame(updateUnderline);
-      window.setTimeout(updateUnderline, 90);
-    }, 330);
-  }, 2500);
+
+      phaseTimer = window.setTimeout(() => {
+        word.classList.remove("is-entering");
+        phaseTimer = null;
+        scheduleRotation();
+      }, enterDuration);
+    }, exitDuration);
+  }
+
+  word.textContent = words[index];
+  requestMeasurement();
+  document.fonts?.ready.then(requestMeasurement).catch(() => {});
+
+  const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestMeasurement) : null;
+  if (resizeObserver) {
+    resizeObserver.observe(wordShell || word);
+  }
+  window.addEventListener("resize", requestMeasurement, { passive: true });
+
+  const handleVisibilityChange = () => {
+    clearRotation();
+    if (!document.hidden) scheduleRotation();
+  };
+  const handleMotionPreferenceChange = () => {
+    clearRotation();
+    if (!reducedMotionQuery.matches) scheduleRotation();
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  if (typeof reducedMotionQuery.addEventListener === "function") {
+    reducedMotionQuery.addEventListener("change", handleMotionPreferenceChange);
+  } else {
+    reducedMotionQuery.addListener(handleMotionPreferenceChange);
+  }
+  scheduleRotation();
 };
 
 const initReveals = () => {

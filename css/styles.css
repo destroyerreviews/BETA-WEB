@@ -20557,3 +20557,269 @@ body,
     left: 20%;
   }
 }
+
+/* Phase 2A.2 · Block 2: stable hero motion and clearer public navigation. */
+.home-page .hero-title {
+  font-size: clamp(58px, 6.35vw, 96px);
+  letter-spacing: -0.04em;
+  line-height: 0.94;
+}
+
+.home-page .rotating-word-shell {
+  width: var(--rotating-word-width, 12ch);
+  min-width: 0;
+  max-width: calc(100% + 0.36em);
+  min-height: 1.24em;
+  flex: 0 0 auto;
+}
+
+.home-page .rotating-word-fit,
+.home-page .rotating-word-mask {
+  width: 100%;
+  min-height: 1.18em;
+}
+
+.home-page .rotating-word-mask {
+  overflow: visible;
+}
+
+.home-page .rotating-word {
+  white-space: nowrap;
+  will-change: opacity, transform, filter;
+}
+
+.home-page .rotating-word.is-entering {
+  animation: heroWordIn 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-page .rotating-word.is-exiting {
+  animation: heroWordOut 260ms cubic-bezier(0.55, 0, 0.2, 1) both;
+}
+
+@keyframes heroWordIn {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(0.22em);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroWordOut {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(-0.18em);
+  }
+}
+
+.home-page .hero-actions {
+  align-items: center;
+  gap: 14px;
+}
+
+.home-page .hero-actions .button-primary {
+  min-height: 56px;
+  border-color: transparent;
+  padding-inline: 28px;
+  background: linear-gradient(180deg, #2d5bff, #173bff);
+  box-shadow: 0 6px 8px rgba(23, 59, 255, 0.28);
+}
+
+.home-page .hero-actions .button-secondary {
+  min-height: 52px;
+  padding-inline: 24px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.home-page .site-header.is-scrolled .liquid-nav,
+.blogs-page .site-header.is-scrolled .liquid-nav,
+.home-page .site-header.is-open .liquid-nav,
+.blogs-page .site-header.is-open .liquid-nav {
+  border-color: rgba(136, 174, 255, 0.3);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(80, 130, 255, 0.18), transparent 42%),
+    rgba(4, 7, 18, 0.9);
+  box-shadow:
+    0 8px 8px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.home-page .site-header.is-scrolled .liquid-nav__glass,
+.blogs-page .site-header.is-scrolled .liquid-nav__glass,
+.home-page .site-header.is-open .liquid-nav__glass,
+.blogs-page .site-header.is-open .liquid-nav__glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.035)),
+    rgba(4, 7, 18, 0.82);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+}
+
+.home-page .site-header.is-scrolled .nav-links a,
+.blogs-page .site-header.is-scrolled .nav-links a {
+  color: rgba(245, 248, 255, 0.86);
+}
+
+@media (max-width: 980px) {
+  .home-page .site-header,
+  .blogs-page .site-header {
+    --promo-height: 44px;
+  }
+
+  .home-page .promo-bar,
+  .blogs-page .promo-bar {
+    height: var(--promo-height);
+    padding-inline: 12px;
+  }
+
+  .home-page .promo-bar span,
+  .blogs-page .promo-bar span {
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .home-page .promo-bar button,
+  .blogs-page .promo-bar button {
+    min-height: 44px;
+    flex: 0 0 auto;
+    padding-inline: 5px;
+    white-space: nowrap;
+  }
+
+  .home-page .liquid-nav__content,
+  .blogs-page .liquid-nav__content {
+    gap: 8px;
+  }
+
+  .home-page .cart-button--mobile,
+  .blogs-page .cart-button--mobile,
+  .home-page .nav-mobile-toggle,
+  .blogs-page .nav-mobile-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .home-page .nav-mobile-toggle,
+  .blogs-page .nav-mobile-toggle {
+    transition:
+      color 180ms ease,
+      border-color 180ms ease,
+      background 180ms ease;
+  }
+
+  .home-page .mobile-menu,
+  .blogs-page .mobile-menu {
+    z-index: 5;
+    display: grid;
+    gap: 8px;
+    max-height: calc(100dvh - 92px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 18px;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.985);
+    transform-origin: top right;
+    transition:
+      visibility 0s linear 220ms,
+      opacity 180ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .home-page .site-header.is-open .mobile-menu,
+  .blogs-page .site-header.is-open .mobile-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+    transition-delay: 0s;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-page .site-header,
+  .blogs-page .site-header {
+    --promo-height: 52px;
+  }
+
+  .home-page .promo-bar,
+  .blogs-page .promo-bar {
+    justify-content: space-between;
+    gap: 6px;
+    padding-inline: 10px 7px;
+    font-size: 11.25px;
+  }
+
+  .home-page .promo-bar span,
+  .blogs-page .promo-bar span {
+    flex: 1 1 auto;
+    white-space: normal;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .home-page .promo-bar button,
+  .blogs-page .promo-bar button {
+    padding-inline: 4px;
+    font-size: 11.25px;
+  }
+
+  .home-page .hero {
+    padding-top: 142px;
+  }
+
+  .home-page .hero-title {
+    font-size: clamp(44px, 13.2vw, 54px);
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+  }
+
+  .home-page .hero-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .home-page .hero-actions .button-primary,
+  .home-page .hero-actions .button-secondary {
+    width: 100%;
+    min-height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .rotating-word,
+  .home-page .rotating-word.is-entering,
+  .home-page .rotating-word.is-exiting,
+  .home-page .mobile-menu,
+  .blogs-page .mobile-menu {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .home-page .rotating-word,
+  .home-page .rotating-word.is-entering,
+  .home-page .rotating-word.is-exiting {
+    opacity: 1 !important;
+  }
+}
